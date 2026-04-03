@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Store {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  logo           String   @default("")
+  whatsappNumber String   @default("")
+  address        String   @default("")
+  description    String   @default("")
+  isActive       Boolean  @default(true)
+  plan           String   @default("free")
+  users          StoreUser[]
+  categories     Category[]
+  products       Product[]
+  orders         Order[]
+  testimonials   Testimonial[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model StoreUser {
+  id        String   @id @default(cuid())
+  email     String
+  password  String
+  name      String
+  phone     String   @default("")
+  address   String   @default("")
+  role      String   @default("customer")
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, storeId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String
+  image     String   @default("")
+  sortOrder Int      @default(0)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products  Product[]
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String
+  description String   @default("")
+  price       Float
+  comparePrice Float?
+  image       String   @default("")
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  isFeatured  Boolean  @default(false)
+  isNew       Boolean  @default(false)
+  discount    Int?
+  sizes       String   @default("[]")
+  colors      String   @default("[]")
+  rating      Float    @default(4.5)
+  reviewCount Int      @default(0)
+  inStock     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([slug, storeId])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  customerName    String
+  customerPhone   String
+  customerAddress String      @default("")
+  status          String      @default("pending")
+  total           Float
+  notes           String      @default("")
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            StoreUser?  @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  productId    String
+  productName  String
+  productImage String
+  price        Float
+  quantity     Int
+  size         String   @default("")
+  color        String   @default("")
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String   @default("")
+  content   String
+  rating    Int      @default(5)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
