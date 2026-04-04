@@ -157,3 +157,100 @@ img {
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
+
+/* WhatsApp floating button pulse */
+@keyframes waPulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+.animate-wa-pulse {
+  animation: waPulse 2s infinite;
+}
+
+/* Fade in up */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Premium shimmer */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 2s infinite;
+  pointer-events: none;
+}
+
+/* Holographic border animation */
+@keyframes holographicBorder {
+  0% {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8, #a8a8a8, #d4d4d4, #b0b0b0, #f0f0f0, #c0c0c0);
+    background-size: 400% 400%;
+    background-position: 0% 50%;
+  }
+  25% {
+    background: linear-gradient(135deg, #d4af37, #c0c0c0, #e8d5a0, #a8a8a8, #f0e68c, #d4d4d4, #d4af37);
+    background-size: 400% 400%;
+    background-position: 50% 0%;
+  }
+  50% {
+    background: linear-gradient(135deg, #b0b0b0, #f5f5f5, #9a9a9a, #e0e0e0, #b8b8b8, #ffffff, #b0b0b0);
+    background-size: 400% 400%;
+    background-position: 100% 50%;
+  }
+  75% {
+    background: linear-gradient(135deg, #e8d5a0, #b0b0b0, #d4af37, #c0c0c0, #f5f5f5, #a8a8a8, #e8d5a0);
+    background-size: 400% 400%;
+    background-position: 50% 100%;
+  }
+  100% {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8, #a8a8a8, #d4d4d4, #b0b0b0, #f0f0f0, #c0c0c0);
+    background-size: 400% 400%;
+    background-position: 0% 50%;
+  }
+}
+.animate-holographic-border {
+  animation: holographicBorder 4s ease-in-out infinite;
+}
+
+/* Holographic shimmer sweep */
+@keyframes holographicShimmer {
+  0% {
+    background: linear-gradient(105deg, transparent 30%, rgba(192,192,192,0.08) 40%, rgba(212,175,55,0.12) 50%, rgba(192,192,192,0.08) 60%, transparent 70%);
+    background-size: 250% 100%;
+    background-position: 100% 0;
+  }
+  100% {
+    background: linear-gradient(105deg, transparent 30%, rgba(192,192,192,0.08) 40%, rgba(212,175,55,0.12) 50%, rgba(192,192,192,0.08) 60%, transparent 70%);
+    background-size: 250% 100%;
+    background-position: -100% 0;
+  }
+}
+.animate-holographic-shimmer {
+  animation: holographicShimmer 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Holographic glow pulse */
+@keyframes holographicGlow {
+  0%, 100% {
+    background: radial-gradient(ellipse at center, rgba(192,192,192,0.3) 0%, rgba(212,175,55,0.1) 40%, transparent 70%);
+  }
+  50% {
+    background: radial-gradient(ellipse at center, rgba(212,175,55,0.3) 0%, rgba(192,192,192,0.15) 40%, transparent 70%);
+  }
+}
+.animate-holographic-glow {
+  animation: holographicGlow 3s ease-in-out infinite;
+  pointer-events: none;
+}

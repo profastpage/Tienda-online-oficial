@@ -1,0 +1,20 @@
+{
+  "name": "Urban Style - Premium Streetwear",
+  "short_name": "Urban Style",
+  "description": "Tu tienda premium de streetwear. Moda urbana, calidad y diseño.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "fashion", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

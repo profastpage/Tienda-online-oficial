@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ViewType = 'landing' | 'auth' | 'admin' | 'customer'
+export type ViewType = 'landing' | 'register' | 'auth' | 'admin' | 'customer' | 'store-demo' | 'super-admin'
 export type AdminSection = 'dashboard' | 'products' | 'categories' | 'orders' | 'settings'
 export type CustomerSection = 'dashboard' | 'orders' | 'profile'
 
