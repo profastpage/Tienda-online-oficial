@@ -72,3 +72,29 @@ All 5 critical fixes successfully implemented:
 
 ### Issues Encountered
 - None. All changes applied cleanly. Lint passes with 0 errors. Dev server compiles successfully (GET / 200).
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix crossed services - PWA install button was on store page instead of SaaS landing page
+
+Work Log:
+- Analyzed 3 uploaded screenshots using VLM to identify the issue
+- Screenshot 1: Cart page (working correctly)
+- Screenshot 2: Store page showing "Productos Destacados" with "Instalar App" button (WRONG - install button on store page)
+- Screenshot 3: Store page showing "Explora por Categoría" with "Instalar App" button (WRONG - same issue)
+- Identified that the holographic "Instalar App" floating button was in storefront.tsx instead of saas-landing.tsx
+- Removed PWA install button, installPwa function, canInstallPwa state, and PWA event listeners from storefront.tsx
+- Fixed WhatsApp button position (removed conditional canInstallPwa reference)
+- Removed unused Download import from storefront.tsx
+- Added PWA install state, event listeners, and installPwa function to saas-landing.tsx
+- Added holographic "Instalar App" floating button to saas-landing.tsx (before WhatsApp button, at bottom-24)
+- Fixed lint error (setState in effect) using queueMicrotask
+- Verified manifest.json, sw.js, and icon.svg are all valid
+- Verified dev server compiles and returns 200
+
+Stage Summary:
+- The "Instalar App" button is now correctly placed on the SaaS LANDING page (where platform visitors see it)
+- The STORE page (Urban Style) no longer shows the install button
+- When PWA is installed and opened as standalone, it goes directly to the store (existing logic works)
+- Inside the installed PWA (store view), no install button appears (correct behavior)
+- Lint passes with no errors

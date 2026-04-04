@@ -26,6 +26,7 @@ import {
   Facebook,
   Instagram,
   Twitter,
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -309,12 +310,39 @@ export default function SaasLanding() {
   const { setView } = useViewStore()
   const [scrollY, setScrollY] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [canInstallPwa, setCanInstallPwa] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // PWA install listener
+  useEffect(() => {
+    const handleInstallAvailable = () => setCanInstallPwa(true)
+    const handleInstalled = () => setCanInstallPwa(false)
+    window.addEventListener('pwa-install-available', handleInstallAvailable)
+    window.addEventListener('pwa-installed', handleInstalled)
+    // Check if prompt was already intercepted before React hydration
+    if ((window as any).__canInstallPwa) {
+      // Use microtask to avoid synchronous setState in effect
+      queueMicrotask(() => setCanInstallPwa(true))
+    }
+    return () => {
+      window.removeEventListener('pwa-install-available', handleInstallAvailable)
+      window.removeEventListener('pwa-installed', handleInstalled)
+    }
+  }, [])
+
+  const installPwa = async () => {
+    const prompt = (window as any).__deferredPrompt
+    if (!prompt) return
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') setCanInstallPwa(false)
+    ;(window as any).__deferredPrompt = null
+  }
 
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola! Quiero información sobre la plataforma Tienda Online Oficial. Gracias!')}`
 
@@ -966,6 +994,24 @@ export default function SaasLanding() {
           </div>
         </div>
       </footer>
+
+      {/* ═══════════════════ FLOATING PWA INSTALL BUTTON ═══════════════════ */}
+      {canInstallPwa && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          onClick={installPwa}
+          className="fixed bottom-24 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors animate-holographic-border"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <span className="relative flex h-5 w-5 items-center justify-center">
+            <Download className="w-4 h-4" />
+            <span className="absolute inset-0 rounded-full animate-holographic-shimmer" />
+          </span>
+          <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
+        </motion.button>
+      )}
 
       {/* ═══════════════════ FLOATING WHATSAPP ═══════════════════ */}
       <a

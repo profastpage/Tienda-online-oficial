@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Download } from 'lucide-react'
+import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -98,7 +98,6 @@ export default function Storefront() {
   const [scrollY, setScrollY] = useState(0)
   const [currentHero, setCurrentHero] = useState(0)
   const [newsletterEmail, setNewsletterEmail] = useState('')
-  const [canInstallPwa, setCanInstallPwa] = useState(false)
   const [selectedImageView, setSelectedImageView] = useState(0)
   const galleryRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme } = useTheme()
@@ -113,19 +112,6 @@ export default function Storefront() {
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // PWA install listener
-  useEffect(() => {
-    const handleInstallAvailable = () => setCanInstallPwa(true)
-    const handleInstalled = () => setCanInstallPwa(false)
-    window.addEventListener('pwa-install-available', handleInstallAvailable)
-    window.addEventListener('pwa-installed', handleInstalled)
-    if ((window as any).__canInstallPwa) setCanInstallPwa(true)
-    return () => {
-      window.removeEventListener('pwa-install-available', handleInstallAvailable)
-      window.removeEventListener('pwa-installed', handleInstalled)
-    }
   }, [])
 
   // Hero carousel
@@ -204,15 +190,6 @@ export default function Storefront() {
     setSelectedColor('')
     setAddedToCart(false)
     setSelectedImageView(0)
-  }
-
-  const installPwa = async () => {
-    const prompt = (window as any).__deferredPrompt
-    if (!prompt) return
-    prompt.prompt()
-    const { outcome } = await prompt.userChoice
-    if (outcome === 'accepted') setCanInstallPwa(false)
-    ;(window as any).__deferredPrompt = null
   }
 
   const scrollToGalleryImage = (index: number) => {
@@ -1092,31 +1069,12 @@ export default function Storefront() {
         </div>
       </footer>
 
-      {/* PWA Install Floating Button */}
-      {canInstallPwa && (
-        <motion.button
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          onClick={installPwa}
-          className="fixed bottom-24 right-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors animate-holographic-border"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span className="relative flex h-5 w-5 items-center justify-center">
-            <Download className="w-4 h-4" />
-            <span className="absolute inset-0 rounded-full animate-holographic-shimmer" />
-          </span>
-          <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
-        </motion.button>
-      )}
-
       {/* WhatsApp Floating Button */}
       <motion.a
         href={getWhatsAppOrderUrl()}
         target="_blank"
         rel="noopener noreferrer"
-        className={`fixed z-40 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors ${canInstallPwa ? 'bottom-6' : 'bottom-6'}`}
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 1, type: 'spring', stiffness: 200 }}
