@@ -7,7 +7,6 @@ import { ArrowLeft, Users, ShoppingBag, TrendingUp, Settings, LogOut, Store } fr
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 
 export default function SuperAdminPanel() {
   const { setView } = useViewStore()

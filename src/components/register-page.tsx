@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { ShoppingBag, ArrowRight, ArrowLeft, Store, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
 const PLANS = [

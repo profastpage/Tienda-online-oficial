@@ -18,7 +18,6 @@ import {
   Store,
   UserPlus,
   Settings,
-  CreditCard,
   MessageCircle,
   Mail,
   Phone,
@@ -995,34 +994,37 @@ export default function SaasLanding() {
         </div>
       </footer>
 
-      {/* ═══════════════════ FLOATING PWA INSTALL BUTTON ═══════════════════ */}
-      {canInstallPwa && (
-        <motion.button
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          onClick={installPwa}
-          className="fixed bottom-24 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors animate-holographic-border"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span className="relative flex h-5 w-5 items-center justify-center">
-            <Download className="w-4 h-4" />
-            <span className="absolute inset-0 rounded-full animate-holographic-shimmer" />
-          </span>
-          <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
-        </motion.button>
-      )}
+      {/* ═══════════════════ FLOATING ACTION BUTTONS ═══════════════════ */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
+        {/* PWA Install Button */}
+        {canInstallPwa && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={installPwa}
+            className="flex items-center gap-2 px-5 py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors animate-holographic-border"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <span className="relative flex h-5 w-5 items-center justify-center">
+              <Download className="w-4 h-4" />
+              <span className="absolute inset-0 rounded-full animate-holographic-shimmer" />
+            </span>
+            <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
+          </motion.button>
+        )}
 
-      {/* ═══════════════════ FLOATING WHATSAPP ═══════════════════ */}
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110"
-        aria-label="Contactar por WhatsApp"
-      >
-        <WhatsAppIcon className="w-7 h-7" />
-      </a>
+        {/* WhatsApp */}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110 animate-wa-pulse"
+          aria-label="Contactar por WhatsApp"
+        >
+          <WhatsAppIcon className="w-7 h-7" />
+        </a>
+      </div>
     </div>
   )
 }
