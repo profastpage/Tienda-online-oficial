@@ -75,3 +75,6 @@ site-analysis.json
 
 # Caddy config (dev only)
 Caddyfile
+
+# Upload folder
+/upload/
