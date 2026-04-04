@@ -63,3 +63,15 @@ db/*.db-journal
 
 # Worklog
 worklog.md
+
+# Agent context
+/agent-ctx/
+
+# Downloads
+/download/
+
+# Site analysis
+site-analysis.json
+
+# Caddy config (dev only)
+Caddyfile
