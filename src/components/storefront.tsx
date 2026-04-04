@@ -131,9 +131,12 @@ export default function Storefront() {
           fetch('/api/categories'),
           fetch('/api/testimonials'),
         ])
-        setProducts(await productsRes.json())
-        setCategories(await categoriesRes.json())
-        setTestimonials(await testimonialsRes.json())
+        const productsData = await productsRes.json()
+        const categoriesData = await categoriesRes.json()
+        const testimonialsData = await testimonialsRes.json()
+        setProducts(Array.isArray(productsData) ? productsData : [])
+        setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+        setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : [])
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
