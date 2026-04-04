@@ -1,17 +1,18 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, LogIn, LogOut, Minus, Plus, Trash2 } from 'lucide-react'
+import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCartStore } from '@/stores/cart-store'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { useViewStore } from '@/stores/view-store'
+import { useTheme } from 'next-themes'
 
 interface Product {
   id: string
@@ -97,6 +98,10 @@ export default function Storefront() {
   const [scrollY, setScrollY] = useState(0)
   const [currentHero, setCurrentHero] = useState(0)
   const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [canInstallPwa, setCanInstallPwa] = useState(false)
+  const [selectedImageView, setSelectedImageView] = useState(0)
+  const galleryRef = useRef<HTMLDivElement>(null)
+  const { theme, setTheme } = useTheme()
 
   const cart = useCartStore()
   const wishlist = useWishlistStore()
@@ -108,6 +113,19 @@ export default function Storefront() {
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // PWA install listener
+  useEffect(() => {
+    const handleInstallAvailable = () => setCanInstallPwa(true)
+    const handleInstalled = () => setCanInstallPwa(false)
+    window.addEventListener('pwa-install-available', handleInstallAvailable)
+    window.addEventListener('pwa-installed', handleInstalled)
+    if ((window as any).__canInstallPwa) setCanInstallPwa(true)
+    return () => {
+      window.removeEventListener('pwa-install-available', handleInstallAvailable)
+      window.removeEventListener('pwa-installed', handleInstalled)
+    }
   }, [])
 
   // Hero carousel
@@ -153,10 +171,10 @@ export default function Storefront() {
       ).join('\n')
       const total = `Total: S/ ${cart.totalPrice().toFixed(2)}`
       const fullMessage = encodeURIComponent(`Hola! Quiero hacer un pedido:\n\n${message}\n\n${total}\n\nGracias!`)
-      return `https://wa.me/51999888777?text=${fullMessage}`
+      return `https://wa.me/51933667414?text=${fullMessage}`
     }
     const defaultMsg = encodeURIComponent('Hola! Quiero información sobre sus productos. Gracias!')
-    return `https://wa.me/51999888777?text=${defaultMsg}`
+    return `https://wa.me/51933667414?text=${defaultMsg}`
   }, [cart.items, cart.totalPrice])
 
   const handleAddToCart = (product: Product) => {
@@ -185,6 +203,25 @@ export default function Storefront() {
     setSelectedSize('')
     setSelectedColor('')
     setAddedToCart(false)
+    setSelectedImageView(0)
+  }
+
+  const installPwa = async () => {
+    const prompt = (window as any).__deferredPrompt
+    if (!prompt) return
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') setCanInstallPwa(false)
+    ;(window as any).__deferredPrompt = null
+  }
+
+  const scrollToGalleryImage = (index: number) => {
+    setSelectedImageView(index)
+    if (galleryRef.current) {
+      const thumbWidth = 72
+      const gap = 8
+      galleryRef.current.scrollTo({ left: index * (thumbWidth + gap), behavior: 'smooth' })
+    }
   }
 
   return (
@@ -246,6 +283,16 @@ export default function Storefront() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-neutral-600 hover:text-neutral-900"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label="Toggle dark mode"
+              >
+                <Sun className="w-5 h-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute w-5 h-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              </Button>
               {user ? (
                 <div className="flex items-center gap-1">
                   <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900" onClick={() => setView(user.role === 'admin' ? 'admin' : 'customer')}>
@@ -319,6 +366,14 @@ export default function Storefront() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
+              >
+                <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
+                <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
+              </button>
               <nav className="space-y-1">
                 {['Inicio', 'Catálogo', 'Novedades', 'Nosotros'].map((item) => (
                   <a
@@ -1002,7 +1057,7 @@ export default function Storefront() {
                   <span>📍</span> Lima, Perú
                 </p>
                 <p className="flex items-center gap-2">
-                  <span>📞</span> +51 999 888 777
+                  <span>📞</span> +51 933 667 414
                 </p>
                 <p className="flex items-center gap-2">
                   <span>💬</span> WhatsApp 24/7
@@ -1037,12 +1092,31 @@ export default function Storefront() {
         </div>
       </footer>
 
+      {/* PWA Install Floating Button */}
+      {canInstallPwa && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          onClick={installPwa}
+          className="fixed bottom-24 right-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors animate-holographic-border"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <span className="relative flex h-5 w-5 items-center justify-center">
+            <Download className="w-4 h-4" />
+            <span className="absolute inset-0 rounded-full animate-holographic-shimmer" />
+          </span>
+          <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
+        </motion.button>
+      )}
+
       {/* WhatsApp Floating Button */}
       <motion.a
         href={getWhatsAppOrderUrl()}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors"
+        className={`fixed z-40 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors ${canInstallPwa ? 'bottom-6' : 'bottom-6'}`}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 1, type: 'spring', stiffness: 200 }}
@@ -1293,12 +1367,87 @@ export default function Storefront() {
             </button>
 
             <div className="grid md:grid-cols-2">
-              <div className="aspect-square bg-neutral-100">
-                <img
-                  src={selectedProduct.image}
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover"
-                />
+              {/* Instagram-style Photo Gallery */}
+              <div className="bg-neutral-100 relative">
+                {/* Main Image with Navigation */}
+                <div className="aspect-square relative overflow-hidden group">
+                  <img
+                    src={selectedProduct.image}
+                    alt={`${selectedProduct.name} - Vista ${selectedImageView + 1}`}
+                    className={`w-full h-full object-cover transition-all duration-500 ${
+                      selectedImageView === 0 ? 'object-cover' :
+                      selectedImageView === 1 ? 'object-cover scale-110' :
+                      selectedImageView === 2 ? 'object-center scale-125' :
+                      'object-top'
+                    }`}
+                    style={{
+                      objectFit: selectedImageView === 0 ? 'cover' :
+                                  selectedImageView === 1 ? 'cover' :
+                                  selectedImageView === 2 ? 'cover' : 'cover',
+                      objectPosition: selectedImageView === 0 ? 'center' :
+                                       selectedImageView === 1 ? 'center 30%' :
+                                       selectedImageView === 2 ? 'center 20%' :
+                                       'center 10%'
+                    }}
+                  />
+                  {/* View indicator */}
+                  <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full font-medium">
+                    {selectedImageView + 1} / 4
+                  </div>
+                  {/* Left Arrow */}
+                  {selectedImageView > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView - 1); scrollToGalleryImage(selectedImageView - 1) }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-neutral-700" />
+                    </button>
+                  )}
+                  {/* Right Arrow */}
+                  {selectedImageView < 3 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView + 1); scrollToGalleryImage(selectedImageView + 1) }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <ChevronRight className="w-5 h-5 text-neutral-700" />
+                    </button>
+                  )}
+                  {/* Gradient overlays for Instagram feel */}
+                  {selectedImageView > 0 && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                    </div>
+                  )}
+                </div>
+                {/* Thumbnail strip */}
+                <div className="flex gap-2 p-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide" ref={galleryRef}>
+                  {[0, 1, 2, 3].map((idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => { e.stopPropagation(); scrollToGalleryImage(idx) }}
+                      className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden snap-start transition-all duration-200 ${
+                        selectedImageView === idx
+                          ? 'ring-2 ring-neutral-900 ring-offset-2 scale-105'
+                          : 'ring-1 ring-neutral-200 hover:ring-neutral-400 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img
+                        src={selectedProduct.image}
+                        alt={`Vista ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        style={{
+                          objectPosition: idx === 0 ? 'center' :
+                                           idx === 1 ? 'center 30%' :
+                                           idx === 2 ? 'center 20%' :
+                                           'center 10%'
+                        }}
+                      />
+                      {selectedImageView === idx && (
+                        <div className="absolute inset-0 bg-neutral-900/20" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="p-6 md:p-8 flex flex-col">
                 <Badge variant="secondary" className="w-fit text-xs uppercase tracking-wider mb-2">
