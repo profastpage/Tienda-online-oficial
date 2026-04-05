@@ -10,6 +10,7 @@ import {
   ImageIcon,
   PackageOpen,
 } from 'lucide-react'
+import { ImageUpload } from '@/components/image-upload'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -533,15 +534,19 @@ export function AdminProducts() {
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-neutral-700">URL de imagen</Label>
-              <Input
+              <Label className="text-sm font-medium text-neutral-700">Imagen del producto</Label>
+              <ImageUpload
                 value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                placeholder="https://ejemplo.com/imagen.jpg"
-                className="h-10 rounded-lg text-sm border-neutral-200"
+                onChange={(url) => setForm({ ...form, image: url })}
+                storeSlug={user?.store?.slug || 'store'}
+                folder="products"
+                className="w-full"
               />
+              {form.image && (
+                <p className="text-xs text-neutral-400 truncate max-w-xs">{form.image}</p>
+              )}
             </div>
 
             {/* Category */}
