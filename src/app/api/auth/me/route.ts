@@ -1,8 +1,9 @@
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
+    const db = await getDb()
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 

@@ -1,8 +1,9 @@
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
+    const db = await getDb()
     const { email, password } = await request.json()
 
     if (!email || !password) {

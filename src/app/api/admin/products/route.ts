@@ -1,8 +1,9 @@
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
+    const db = await getDb()
     const { searchParams } = new URL(request.url)
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const db = await getDb()
     const body = await request.json()
     const { storeId, name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, sizes, colors } = body
     if (!storeId || !name || !slug || !price || !categoryId) {
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const db = await getDb()
     const body = await request.json()
     const { id, ...data } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -75,6 +78,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const db = await getDb()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })

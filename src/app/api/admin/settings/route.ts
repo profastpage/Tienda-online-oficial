@@ -1,8 +1,9 @@
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
+    const db = await getDb()
     const { searchParams } = new URL(request.url)
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
@@ -16,6 +17,7 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const db = await getDb()
     const body = await request.json()
     const { id, name, description, whatsappNumber, address, logo } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
