@@ -277,7 +277,7 @@ export default function Storefront() {
               {user ? (
                 <div className="flex items-center gap-1">
                   <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => setView(user.role === 'admin' ? 'admin' : 'customer')}>
-                    <div className="w-6 h-6 rounded-full bg-neutral-900 flex items-center justify-center text-white text-[10px] font-bold">{user.name.charAt(0)}</div>
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold">{user.name.charAt(0)}</div>
                     <span className="max-w-[80px] truncate">{user.name}</span>
                   </Button>
                   <Button variant="ghost" size="icon" className="text-muted-foreground/70 hover:text-red-500 h-8 w-8" onClick={() => logout()}>
@@ -381,7 +381,7 @@ export default function Storefront() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7 }}
               >
-                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-700 hover:bg-muted">
+                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-muted text-foreground hover:bg-muted">
                   Nueva Colección 2026
                 </Badge>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-tight">
@@ -416,14 +416,14 @@ export default function Storefront() {
                 {/* Trust indicators */}
                 <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     </div>
                     <span>Envío gratis</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     </div>
                     <span>Pago contra entrega</span>
                   </div>
@@ -469,7 +469,7 @@ export default function Storefront() {
                   className="absolute -bottom-4 -left-4 md:left-4 bg-card rounded-xl shadow-lg p-4 border"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
                       <span className="text-lg">⭐</span>
                     </div>
                     <div>
@@ -485,7 +485,7 @@ export default function Storefront() {
                   className="hidden md:block absolute -bottom-4 right-4 bg-card rounded-xl shadow-lg p-4 border"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                       <span className="text-lg">🚚</span>
                     </div>
                     <div>
@@ -600,12 +600,12 @@ export default function Storefront() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border animate-pulse">
-                    <div className="aspect-square bg-neutral-200" />
+                    <div className="aspect-square bg-muted" />
                     <div className="p-4 space-y-3">
-                      <div className="h-3 bg-neutral-200 rounded w-16" />
-                      <div className="h-4 bg-neutral-200 rounded w-full" />
-                      <div className="h-3 bg-neutral-200 rounded w-20" />
-                      <div className="h-5 bg-neutral-200 rounded w-24 mt-2" />
+                      <div className="h-3 bg-muted rounded w-16" />
+                      <div className="h-4 bg-muted rounded w-full" />
+                      <div className="h-3 bg-muted rounded w-20" />
+                      <div className="h-5 bg-muted rounded w-24 mt-2" />
                     </div>
                   </div>
                 ))}
@@ -628,7 +628,7 @@ export default function Storefront() {
                         onClick={() => openProduct(product)}
                       >
                         {/* Product Image */}
-                        <div className="relative aspect-square overflow-hidden bg-neutral-100">
+                        <div className="relative aspect-square overflow-hidden bg-muted">
                           <img
                             src={product.image}
                             alt={product.name}
@@ -671,7 +671,7 @@ export default function Storefront() {
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                             <Button
                               size="sm"
-                              className="w-full bg-white text-foreground hover:bg-muted rounded-lg text-xs font-semibold"
+                              className="w-full bg-background text-foreground hover:bg-muted rounded-lg text-xs font-semibold"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 openProduct(product)
@@ -699,7 +699,7 @@ export default function Storefront() {
                                   className={`w-3 h-3 ${
                                     i < Math.floor(product.rating)
                                       ? 'text-amber-400 fill-amber-400'
-                                      : 'text-neutral-200 fill-neutral-200'
+                                      : 'text-muted-foreground/30 fill-muted-foreground/30'
                                   }`}
                                   viewBox="0 0 20 20"
                                 >
@@ -863,7 +863,7 @@ export default function Storefront() {
                         className={`w-4 h-4 ${
                           i < testimonial.rating
                             ? 'text-amber-400 fill-amber-400'
-                            : 'text-neutral-200 fill-neutral-200'
+                            : 'text-muted-foreground/30 fill-muted-foreground/30'
                         }`}
                         viewBox="0 0 20 20"
                       >
@@ -875,7 +875,7 @@ export default function Storefront() {
                     &ldquo;{testimonial.content}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-300 to-neutral-400 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">
                       {testimonial.name.charAt(0)}
                     </div>
                     <div>
@@ -937,7 +937,7 @@ export default function Storefront() {
         </section>
 
         {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-neutral-50 to-white">
+        <section className="py-20 bg-gradient-to-br from-muted to-background">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -996,7 +996,7 @@ export default function Storefront() {
                   <a
                     key={social}
                     href="#"
-                    className="w-9 h-9 bg-neutral-800 hover:bg-neutral-700 rounded-full flex items-center justify-center transition-colors"
+                    className="w-9 h-9 bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 rounded-full flex items-center justify-center transition-colors"
                   >
                     <span className="text-xs text-muted-foreground/70 capitalize">{social[0]}</span>
                   </a>
@@ -1006,7 +1006,7 @@ export default function Storefront() {
 
             {/* Links */}
             <div>
-              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Tienda</h3>
+              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-400">Tienda</h3>
               <ul className="space-y-2.5">
                 {['Polos', 'Hoodies', 'Pantalones', 'Zapatos', 'Novedades'].map((link) => (
                   <li key={link}>
@@ -1019,7 +1019,7 @@ export default function Storefront() {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Ayuda</h3>
+              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-400">Ayuda</h3>
               <ul className="space-y-2.5">
                 {['FAQ', 'Guía de tallas', 'Devoluciones', 'Contacto', 'Términos'].map((link) => (
                   <li key={link}>
@@ -1032,7 +1032,7 @@ export default function Storefront() {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Contacto</h3>
+              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-400">Contacto</h3>
               <div className="space-y-3 text-sm text-muted-foreground/70">
                 <p className="flex items-center gap-2">
                   <span>📍</span> Lima, Perú
@@ -1052,7 +1052,7 @@ export default function Storefront() {
                 <h4 className="text-xs text-muted-foreground mb-2">Métodos de pago</h4>
                 <div className="flex flex-wrap gap-2">
                   {['Efectivo', 'Yape', 'Plin', 'Transferencia'].map((method) => (
-                    <span key={method} className="text-[10px] bg-neutral-800 text-muted-foreground/70 px-2 py-1 rounded">
+                    <span key={method} className="text-[10px] bg-muted text-muted-foreground/70 px-2 py-1 rounded">
                       {method}
                     </span>
                   ))}
@@ -1081,7 +1081,7 @@ export default function Storefront() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-11 h-11 bg-neutral-900/80 backdrop-blur-sm hover:bg-neutral-800 rounded-full flex items-center justify-center shadow-lg transition-colors"
+            className="w-11 h-11 bg-primary/80 backdrop-blur-sm hover:bg-primary rounded-full flex items-center justify-center shadow-lg transition-colors"
             aria-label="Volver arriba"
           >
             <ChevronUp className="w-5 h-5 text-white" />
@@ -1124,8 +1124,8 @@ export default function Storefront() {
 
           {cart.items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
-              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-                <ShoppingBag className="w-8 h-8 text-neutral-300" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <ShoppingBag className="w-8 h-8 text-muted-foreground" />
               </div>
               <p className="text-muted-foreground font-medium">Tu carrito está vacío</p>
               <p className="text-muted-foreground/70 text-sm mt-1">Explora nuestro catálogo y encuentra tu estilo</p>
@@ -1143,7 +1143,7 @@ export default function Storefront() {
                 <div className="space-y-4">
                   {cart.items.map((item) => (
                     <div key={`${item.id}-${item.size}`} className="flex gap-4">
-                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1169,7 +1169,7 @@ export default function Storefront() {
                         </div>
                       </div>
                       <button
-                        className="text-neutral-300 hover:text-red-500 transition-colors flex-shrink-0 mt-1"
+                        className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0 mt-1"
                         onClick={() => cart.removeItem(item.id, item.size)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1220,8 +1220,8 @@ export default function Storefront() {
 
           {wishlist.items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
-              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-                <Heart className="w-8 h-8 text-neutral-300" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <Heart className="w-8 h-8 text-muted-foreground" />
               </div>
               <p className="text-muted-foreground font-medium">Tu lista está vacía</p>
               <p className="text-muted-foreground/70 text-sm mt-1">Guarda tus productos favoritos aquí</p>
@@ -1240,7 +1240,7 @@ export default function Storefront() {
                   {wishlist.items.map((item) => (
                     <div key={item.id} className="flex gap-4">
                       <div
-                        className="w-20 h-20 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0 cursor-pointer"
+                        className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
                         onClick={() => {
                           const prod = products.find((p) => p.id === item.id)
                           if (prod) {
@@ -1283,7 +1283,7 @@ export default function Storefront() {
                         </div>
                       </div>
                       <button
-                        className="text-neutral-300 hover:text-red-500 transition-colors flex-shrink-0 mt-1"
+                        className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0 mt-1"
                         onClick={() => wishlist.removeItem(item.id)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1335,7 +1335,7 @@ export default function Storefront() {
 
             <div className="grid md:grid-cols-2">
               {/* Instagram-style Photo Gallery */}
-              <div className="bg-neutral-100 relative">
+              <div className="bg-muted relative">
                 {/* Main Image with Navigation */}
                 <div className="aspect-square relative overflow-hidden group">
                   <img
@@ -1367,7 +1367,7 @@ export default function Storefront() {
                       onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView - 1); scrollToGalleryImage(selectedImageView - 1) }}
                       className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all opacity-0 group-hover:opacity-100"
                     >
-                      <ChevronLeft className="w-5 h-5 text-neutral-700" />
+                      <ChevronLeft className="w-5 h-5 text-foreground" />
                     </button>
                   )}
                   {/* Right Arrow */}
@@ -1376,7 +1376,7 @@ export default function Storefront() {
                       onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView + 1); scrollToGalleryImage(selectedImageView + 1) }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all opacity-0 group-hover:opacity-100"
                     >
-                      <ChevronRight className="w-5 h-5 text-neutral-700" />
+                      <ChevronRight className="w-5 h-5 text-foreground" />
                     </button>
                   )}
                   {/* Gradient overlays for Instagram feel */}
@@ -1394,8 +1394,8 @@ export default function Storefront() {
                       onClick={(e) => { e.stopPropagation(); scrollToGalleryImage(idx) }}
                       className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden snap-start transition-all duration-200 ${
                         selectedImageView === idx
-                          ? 'ring-2 ring-neutral-900 ring-offset-2 scale-105'
-                          : 'ring-1 ring-neutral-200 hover:ring-neutral-400 opacity-70 hover:opacity-100'
+                          ? 'ring-2 ring-primary ring-offset-2 scale-105'
+                          : 'ring-1 ring-border hover:ring-ring opacity-70 hover:opacity-100'
                       }`}
                     >
                       <img
@@ -1434,7 +1434,7 @@ export default function Storefront() {
                         className={`w-4 h-4 ${
                           i < Math.floor(selectedProduct.rating)
                             ? 'text-amber-400 fill-amber-400'
-                            : 'text-neutral-200 fill-neutral-200'
+                            : 'text-muted-foreground/30 fill-muted-foreground/30'
                         }`}
                         viewBox="0 0 20 20"
                       >
@@ -1476,8 +1476,8 @@ export default function Storefront() {
                         onClick={() => setSelectedSize(size)}
                         className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
                           selectedSize === size
-                            ? 'border-neutral-900 bg-neutral-900 text-white'
-                            : 'border-border text-foreground/70 hover:border-neutral-400'
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border text-foreground/70 hover:border-ring'
                         }`}
                       >
                         {size}
@@ -1500,7 +1500,7 @@ export default function Storefront() {
                           title={color.name}
                           className={`w-8 h-8 rounded-full cursor-pointer hover:scale-110 transition-all ${
                             selectedColor === color.name
-                              ? 'ring-2 ring-neutral-900 ring-offset-2'
+                              ? 'ring-2 ring-primary ring-offset-2'
                               : 'border-2 border-border'
                           }`}
                           style={{ backgroundColor: color.hex }}
