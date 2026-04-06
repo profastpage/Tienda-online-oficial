@@ -1074,14 +1074,14 @@ export default function Storefront() {
       </footer>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
+      <div className="fixed bottom-6 right-4 z-40 flex flex-col items-center gap-3">
         {/* Back to Top Button */}
         {scrollY > 400 && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-11 h-11 bg-primary/80 backdrop-blur-sm hover:bg-primary rounded-full flex items-center justify-center shadow-lg transition-colors"
+            className="w-12 h-12 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center shadow-lg transition-colors border border-primary-foreground/10"
             aria-label="Volver arriba"
           >
             <ChevronUp className="w-5 h-5 text-primary-foreground" />
@@ -1093,7 +1093,7 @@ export default function Storefront() {
           href={getWhatsAppOrderUrl()}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors animate-wa-pulse"
+          className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}

@@ -93,7 +93,7 @@ export default function AiChat() {
     <>
       {/* Floating Button */}
       <motion.div
-        className="fixed bottom-28 right-4 z-50"
+        className="fixed bottom-40 right-4 z-50"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -134,7 +134,7 @@ export default function AiChat() {
       {/* Pulse animation ring */}
       {!isOpen && (
         <motion.div
-          className="fixed bottom-28 right-4 z-40 w-14 h-14 rounded-full bg-purple-500/20"
+          className="fixed bottom-40 right-4 z-40 w-14 h-14 rounded-full bg-purple-500/20"
           animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         />

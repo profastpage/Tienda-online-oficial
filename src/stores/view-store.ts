@@ -26,10 +26,10 @@ export const useViewStore = create<ViewState>((set) => ({
   hydrate: () => {
     try {
       const stored = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null
-      const view = stored?.role === 'admin' ? 'admin' : stored?.role === 'customer' ? 'customer' : 'store-demo'
+      const view = stored?.role === 'admin' ? 'admin' : stored?.role === 'customer' ? 'customer' : 'landing'
       set({ view, _hydrated: true })
     } catch {
-      set({ view: 'store-demo', _hydrated: true })
+      set({ view: 'landing', _hydrated: true })
     }
   },
 }))

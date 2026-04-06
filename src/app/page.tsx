@@ -63,6 +63,6 @@ export default function Home() {
     case 'store-demo':
       return <Storefront />
     default:
-      return <Storefront />
+      return <SaasLanding />
   }
 }
