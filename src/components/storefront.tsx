@@ -671,7 +671,7 @@ export default function Storefront() {
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                             <Button
                               size="sm"
-                              className="w-full bg-background text-foreground hover:bg-muted rounded-lg text-xs font-semibold"
+                              className="w-full bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-xs font-semibold"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 openProduct(product)
@@ -784,7 +784,7 @@ export default function Storefront() {
                   </p>
                   <Button
                     size="lg"
-                    className="mt-6 bg-white text-foreground hover:bg-muted rounded-full px-8 h-12 font-semibold"
+                    className="mt-6 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full px-8 h-12 font-semibold"
                     onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
                   >
                     Pedir por WhatsApp
@@ -983,8 +983,8 @@ export default function Storefront() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-foreground" />
+                <div className="w-9 h-9 bg-white dark:bg-neutral-800 rounded-xl flex items-center justify-center">
+                  <ShoppingBag className="w-5 h-5 text-neutral-900 dark:text-white" />
                 </div>
                 <span className="text-xl font-bold tracking-tight">URBAN STYLE</span>
               </div>
@@ -1084,7 +1084,7 @@ export default function Storefront() {
             className="w-11 h-11 bg-primary/80 backdrop-blur-sm hover:bg-primary rounded-full flex items-center justify-center shadow-lg transition-colors"
             aria-label="Volver arriba"
           >
-            <ChevronUp className="w-5 h-5 text-white" />
+            <ChevronUp className="w-5 h-5 text-primary-foreground" />
           </motion.button>
         )}
 
