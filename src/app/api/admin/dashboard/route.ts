@@ -8,7 +8,10 @@ export async function GET(request: Request) {
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
 
-    const [totalProducts, totalOrders, totalCustomers, recentOrders, revenueData, pendingCount, leadsCount] = await Promise.all([
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const [totalProducts, totalOrders, totalCustomers, recentOrders, revenueData, pendingCount, leadsCount, ordersToday, recentPayments] = await Promise.all([
       db.product.count({ where: { storeId } }),
       db.order.count({ where: { storeId } }),
       db.storeUser.count({ where: { storeId, role: 'customer' } }),
@@ -16,6 +19,19 @@ export async function GET(request: Request) {
       db.order.aggregate({ where: { storeId, status: { in: ['delivered', 'shipped', 'confirmed', 'preparing'] } }, _sum: { total: true } }),
       db.order.count({ where: { storeId, status: 'pending' } }),
       db.lead.count({ where: { status: 'new' } }),
+      db.order.count({ where: { storeId, createdAt: { gte: todayStart } } }),
+      db.order.findMany({
+        where: { storeId },
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          orderNumber: true,
+          total: true,
+          status: true,
+          paymentMethod: { select: { name: true, type: true } },
+          createdAt: true,
+        },
+      }),
     ])
 
     const totalRevenue = revenueData._sum.total || 0
@@ -83,6 +99,8 @@ export async function GET(request: Request) {
       dailySales,
       orderStatusDist,
       newLeads: leadsCount,
+      ordersToday,
+      recentPayments,
     })
   } catch {
     return NextResponse.json({ error: 'Failed' }, { status: 500 })

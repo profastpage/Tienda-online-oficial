@@ -11,6 +11,8 @@ import {
   Clock,
   UserPlus,
   BarChart3,
+  CreditCard,
+  CalendarCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -41,7 +43,9 @@ interface DashboardStats {
   totalCustomers: number
   pendingOrders: number
   newLeads: number
+  ordersToday: number
   recentOrders: RecentOrder[]
+  recentPayments: RecentPayment[]
   dailySales: { date: string; total: number; orders: number }[]
   orderStatusDist: { status: string; count: number }[]
 }
@@ -54,6 +58,14 @@ interface RecentOrder {
   status: string
   createdAt: string
   items: { id: string; productName: string; quantity: number; price: number }[]
+}
+
+interface RecentPayment {
+  orderNumber: string
+  total: number
+  status: string
+  paymentMethod: { name: string; type: string } | null
+  createdAt: string
 }
 
 const statusBadge: Record<string, string> = {
@@ -72,6 +84,26 @@ const statusLabel: Record<string, string> = {
   shipped: 'Enviado',
   delivered: 'Entregado',
   cancelled: 'Cancelado',
+}
+
+const paymentMethodBadge: Record<string, string> = {
+  yape: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  plin: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+  efectivo: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  transferencia: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  tarjeta: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  niubiz: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  mercadopago: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+}
+
+const paymentMethodEmoji: Record<string, string> = {
+  yape: '💜',
+  plin: '🟢',
+  efectivo: '💵',
+  transferencia: '🏦',
+  tarjeta: '💳',
+  niubiz: '🔴',
+  mercadopago: '🔵',
 }
 
 const statCards = [
@@ -105,6 +137,14 @@ const statCards = [
     icon: Users,
     bgColor: 'bg-purple-50 dark:bg-purple-900/20',
     iconColor: 'text-purple-600 dark:text-purple-400',
+    format: (v: number) => v.toString(),
+  },
+  {
+    key: 'ordersToday',
+    label: 'Pedidos Hoy',
+    icon: CalendarCheck,
+    bgColor: 'bg-rose-50 dark:bg-rose-900/20',
+    iconColor: 'text-rose-600 dark:text-rose-400',
     format: (v: number) => v.toString(),
   },
 ]
@@ -145,8 +185,8 @@ export function AdminDashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
             <Card key={i} className="rounded-xl border-neutral-200">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
@@ -234,7 +274,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {statCards.map((card, index) => {
           const Icon = card.icon
           const value = stats ? (stats as unknown as Record<string, unknown>)[card.key] as number : 0
@@ -375,6 +415,88 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent payments */}
+      {stats?.recentPayments && stats.recentPayments.length > 0 && (
+        <Card className="rounded-xl border-neutral-200">
+          <CardContent className="p-0">
+            <div className="p-5 pb-0">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-neutral-400" />
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Últimos Pagos Recibidos</h3>
+              </div>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Últimos 10 pagos y métodos de pago utilizados
+              </p>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-neutral-100 hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                      Pedido
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                      Método de Pago
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                      Fecha
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
+                      Total
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center">
+                      Estado
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.recentPayments.map((payment, i) => {
+                    const pmType = payment.paymentMethod?.type?.toLowerCase() || ''
+                    const pmName = payment.paymentMethod?.name || 'No especificado'
+                    const emoji = paymentMethodEmoji[pmType] || '💳'
+                    const badgeClass = paymentMethodBadge[pmType] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'
+                    return (
+                      <TableRow
+                        key={`${payment.orderNumber}-${i}`}
+                        className="border-neutral-50 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50"
+                      >
+                        <TableCell className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
+                          #{payment.orderNumber.slice(-6)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border-0 ${badgeClass}`}
+                          >
+                            {emoji} {pmName}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-neutral-500">
+                          {formatDate(payment.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 text-right">
+                          S/ {payment.total.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border-0 ${
+                              statusBadge[payment.status] || 'bg-neutral-100 text-neutral-600'
+                            }`}
+                          >
+                            {statusLabel[payment.status] || payment.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent orders */}
       <Card className="rounded-xl border-neutral-200">

@@ -14,7 +14,10 @@ export async function GET(request: Request) {
 
     const orders = await db.order.findMany({
       where,
-      include: { items: true },
+      include: {
+        items: true,
+        paymentMethod: { select: { name: true, type: true } },
+      },
       orderBy: { createdAt: 'desc' },
     })
     return NextResponse.json(orders)
@@ -34,7 +37,14 @@ export async function PUT(request: Request) {
     if (status) updateData.status = status
     if (notes !== undefined) updateData.notes = notes
 
-    const order = await db.order.update({ where: { id }, data: updateData, include: { items: true } })
+    const order = await db.order.update({
+      where: { id },
+      data: updateData,
+      include: {
+        items: true,
+        paymentMethod: { select: { name: true, type: true } },
+      },
+    })
     return NextResponse.json(order)
   } catch {
     return NextResponse.json({ error: 'Failed' }, { status: 500 })

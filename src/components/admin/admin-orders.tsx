@@ -10,6 +10,7 @@ import {
   StickyNote,
   Package,
   Clock,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -49,6 +50,11 @@ interface OrderItem {
   color: string
 }
 
+interface PaymentMethodInfo {
+  name: string
+  type: string
+}
+
 interface Order {
   id: string
   orderNumber: string
@@ -60,6 +66,7 @@ interface Order {
   notes: string
   createdAt: string
   items: OrderItem[]
+  paymentMethod: PaymentMethodInfo | null
 }
 
 type StatusFilter = 'all' | 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled'
@@ -68,28 +75,44 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'pending', label: 'Pendiente' },
   { value: 'confirmed', label: 'Confirmado' },
-  { value: 'preparing', label: 'Preparando' },
+  { value: 'preparing', label: 'En preparación' },
   { value: 'shipped', label: 'Enviado' },
   { value: 'delivered', label: 'Entregado' },
   { value: 'cancelled', label: 'Cancelado' },
 ]
 
 const statusBadge: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  preparing: 'bg-purple-100 text-purple-800',
-  shipped: 'bg-cyan-100 text-cyan-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  pending: 'bg-amber-100 text-amber-700',
+  confirmed: 'bg-blue-100 text-blue-700',
+  preparing: 'bg-indigo-100 text-indigo-700',
+  shipped: 'bg-purple-100 text-purple-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
 }
 
 const statusLabel: Record<string, string> = {
   pending: 'Pendiente',
   confirmed: 'Confirmado',
-  preparing: 'Preparando',
+  preparing: 'En preparación',
   shipped: 'Enviado',
   delivered: 'Entregado',
   cancelled: 'Cancelado',
+}
+
+const paymentMethodBadge: Record<string, string> = {
+  yape: 'bg-purple-100 text-purple-700',
+  plin: 'bg-teal-100 text-teal-700',
+  efectivo: 'bg-green-100 text-green-700',
+  transferencia: 'bg-blue-100 text-blue-700',
+  tarjeta: 'bg-orange-100 text-orange-700',
+}
+
+const paymentMethodIcon: Record<string, string> = {
+  yape: '💜',
+  plin: '💚',
+  efectivo: '💵',
+  transferencia: '🏦',
+  tarjeta: '💳',
 }
 
 const statusOptions = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']
@@ -212,6 +235,9 @@ export function AdminOrders() {
                   <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center hidden sm:table-cell">
                     Items
                   </TableHead>
+                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden lg:table-cell">
+                    Pago
+                  </TableHead>
                   <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
                     Total
                   </TableHead>
@@ -251,6 +277,20 @@ export function AdminOrders() {
                           <Package className="w-3.5 h-3.5" />
                           {order.items.length}
                         </span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {order.paymentMethod ? (
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              paymentMethodBadge[order.paymentMethod.type.toLowerCase()] || 'bg-neutral-100 text-neutral-600'
+                            }`}
+                          >
+                            <span>{paymentMethodIcon[order.paymentMethod.type.toLowerCase()] || '💳'}</span>
+                            {order.paymentMethod.name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-neutral-400">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="text-sm font-semibold text-neutral-900">
@@ -294,7 +334,7 @@ export function AdminOrders() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-40 text-center">
+                    <TableCell colSpan={8} className="h-40 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <ShoppingCart className="w-10 h-10 text-neutral-300" />
                         <p className="text-neutral-400 text-sm">
@@ -331,15 +371,27 @@ export function AdminOrders() {
               </DialogHeader>
 
               <div className="space-y-5 mt-2">
-                {/* Status & date */}
-                <div className="flex items-center justify-between">
-                  <Badge
-                    className={`text-xs font-semibold px-3 py-1 rounded-full border-0 ${
-                      statusBadge[viewOrder.status] || 'bg-neutral-100 text-neutral-600'
-                    }`}
-                  >
-                    {statusLabel[viewOrder.status]}
-                  </Badge>
+                {/* Status & date & payment */}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      className={`text-xs font-semibold px-3 py-1 rounded-full border-0 ${
+                        statusBadge[viewOrder.status] || 'bg-neutral-100 text-neutral-600'
+                      }`}
+                    >
+                      {statusLabel[viewOrder.status]}
+                    </Badge>
+                    {viewOrder.paymentMethod && (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full ${
+                          paymentMethodBadge[viewOrder.paymentMethod.type.toLowerCase()] || 'bg-neutral-100 text-neutral-600'
+                        }`}
+                      >
+                        <CreditCard className="w-3 h-3" />
+                        {viewOrder.paymentMethod.name}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 text-sm text-neutral-500">
                     <Clock className="w-3.5 h-3.5" />
                     {formatDate(viewOrder.createdAt)}

@@ -123,7 +123,8 @@ export default function Storefront() {
   const [customerAddress, setCustomerAddress] = useState('')
   const [orderNotes, setOrderNotes] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
-  const [deliveryAccepted, setDeliveryAccepted] = useState(false)
+  const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; type: string; name: string; qrCode: string; accountNumber: string; accountHolder: string; bankName: string}>>([])
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
   const [createdOrder, setCreatedOrder] = useState<{ id: string; orderNumber: string; status: string; total: number; items: any[] } | null>(null)
 
   // Scroll listener
@@ -162,16 +163,21 @@ export default function Storefront() {
 
     async function fetchData() {
       try {
-        const [productsData, categoriesData, testimonialsData] = await Promise.all([
+        const [productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
           fetchWithRetry('/api/products?store=urban-store'),
           fetchWithRetry('/api/categories?store=urban-store'),
           fetchWithRetry('/api/testimonials?store=urban-store'),
+          fetchWithRetry('/api/store/payment-methods?storeId=urban-store'),
         ])
         if (cancelled) return
         console.log(`[Storefront] Loaded: ${Array.isArray(productsData) ? productsData.length : 0} products, ${Array.isArray(categoriesData) ? categoriesData.length : 0} categories`)
         setProducts(Array.isArray(productsData) ? productsData : [])
         setCategories(Array.isArray(categoriesData) ? categoriesData : [])
         setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : [])
+        if (Array.isArray(paymentMethodsData?.methods)) {
+          setPaymentMethods(paymentMethodsData.methods)
+          console.log(`[Storefront] Loaded ${paymentMethodsData.methods.length} payment methods`)
+        }
       } catch (error) {
         console.error('[Storefront] Error fetching data:', error)
       } finally {
@@ -273,6 +279,7 @@ export default function Storefront() {
             image: item.image,
           })),
           notes: orderNotes,
+          paymentMethodId: selectedPaymentMethod || null,
           userId: user?.id || null,
         }),
       })
@@ -301,7 +308,7 @@ export default function Storefront() {
     setCustomerAddress('')
     setOrderNotes('')
     setTermsAccepted(false)
-    setDeliveryAccepted(false)
+    setSelectedPaymentMethod('')
     setCreatedOrder(null)
     setTimeout(() => setCheckoutOpen(true), 150)
   }
@@ -1191,11 +1198,32 @@ Gracias!`)
               <div className="mt-4">
                 <h4 className="text-xs text-muted-foreground mb-2">Métodos de pago</h4>
                 <div className="flex flex-wrap gap-2">
-                  {['Efectivo', 'Yape', 'Plin', 'Transferencia'].map((method) => (
-                    <span key={method} className="text-[10px] bg-muted text-muted-foreground/70 px-2 py-1 rounded">
-                      {method}
-                    </span>
-                  ))}
+                  {paymentMethods.length > 0 ? (
+                    paymentMethods.map((method) => {
+                      const typeColors: Record<string, string> = {
+                        yape: 'bg-purple-100 text-purple-700',
+                        plin: 'bg-teal-100 text-teal-700',
+                        efectivo: 'bg-green-100 text-green-700',
+                        transferencia: 'bg-blue-100 text-blue-700',
+                        tarjeta: 'bg-orange-100 text-orange-700',
+                        niubiz: 'bg-red-100 text-red-700',
+                        mercadopago: 'bg-sky-100 text-sky-700',
+                        otro: 'bg-neutral-100 text-neutral-700',
+                      }
+                      const colorClass = typeColors[method.type] || 'bg-neutral-100 text-neutral-700'
+                      return (
+                        <span key={method.id} className={`text-[10px] px-2 py-1 rounded font-medium ${colorClass}`}>
+                          {method.name}
+                        </span>
+                      )
+                    })
+                  ) : (
+                    ['Efectivo', 'Yape', 'Plin', 'Transferencia'].map((method) => (
+                      <span key={method} className="text-[10px] bg-muted text-muted-foreground/70 px-2 py-1 rounded">
+                        {method}
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -1814,17 +1842,73 @@ Gracias!`)
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="delivery"
-                    checked={deliveryAccepted}
-                    onCheckedChange={(checked) => setDeliveryAccepted(checked === true)}
-                  />
-                  <Label htmlFor="delivery" className="text-sm font-normal cursor-pointer">
-                    Pago contra entrega
-                  </Label>
+              {/* Payment method selection */}
+              {paymentMethods.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Método de Pago</Label>
+                  <div className="grid gap-2">
+                    {paymentMethods.map((method) => {
+                      const isSelected = selectedPaymentMethod === method.id
+                      const typeColors: Record<string, string> = {
+                        yape: 'border-purple-300 bg-purple-50',
+                        plin: 'border-teal-300 bg-teal-50',
+                        efectivo: 'border-green-300 bg-green-50',
+                        transferencia: 'border-blue-300 bg-blue-50',
+                        tarjeta: 'border-orange-300 bg-orange-50',
+                        niubiz: 'border-red-300 bg-red-50',
+                        mercadopago: 'border-sky-300 bg-sky-50',
+                        otro: 'border-neutral-300 bg-neutral-50',
+                      }
+                      const selectedColor = typeColors[method.type] || 'border-amber-300 bg-amber-50'
+                      const typeEmojis: Record<string, string> = {
+                        yape: '💜', plin: '💚', efectivo: '💵', transferencia: '🏦',
+                        tarjeta: '💳', niubiz: '🔴', mercadopago: '💙', otro: '💰',
+                      }
+                      return (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod(method.id)}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                            isSelected ? selectedColor + ' ring-2 ring-offset-1 ring-amber-400' : 'border-neutral-200 hover:border-neutral-300'
+                          }`}
+                        >
+                          <span className="text-lg">{typeEmojis[method.type] || '💰'}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{method.name}</p>
+                            {method.accountNumber && (
+                              <p className="text-xs text-muted-foreground truncate">{method.accountNumber}</p>
+                            )}
+                            {method.accountHolder && (
+                              <p className="text-xs text-muted-foreground truncate">{method.accountHolder}</p>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {/* Show QR code if selected method has one */}
+                  {selectedPaymentMethod && paymentMethods.find(m => m.id === selectedPaymentMethod)?.qrCode && (
+                    <div className="flex flex-col items-center gap-2 p-4 bg-muted rounded-xl">
+                      <p className="text-xs font-medium text-muted-foreground">Escanea el QR para pagar</p>
+                      <img
+                        src={paymentMethods.find(m => m.id === selectedPaymentMethod)!.qrCode}
+                        alt="QR de pago"
+                        className="w-40 h-40 object-contain rounded-lg"
+                      />
+                      <p className="text-sm font-bold text-foreground">
+                        {paymentMethods.find(m => m.id === selectedPaymentMethod)!.accountNumber}
+                      </p>
+                    </div>
+                  )}
                 </div>
+              )}
+              <div className="space-y-3">
                 <div className="flex items-start gap-2">
                   <Checkbox
                     id="terms"
@@ -1851,7 +1935,7 @@ Gracias!`)
                 <Button
                   className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
                   onClick={handleCheckout}
-                  disabled={!termsAccepted || checkoutLoading}
+                  disabled={!termsAccepted || checkoutLoading || (paymentMethods.length > 0 && !selectedPaymentMethod)}
                 >
                   {checkoutLoading ? (
                     <>

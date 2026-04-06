@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const db = await getDb()
-    const { storeId, customerName, customerPhone, customerAddress, items, notes, userId } = await request.json()
+    const { storeId, customerName, customerPhone, customerAddress, items, notes, userId, paymentMethodId } = await request.json()
 
     // Validate required fields
     if (!storeId || !customerName || !customerPhone || !items || items.length === 0) {
@@ -44,6 +44,7 @@ export async function POST(request: Request) {
         status: 'pending',
         storeId,
         userId: userId || null,
+        paymentMethodId: paymentMethodId || null,
         items: {
           create: items.map((item: any) => ({
             productId: item.id,
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       },
       include: {
         items: true,
+        paymentMethod: { select: { name: true, type: true } },
       },
     })
 

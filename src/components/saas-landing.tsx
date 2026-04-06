@@ -609,6 +609,45 @@ export default function SaasLanding() {
       {/* ═══ Countdown Timer Banner ═══ */}
       <CountdownBanner />
 
+      {/* ═══ Shared Mobile Menu Sheet ═══ */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-80 bg-white">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
+                <Store className="w-4 h-4 text-white" />
+              </div>
+              Tienda Online Oficial
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="mt-6 space-y-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+            <Separator className="my-3" />
+            <button
+              onClick={() => { setView('auth'); setMobileMenuOpen(false) }}
+              className="block w-full text-left px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
+            >
+              Iniciar Sesión
+            </button>
+            <button
+              onClick={() => { setView('register'); setMobileMenuOpen(false) }}
+              className="block w-full text-left px-4 py-3 text-amber-600 hover:bg-amber-50 rounded-lg text-sm font-medium transition-colors"
+            >
+              Registrarse
+            </button>
+          </nav>
+        </SheetContent>
+      </Sheet>
+
       {/* ═══ Fixed Header ═══ */}
       <AnimatePresence>
         {scrollY > 50 && (
@@ -622,7 +661,18 @@ export default function SaasLanding() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
+                  {/* Hamburger menu — mobile only, sticky on scroll */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 md:hidden"
+                    onClick={() => setMobileMenuOpen(true)}
+                    aria-label="Abrir menú"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                  {/* Brand icon — desktop only */}
+                  <div className="hidden md:flex w-8 h-8 bg-amber-500 rounded-xl items-center justify-center">
                     <Store className="w-4 h-4 text-white" />
                   </div>
                 </div>
@@ -826,48 +876,14 @@ export default function SaasLanding() {
         {/* Top nav bar (mobile + desktop) */}
         <div className="absolute top-0 left-0 right-0 z-10 p-4 sm:p-6">
           <div className="flex items-center justify-between">
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                  <Menu className="w-6 h-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 bg-white">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
-                      <Store className="w-4 h-4 text-white" />
-                    </div>
-                    Tienda Online Oficial
-                  </SheetTitle>
-                </SheetHeader>
-                <nav className="mt-6 space-y-1">
-                  {navLinks.map((link) => (
-                    <a
-                      key={link.label}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ))}
-                  <Separator className="my-3" />
-                  <button
-                    onClick={() => { setView('auth'); setMobileMenuOpen(false) }}
-                    className="block w-full text-left px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Iniciar Sesión
-                  </button>
-                  <button
-                    onClick={() => { setView('register'); setMobileMenuOpen(false) }}
-                    className="block w-full text-left px-4 py-3 text-amber-600 hover:bg-amber-50 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Registrarse
-                  </button>
-                </nav>
-              </SheetContent>
-            </Sheet>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
