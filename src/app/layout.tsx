@@ -14,19 +14,70 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://tiendaonlineoficial.com";
+const SITE_IMAGE = `${SITE_URL}/images/hero/banner.png`;
+
 export const metadata: Metadata = {
   title: "Tienda Online Oficial | Crea tu Tienda en Minutos",
-  description: "Plataforma #1 en Perú para crear tu tienda online. Catálogo, carrito, WhatsApp y notificaciones push. Sin conocimientos técnicos.",
-  keywords: ["tienda online", "crear tienda", "e-commerce", "Perú", "Tienda Online Oficial"],
-  authors: [{ name: "Tienda Online Oficial" }],
+  description:
+    "Plataforma #1 en Perú para crear tu tienda online. Catálogo digital, carrito de compras, WhatsApp integrado y notificaciones push. Sin conocimientos técnicos. Empieza gratis.",
+  keywords: [
+    "tienda online",
+    "crear tienda online",
+    "e-commerce Perú",
+    "tienda virtual",
+    "vender por internet",
+    "catálogo digital",
+    "WhatsApp business",
+    "tienda online oficial",
+    "e-commerce SaaS",
+    "plataforma e-commerce",
+  ],
+  authors: [{ name: "Tienda Online Oficial", url: SITE_URL }],
+  creator: "Tienda Online Oficial",
+  publisher: "Tienda Online Oficial",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",
   },
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Tienda Online Oficial | Tu Tienda Profesional en Minutos",
-    description: "Crea tu tienda online con catálogo, carrito, WhatsApp y push. La plataforma #1 en Perú.",
+    description:
+      "Crea tu tienda online con catálogo digital, carrito, WhatsApp y push notifications. La plataforma #1 en Perú para emprendedores.",
+    url: SITE_URL,
+    siteName: "Tienda Online Oficial",
+    images: [
+      {
+        url: SITE_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Tienda Online Oficial - Crea tu tienda profesional en minutos",
+      },
+    ],
+    locale: "es_PE",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tienda Online Oficial | Tu Tienda Profesional en Minutos",
+    description:
+      "Crea tu tienda online con catálogo, carrito, WhatsApp y push. La plataforma #1 en Perú.",
+    images: [SITE_IMAGE],
   },
   manifest: "/manifest.json",
   other: {
@@ -45,6 +96,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        {/* Facebook Pixel placeholder */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Facebook Pixel (replace with your actual pixel ID)
+              // !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              // n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+              // n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+              // t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+              // document,'script','https://connect.facebook.net/en_US/fbevents.js');
+              // fbq('init', 'YOUR_PIXEL_ID');
+              // fbq('track', 'PageView');
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

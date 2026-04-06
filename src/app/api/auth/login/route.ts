@@ -12,22 +12,52 @@ export async function POST(request: Request) {
 
     // Find user across all stores
     const users = await db.storeUser.findMany({ where: { email }, include: { store: true } })
-    const user = users.find((u) => u.password === password)
 
-    if (!user) {
+    // Check password with bcrypt (supports both hashed and plaintext for backward compat)
+    const bcrypt = await import('bcryptjs')
+    let matchedUser: typeof users[0] | null = null
+
+    for (const user of users) {
+      // Try bcrypt comparison first
+      const isBcryptHash = user.password.startsWith('$2')
+      if (isBcryptHash) {
+        const isValid = await bcrypt.compare(password, user.password)
+        if (isValid) {
+          matchedUser = user
+          break
+        }
+      } else {
+        // Legacy: plaintext comparison
+        if (user.password === password) {
+          matchedUser = user
+          break
+        }
+      }
+    }
+
+    if (!matchedUser) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
+    // If user has plaintext password, auto-migrate to bcrypt hash
+    if (!matchedUser.password.startsWith('$2')) {
+      const hashedPassword = await bcrypt.hash(password, 12)
+      await db.storeUser.update({
+        where: { id: matchedUser.id },
+        data: { password: hashedPassword },
+      })
+    }
+
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      phone: user.phone,
-      address: user.address,
-      role: user.role,
-      storeId: user.storeId,
-      storeName: user.store.name,
-      storeSlug: user.store.slug,
+      id: matchedUser.id,
+      email: matchedUser.email,
+      name: matchedUser.name,
+      phone: matchedUser.phone,
+      address: matchedUser.address,
+      role: matchedUser.role,
+      storeId: matchedUser.storeId,
+      storeName: matchedUser.store.name,
+      storeSlug: matchedUser.store.slug,
     })
   } catch {
     return NextResponse.json({ error: 'Error al iniciar sesión' }, { status: 500 })

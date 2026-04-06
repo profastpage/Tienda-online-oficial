@@ -26,14 +26,24 @@ import {
   Instagram,
   Twitter,
   Download,
+  Eye,
+  Clock,
+  Lock,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useViewStore } from '@/stores/view-store'
-import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useToast } from '@/hooks/use-toast'
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 
 // ─── WhatsApp Icon SVG ─────────────────────────────────────────────
 function WhatsAppIcon({ className = 'w-5 h-5' }: { className?: string }) {
@@ -125,6 +135,120 @@ function StaggerItem({ children, className = '' }: { children: ReactNode; classN
     >
       {children}
     </motion.div>
+  )
+}
+
+// ─── Countdown Timer Component ─────────────────────────────────────
+function CountdownBanner() {
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
+
+  useEffect(() => {
+    const getTargetTime = () => {
+      const now = new Date()
+      const target = new Date(now.getTime() + 48 * 60 * 60 * 1000)
+      target.setHours(23, 59, 59, 999)
+      return target.getTime()
+    }
+
+    let targetTime = getTargetTime()
+
+    const calculateTime = () => {
+      const now = Date.now()
+      const diff = Math.max(0, targetTime - now)
+      setTimeLeft({
+        hours: Math.floor(diff / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+      })
+    }
+
+    calculateTime()
+    const timer = setInterval(calculateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  return (
+    <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 animate-pulse-subtle">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-3">
+        <Clock className="w-4 h-4 text-amber-900 shrink-0" />
+        <p className="text-sm font-semibold text-amber-900 text-center">
+          <span className="hidden sm:inline">OFERTA ESPECIAL: 30% de descuento en todos los planes. Termina en: </span>
+          <span className="sm:hidden">30% OFF en todos los planes — Termina en </span>
+          <span className="inline-flex items-center gap-1 ml-1">
+            <span className="inline-flex items-center justify-center bg-amber-900/20 rounded px-1.5 py-0.5 text-xs font-bold min-w-[28px]">
+              {pad(timeLeft.hours)}
+            </span>
+            <span className="font-bold">:</span>
+            <span className="inline-flex items-center justify-center bg-amber-900/20 rounded px-1.5 py-0.5 text-xs font-bold min-w-[28px]">
+              {pad(timeLeft.minutes)}
+            </span>
+            <span className="font-bold">:</span>
+            <span className="inline-flex items-center justify-center bg-amber-900/20 rounded px-1.5 py-0.5 text-xs font-bold min-w-[28px]">
+              {pad(timeLeft.seconds)}
+            </span>
+          </span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Social Proof Activity Feed ────────────────────────────────────
+function ActivityFeed() {
+  const activities = [
+    { text: 'María de Lima acaba de crear su tienda', icon: <Store className="w-3.5 h-3.5" /> },
+    { text: 'Carlos completó su primera venta — S/350', icon: <Zap className="w-3.5 h-3.5" /> },
+    { text: '+12 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
+    { text: 'Ana de Cusco acaba de registrarse', icon: <UserPlus className="w-3.5 h-3.5" /> },
+    { text: 'Pedro completó su primera venta — S/580', icon: <Zap className="w-3.5 h-3.5" /> },
+    { text: '+8 ventas procesadas en la última hora', icon: <BarChart3 className="w-3.5 h-3.5" /> },
+    { text: 'Lucía de Arequipa acaba de crear su tienda', icon: <Store className="w-3.5 h-3.5" /> },
+    { text: 'Roberto completó su primera venta — S/220', icon: <Zap className="w-3.5 h-3.5" /> },
+    { text: '+15 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
+    { text: 'Gaby de Trujillo se unió a Premium', icon: <Star className="w-3.5 h-3.5" /> },
+  ]
+
+  const [currentIndex, setCurrentIndex] = useState(0)
+  // Use a random stable visitor count on mount via useRef
+  const visitorCountRef = useRef(Math.floor(Math.random() * 121) + 80)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % activities.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [activities.length])
+
+  return (
+    <div className="bg-neutral-50 border-y border-neutral-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-neutral-600 min-h-[24px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4 }}
+              className="flex items-center gap-2"
+            >
+              <span className="flex items-center justify-center w-7 h-7 bg-green-100 text-green-600 rounded-full shrink-0">
+                {activities[currentIndex].icon}
+              </span>
+              <span className="truncate">{activities[currentIndex].text}</span>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-neutral-500 shrink-0">
+          <Eye className="w-3.5 h-3.5 text-green-500" />
+          <span className="font-medium text-neutral-700">{visitorCountRef.current}</span>
+          <span className="hidden sm:inline">personas viendo esto ahora</span>
+          <span className="sm:hidden">viendo ahora</span>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -288,6 +412,41 @@ const testimonials = [
   },
 ]
 
+const faqItems = [
+  {
+    question: '¿Necesito conocimientos técnicos?',
+    answer: 'No, absolutamente. Nuestra plataforma está diseñada para que cualquier persona pueda crear su tienda online sin saber programar. El proceso es 100% visual e intuitivo, como crear una publicación en redes sociales. Si sabes usar WhatsApp y redes sociales, ya sabes usar nuestra plataforma.',
+  },
+  {
+    question: '¿Cuánto tiempo toma crear mi tienda?',
+    answer: 'La mayoría de nuestros usuarios tienen su tienda lista en menos de 30 minutos. Solo necesitas registrarte, subir fotos de tus productos, poner precios y ya estás listo para vender. Nuestros asistentes y tutoriales te guían paso a paso.',
+  },
+  {
+    question: '¿Puedo usar mi propio dominio?',
+    answer: 'Sí, con los planes Pro y superiores puedes conectar tu propio dominio personalizado (ej: www.mitienda.com). También puedes usar un subdominio gratuito de Tienda Online Oficial si lo prefieres.',
+  },
+  {
+    question: '¿Cómo reciben los pagos mis clientes?',
+    answer: 'Tus clientes pueden pagarte directamente a través de transferencia bancaria, Yape, Plin, Niubiz, MercadoPago u otros métodos que configures. Tú controlas al 100% cómo recibes tu dinero, sin intermediarios que retengan tus ganancias.',
+  },
+  {
+    question: '¿Qué pasa si quiero cancelar?',
+    answer: 'Puedes cancelar en cualquier momento sin penalidades ni compromisos. No hay contratos de permanencia. Además, ofrecemos garantía de devolución de 7 días: si no estás satisfecho, te devolvemos tu dinero sin preguntas.',
+  },
+  {
+    question: '¿Ofrecen soporte técnico?',
+    answer: 'Sí, nuestro equipo de soporte está disponible para ayudarte. Los planes Premium y Empresarial incluyen soporte 24/7 con respuesta garantizada en menos de 2 horas. También ofrecemos tutoriales, videos y una base de conocimientos completa.',
+  },
+  {
+    question: '¿Puedo cambiar de plan en cualquier momento?',
+    answer: 'Por supuesto. Puedes upgrade o downgrade tu plan cuando quieras. Si haces un upgrade, se te cobrará la diferencia proporcional. Si haces un downgrade, el cambio se aplica al siguiente ciclo de facturación.',
+  },
+  {
+    question: '¿Mis datos están seguros?',
+    answer: 'Absolutamente. Usamos encriptación SSL de 256 bits, backups automáticos diarios y servidores de clase enterprise. Cumplimos con los estándares de seguridad PCI DSS para procesamiento de pagos. Tu información y la de tus clientes están protegidas.',
+  },
+]
+
 // ─── Star Rating Component ─────────────────────────────────────────
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -307,9 +466,65 @@ function StarRating({ rating }: { rating: number }) {
 // ─── Main Component ────────────────────────────────────────────────
 export default function SaasLanding() {
   const { setView } = useViewStore()
+  const { toast } = useToast()
   const [scrollY, setScrollY] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [canInstallPwa, setCanInstallPwa] = useState(false)
+
+  // Lead form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    plan: '',
+    message: '',
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleFormChange = useCallback((field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }, [])
+
+  const handleSubmitLead = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.name.trim() || !formData.email.trim()) {
+      toast({
+        title: 'Campos requeridos',
+        description: 'Por favor, ingresa tu nombre y email.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          plan: formData.plan || null,
+          message: formData.message,
+          source: 'contact-form',
+        }),
+      })
+      if (!res.ok) throw new Error('Error al enviar')
+      toast({
+        title: '¡Mensaje enviado!',
+        description: 'Nos pondremos en contacto contigo pronto.',
+      })
+      setFormData({ name: '', email: '', phone: '', plan: '', message: '' })
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'No se pudo enviar el mensaje. Intenta de nuevo.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -350,11 +565,15 @@ export default function SaasLanding() {
     { label: 'Cómo Funciona', href: '#how-it-works' },
     { label: 'Precios', href: '#pricing' },
     { label: 'Testimonios', href: '#testimonials' },
+    { label: 'FAQ', href: '#faq' },
     { label: 'Contacto', href: '#contact' },
   ]
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      {/* ═══ Countdown Timer Banner ═══ */}
+      <CountdownBanner />
+
       {/* ═══ Fixed Header ═══ */}
       <AnimatePresence>
         {scrollY > 50 && (
@@ -614,6 +833,9 @@ export default function SaasLanding() {
         </div>
       </section>
 
+      {/* ═══ Social Proof Activity Feed ═══ */}
+      <ActivityFeed />
+
       {/* ═══════════════════ BRAND LOGOS MARQUEE ═══════════════════ */}
       <section className="py-8 bg-neutral-50 border-b border-neutral-200">
         <FadeInUp>
@@ -726,6 +948,32 @@ export default function SaasLanding() {
         </div>
       </section>
 
+      {/* ═══════════════════ STATS / NUMBERS SECTION ═══════════════════ */}
+      <section className="py-16 bg-neutral-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { value: '500+', label: 'Tiendas Activas', icon: <Store className="w-6 h-6" /> },
+              { value: 'S/2M+', label: 'Ventas Procesadas', icon: <BarChart3 className="w-6 h-6" /> },
+              { value: '10000+', label: 'Productos Publicados', icon: <Globe className="w-6 h-6" /> },
+              { value: '99.9%', label: 'Uptime', icon: <Shield className="w-6 h-6" /> },
+            ].map((stat) => (
+              <StaggerItem key={stat.label}>
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 rounded-2xl text-amber-400 mb-4">
+                    {stat.icon}
+                  </div>
+                  <p className="text-3xl sm:text-4xl font-bold text-white">
+                    <AnimatedCounter target={stat.value} />
+                  </p>
+                  <p className="text-sm text-neutral-400 mt-2">{stat.label}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
       {/* ═══════════════════ PRICING SECTION ═══════════════════ */}
       <section id="pricing" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -800,7 +1048,22 @@ export default function SaasLanding() {
             ))}
           </StaggerContainer>
 
-          <FadeInUp delay={0.3} className="text-center mt-10">
+          {/* Money-Back Guarantee Badge */}
+          <FadeInUp delay={0.3} className="mt-12">
+            <div className="max-w-lg mx-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-4 p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                <div className="shrink-0 w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-amber-600" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <h4 className="font-bold text-neutral-900 text-base">Garantía de Devolución de 7 Días</h4>
+                  <p className="text-sm text-neutral-600 mt-1">Si no estás satisfecho, te devolvemos tu dinero. Sin preguntas, sin complicaciones.</p>
+                </div>
+              </div>
+            </div>
+          </FadeInUp>
+
+          <FadeInUp delay={0.4} className="text-center mt-8">
             <p className="text-sm text-neutral-400">
               Todos los planes incluyen <span className="text-neutral-600 font-medium">SSL gratuito</span>,{' '}
               <span className="text-neutral-600 font-medium">backups automáticos</span> y{' '}
@@ -852,35 +1115,60 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* ═══════════════════ CONTACT / CTA SECTION ═══════════════════ */}
-      <section id="contact" className="py-20 bg-white">
+      {/* ═══════════════════ FAQ SECTION ═══════════════════ */}
+      <section id="faq" className="py-20 bg-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <FadeInUp className="text-center mb-14">
+            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 text-amber-700 hover:bg-amber-50">
+              Preguntas Frecuentes
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight">
+              ¿Tienes preguntas?
+            </h2>
+            <p className="mt-4 text-neutral-500 text-lg max-w-2xl mx-auto">
+              Encuentra respuestas a las dudas más comunes sobre nuestra plataforma.
+            </p>
+          </FadeInUp>
+
+          <FadeInUp delay={0.2}>
+            <Accordion type="single" collapsible className="w-full">
+              {faqItems.map((item, index) => (
+                <AccordionItem key={index} value={`faq-${index}`} className="border-neutral-200">
+                  <AccordionTrigger className="text-left text-neutral-900 font-semibold hover:text-amber-600 hover:no-underline [&[data-state=open]]:text-amber-600">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-neutral-600 leading-relaxed">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </FadeInUp>
+        </div>
+      </section>
+
+      {/* ═══════════════════ CONTACT / LEAD FORM SECTION ═══════════════════ */}
+      <section id="contact" className="py-20 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeInUp>
-            <div className="relative bg-neutral-900 rounded-3xl overflow-hidden">
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2" />
-              </div>
-
-              <div className="relative z-10 px-6 py-16 sm:px-12 lg:px-20 lg:py-20 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-white/70 text-sm mb-6 backdrop-blur-sm border border-white/10">
-                  <Shield className="w-4 h-4" />
-                  Comienza sin compromiso
-                </div>
-
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight max-w-3xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+            {/* Left - CTA */}
+            <FadeInUp>
+              <div>
+                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 text-amber-700 hover:bg-amber-50">
+                  Contacto
+                </Badge>
+                <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight">
                   ¿Listo para crear tu tienda online?
                 </h2>
-                <p className="mt-5 text-neutral-400 text-lg max-w-2xl mx-auto leading-relaxed">
+                <p className="mt-4 text-neutral-500 text-lg leading-relaxed">
                   Únete a más de 500 tiendas que ya están vendiendo más con nuestra plataforma.
                   Comienza gratis hoy y escala sin límites.
                 </p>
 
-                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Button
                     size="lg"
-                    className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-10 h-14 text-base font-semibold shadow-xl shadow-amber-500/25"
+                    className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/20"
                     onClick={() => setView('register')}
                   >
                     Crear mi Tienda Gratis
@@ -890,7 +1178,7 @@ export default function SaasLanding() {
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 h-14 rounded-full border border-white/20 text-white hover:bg-white/10 transition-colors text-base font-medium"
+                    className="inline-flex items-center gap-2 px-6 h-13 rounded-full border border-neutral-300 text-neutral-700 hover:bg-white hover:border-neutral-400 transition-colors text-base font-medium"
                   >
                     <WhatsAppIcon className="w-5 h-5" />
                     Hablar con Ventas
@@ -898,19 +1186,163 @@ export default function SaasLanding() {
                 </div>
 
                 {/* Contact info */}
-                <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-neutral-400">
+                <div className="mt-10 flex flex-col sm:flex-row items-start gap-6 text-sm text-neutral-500">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
+                    <Phone className="w-4 h-4 text-amber-500" />
                     <span>+51 933 667 414</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
+                    <Mail className="w-4 h-4 text-amber-500" />
                     <span>hola@tiendaonlineoficial.com</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
+                    <MapPin className="w-4 h-4 text-amber-500" />
                     <span>Lima, Perú</span>
                   </div>
+                </div>
+
+                {/* Trust badges */}
+                <div className="mt-10 flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white rounded-full px-3 py-1.5 border border-neutral-200">
+                    <Lock className="w-3.5 h-3.5 text-green-500" />
+                    SSL Seguro
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white rounded-full px-3 py-1.5 border border-neutral-200">
+                    <Shield className="w-3.5 h-3.5 text-amber-500" />
+                    Garantía 7 días
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white rounded-full px-3 py-1.5 border border-neutral-200">
+                    <HeadphonesIcon className="w-3.5 h-3.5 text-blue-500" />
+                    Soporte 24/7
+                  </div>
+                </div>
+              </div>
+            </FadeInUp>
+
+            {/* Right - Lead Capture Form */}
+            <FadeInUp delay={0.2}>
+              <Card className="border-neutral-200 shadow-lg py-0 gap-0">
+                <CardHeader className="bg-neutral-900 rounded-t-lg">
+                  <CardTitle className="text-white text-lg">Escríbenos</CardTitle>
+                  <CardDescription className="text-neutral-400">
+                    Completa el formulario y te contactamos en menos de 24 horas.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <form onSubmit={handleSubmitLead} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="lead-name">Nombre *</Label>
+                      <Input
+                        id="lead-name"
+                        placeholder="Tu nombre completo"
+                        value={formData.name}
+                        onChange={(e) => handleFormChange('name', e.target.value)}
+                        required
+                        className="bg-neutral-50 border-neutral-200 focus:border-amber-400"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lead-email">Email *</Label>
+                      <Input
+                        id="lead-email"
+                        type="email"
+                        placeholder="tu@email.com"
+                        value={formData.email}
+                        onChange={(e) => handleFormChange('email', e.target.value)}
+                        required
+                        className="bg-neutral-50 border-neutral-200 focus:border-amber-400"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lead-phone">Teléfono <span className="text-neutral-400 font-normal">(opcional)</span></Label>
+                      <Input
+                        id="lead-phone"
+                        type="tel"
+                        placeholder="+51 999 999 999"
+                        value={formData.phone}
+                        onChange={(e) => handleFormChange('phone', e.target.value)}
+                        className="bg-neutral-50 border-neutral-200 focus:border-amber-400"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lead-plan">¿Qué plan te interesa?</Label>
+                      <Select
+                        value={formData.plan}
+                        onValueChange={(val) => handleFormChange('plan', val)}
+                      >
+                        <SelectTrigger className="w-full bg-neutral-50 border-neutral-200 focus:border-amber-400">
+                          <SelectValue placeholder="Selecciona un plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no-seguro">No estoy seguro</SelectItem>
+                          <SelectItem value="basico">Básico — S/49/mes</SelectItem>
+                          <SelectItem value="pro">Pro — S/89/mes</SelectItem>
+                          <SelectItem value="premium">Premium — S/129/mes</SelectItem>
+                          <SelectItem value="empresarial">Empresarial — Cotizar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lead-message">Mensaje <span className="text-neutral-400 font-normal">(opcional)</span></Label>
+                      <Textarea
+                        id="lead-message"
+                        placeholder="Cuéntanos sobre tu negocio o tu consulta..."
+                        value={formData.message}
+                        onChange={(e) => handleFormChange('message', e.target.value)}
+                        rows={3}
+                        className="bg-neutral-50 border-neutral-200 focus:border-amber-400 resize-none"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full h-11 font-semibold"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        'Enviar Mensaje'
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </FadeInUp>
+          </div>
+
+          {/* CTA Banner */}
+          <FadeInUp delay={0.3} className="mt-16">
+            <div className="relative bg-neutral-900 rounded-3xl overflow-hidden">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2" />
+              </div>
+
+              <div className="relative z-10 px-6 py-14 sm:px-12 text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-white/70 text-sm mb-6 backdrop-blur-sm border border-white/10">
+                  <Shield className="w-4 h-4" />
+                  Comienza sin compromiso
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight max-w-2xl mx-auto">
+                  Empieza a vender online hoy
+                </h2>
+                <p className="mt-4 text-neutral-400 text-lg max-w-xl mx-auto">
+                  Más de 500 tiendas confían en nosotros. Tu tienda podría ser la siguiente.
+                </p>
+
+                <div className="mt-8">
+                  <Button
+                    size="lg"
+                    className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-10 h-14 text-base font-semibold shadow-xl shadow-amber-500/25"
+                    onClick={() => setView('register')}
+                  >
+                    Crear mi Tienda Gratis
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -973,7 +1405,7 @@ export default function SaasLanding() {
             <div>
               <h4 className="text-white font-semibold text-sm mb-4">Soporte</h4>
               <ul className="space-y-2.5 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Centro de Ayuda</a></li>
+                <li><a href="#faq" className="hover:text-white transition-colors">Preguntas Frecuentes</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Tutoriales</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Términos de Uso</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Privacidad</a></li>
@@ -1014,12 +1446,12 @@ export default function SaasLanding() {
           </motion.button>
         )}
 
-        {/* WhatsApp */}
+        {/* WhatsApp Floating Button */}
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110 animate-wa-pulse"
+          className="relative w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110 animate-wa-pulse"
           aria-label="Contactar por WhatsApp"
         >
           <WhatsAppIcon className="w-7 h-7" />

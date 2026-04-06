@@ -9,8 +9,10 @@ import {
   Users,
   TrendingUp,
   Clock,
+  UserPlus,
+  BarChart3,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -21,6 +23,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 import { useAuthStore } from '@/stores/auth-store'
 
 interface DashboardStats {
@@ -29,7 +40,10 @@ interface DashboardStats {
   totalProducts: number
   totalCustomers: number
   pendingOrders: number
+  newLeads: number
   recentOrders: RecentOrder[]
+  dailySales: { date: string; total: number; orders: number }[]
+  orderStatusDist: { status: string; count: number }[]
 }
 
 interface RecentOrder {
@@ -43,12 +57,12 @@ interface RecentOrder {
 }
 
 const statusBadge: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  preparing: 'bg-purple-100 text-purple-800',
-  shipped: 'bg-cyan-100 text-cyan-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  preparing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  shipped: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 }
 
 const statusLabel: Record<string, string> = {
@@ -65,32 +79,32 @@ const statCards = [
     key: 'totalRevenue',
     label: 'Ingresos Totales',
     icon: DollarSign,
-    bgColor: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
     format: (v: number) => `S/ ${v.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
   },
   {
     key: 'totalOrders',
     label: 'Total Pedidos',
     icon: ShoppingCart,
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-600',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+    iconColor: 'text-blue-600 dark:text-blue-400',
     format: (v: number) => v.toString(),
   },
   {
     key: 'totalProducts',
     label: 'Total Productos',
     icon: Package,
-    bgColor: 'bg-amber-50',
-    iconColor: 'text-amber-600',
+    bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+    iconColor: 'text-amber-600 dark:text-amber-400',
     format: (v: number) => v.toString(),
   },
   {
     key: 'totalCustomers',
     label: 'Total Clientes',
     icon: Users,
-    bgColor: 'bg-purple-50',
-    iconColor: 'text-purple-600',
+    bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+    iconColor: 'text-purple-600 dark:text-purple-400',
     format: (v: number) => v.toString(),
   },
 ]
@@ -104,7 +118,8 @@ export function AdminDashboard() {
     if (!user?.storeId) return
     async function fetchStats() {
       try {
-        const res = await fetch(`/api/admin/dashboard?storeId=${user.storeId}`)
+        const sid = user!.storeId
+        const res = await fetch(`/api/admin/dashboard?storeId=${sid}`)
         if (res.ok) {
           const data = await res.json()
           setStats(data)
@@ -144,6 +159,20 @@ export function AdminDashboard() {
             </Card>
           ))}
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="rounded-xl border-neutral-200 lg:col-span-2">
+            <CardContent className="p-5">
+              <Skeleton className="h-6 w-40 mb-4" />
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl border-neutral-200">
+            <CardContent className="p-5">
+              <Skeleton className="h-6 w-40 mb-4" />
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+        </div>
         <Card className="rounded-xl border-neutral-200">
           <CardContent className="p-5">
             <Skeleton className="h-6 w-40 mb-4" />
@@ -156,35 +185,59 @@ export function AdminDashboard() {
     )
   }
 
+  const hasChartData = stats?.dailySales?.some((d) => d.total > 0)
+
   return (
     <div className="space-y-6">
-      {/* Quick stats summary */}
-      {stats && stats.pendingOrders > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl"
-        >
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-            <Clock className="w-5 h-5 text-amber-600" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-amber-900">
-              {stats.pendingOrders} pedidos pendientes
-            </p>
-            <p className="text-xs text-amber-700">
-              Revisa y confirma los pedidos nuevos
-            </p>
-          </div>
-          <TrendingUp className="w-5 h-5 text-amber-400 ml-auto" />
-        </motion.div>
-      )}
+      {/* Quick alerts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {stats && stats.pendingOrders > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-xl"
+          >
+            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center">
+              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">
+                {stats.pendingOrders} pedidos pendientes
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Revisa y confirma los pedidos nuevos
+              </p>
+            </div>
+            <TrendingUp className="w-5 h-5 text-amber-400 ml-auto" />
+          </motion.div>
+        )}
+        {stats && stats.newLeads > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 rounded-xl"
+          >
+            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-300">
+                {stats.newLeads} nuevos leads
+              </p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                Contactos interesados en tu tienda
+              </p>
+            </div>
+            <UserPlus className="w-5 h-5 text-emerald-400 ml-auto opacity-40" />
+          </motion.div>
+        )}
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, index) => {
           const Icon = card.icon
-          const value = stats ? (stats as Record<string, unknown>)[card.key] as number : 0
+          const value = stats ? (stats as unknown as Record<string, unknown>)[card.key] as number : 0
           return (
             <motion.div
               key={card.key}
@@ -202,7 +255,7 @@ export function AdminDashboard() {
                       {card.label}
                     </span>
                   </div>
-                  <p className="mt-3 text-2xl font-bold text-neutral-900">
+                  <p className="mt-3 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {card.format(value)}
                   </p>
                 </CardContent>
@@ -212,11 +265,122 @@ export function AdminDashboard() {
         })}
       </div>
 
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Sales chart */}
+        <Card className="rounded-xl border-neutral-200 lg:col-span-2">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-neutral-400" />
+              <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                Ventas de los Últimos 7 Días
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {hasChartData ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={stats?.dailySales} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => `S/${v}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value: number) => [`S/ ${value.toFixed(2)}`, 'Ventas']}
+                  />
+                  <Bar dataKey="total" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-neutral-400">
+                <BarChart3 className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm font-medium">Sin datos de ventas</p>
+                <p className="text-xs mt-1">Los pedidos aparecerán aquí automáticamente</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Order status distribution */}
+        <Card className="rounded-xl border-neutral-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              Estado de Pedidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats?.orderStatusDist && stats.orderStatusDist.length > 0 ? (
+                stats.orderStatusDist
+                  .sort((a, b) => b.count - a.count)
+                  .map((item) => {
+                    const total = stats.orderStatusDist.reduce((s, i) => s + i.count, 0)
+                    const pct = total > 0 ? Math.round((item.count / total) * 100) : 0
+                    return (
+                      <div key={item.status} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            {statusLabel[item.status] || item.status}
+                          </span>
+                          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                            {item.count} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                            className={`h-full rounded-full ${
+                              statusBadge[item.status]?.includes('green')
+                                ? 'bg-green-500'
+                                : statusBadge[item.status]?.includes('amber')
+                                ? 'bg-amber-500'
+                                : statusBadge[item.status]?.includes('blue')
+                                ? 'bg-blue-500'
+                                : statusBadge[item.status]?.includes('cyan')
+                                ? 'bg-cyan-500'
+                                : statusBadge[item.status]?.includes('red')
+                                ? 'bg-red-500'
+                                : 'bg-purple-500'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 text-neutral-400">
+                  <ShoppingCart className="w-12 h-12 mb-3 opacity-30" />
+                  <p className="text-sm font-medium">Sin pedidos</p>
+                  <p className="text-xs mt-1">Los pedidos aparecerán aquí</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Recent orders */}
       <Card className="rounded-xl border-neutral-200">
         <CardContent className="p-0">
           <div className="p-5 pb-0">
-            <h3 className="text-base font-bold text-neutral-900">Pedidos Recientes</h3>
+            <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Pedidos Recientes</h3>
             <p className="text-xs text-neutral-400 mt-0.5">
               Últimos 5 pedidos de tu tienda
             </p>
@@ -234,6 +398,9 @@ export function AdminDashboard() {
                   <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                     Fecha
                   </TableHead>
+                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                    Items
+                  </TableHead>
                   <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
                     Total
                   </TableHead>
@@ -247,18 +414,21 @@ export function AdminDashboard() {
                   stats.recentOrders.map((order) => (
                     <TableRow
                       key={order.id}
-                      className="border-neutral-50 hover:bg-neutral-50/50"
+                      className="border-neutral-50 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50"
                     >
-                      <TableCell className="font-medium text-neutral-900 text-sm">
+                      <TableCell className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
                         #{order.orderNumber.slice(-6)}
                       </TableCell>
-                      <TableCell className="text-sm text-neutral-600">
+                      <TableCell className="text-sm text-neutral-600 dark:text-neutral-400">
                         {order.customerName}
                       </TableCell>
                       <TableCell className="text-sm text-neutral-500">
                         {formatDate(order.createdAt)}
                       </TableCell>
-                      <TableCell className="text-sm font-semibold text-neutral-900 text-right">
+                      <TableCell className="text-sm text-neutral-500">
+                        {order.items?.length || 0} items
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 text-right">
                         S/ {order.total.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-center">
@@ -275,8 +445,11 @@ export function AdminDashboard() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center">
+                    <TableCell colSpan={6} className="h-32 text-center">
                       <p className="text-neutral-400 text-sm">No hay pedidos aún</p>
+                      <p className="text-neutral-300 text-xs mt-1">
+                        Los pedidos de tus clientes aparecerán aquí automáticamente
+                      </p>
                     </TableCell>
                   </TableRow>
                 )}

@@ -241,6 +241,15 @@ img {
   pointer-events: none;
 }
 
+/* Countdown banner subtle pulse */
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.92; }
+}
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
 /* Holographic glow pulse */
 @keyframes holographicGlow {
   0%, 100% {
