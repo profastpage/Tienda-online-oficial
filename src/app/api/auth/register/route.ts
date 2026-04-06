@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const db = await getDb()
-    const { email, password, name, phone, address, role, storeName } = await request.json()
+    const { email, password, name, phone, address, role, storeName, plan } = await request.json()
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Email, contraseña y nombre son requeridos' }, { status: 400 })
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       storeNameStr = storeName
       const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
       const store = await db.store.create({
-        data: { name: storeName, slug, whatsappNumber: phone || '' },
+        data: { name: storeName, slug, whatsappNumber: phone || '', plan: plan || 'basico' },
       })
       storeId = store.id
     } else {

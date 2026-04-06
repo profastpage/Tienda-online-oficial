@@ -317,31 +317,45 @@ const plans = [
     name: 'Básico',
     price: 'S/49',
     period: '/mes',
-    description: 'Perfecto para comenzar',
+    description: 'Ideal para emprendedores',
+    badge: null,
     features: [
       'Hasta 50 productos',
-      '1 usuario admin',
-      'Catálogo digital',
-      'WhatsApp básico',
-      'Soporte por email',
+      '1 usuario administrador',
+      'Catálogo digital con fotos',
+      'Carrito de compras',
+      'Pedidos por WhatsApp',
+      'Panel administración básico',
       'Tema personalizable',
+      'Soporte por email (48h)',
+      'SSL gratuito',
+      'Responsive móvil',
+      'Setup inicial incluido',
     ],
     highlighted: false,
-    cta: 'Crear Tienda',
+    cta: 'Comenzar Ahora',
   },
   {
     name: 'Pro',
     price: 'S/89',
     period: '/mes',
-    description: 'Para negocios en crecimiento',
+    description: 'Negocios en crecimiento',
+    badge: 'POPULAR',
     features: [
       'Hasta 200 productos',
-      '3 usuarios admin',
-      'Catálogo digital',
-      'WhatsApp Business',
-      'Panel de métricas',
-      'PWA App',
-      'Soporte prioritario',
+      '3 usuarios administrador',
+      'Catálogo digital con fotos',
+      'Carrito avanzado',
+      'WhatsApp Business API',
+      'Panel métricas y reportes',
+      'PWA App instalable',
+      'Notificaciones pedidos',
+      'Control de inventario',
+      'Categorías ilimitadas',
+      'Tema premium personalizable',
+      'Soporte prioritario (12h)',
+      'SSL + backups automáticos',
+      'Setup + capacitación video',
     ],
     highlighted: false,
     cta: 'Elegir Pro',
@@ -350,17 +364,27 @@ const plans = [
     name: 'Premium',
     price: 'S/129',
     period: '/mes',
-    description: 'Recomendado para escalar',
+    description: 'La mejor inversión',
+    badge: 'RECOMENDADO',
     features: [
       'Productos ilimitados',
-      '10 usuarios admin',
-      'Catálogo digital',
+      '10 usuarios administrador',
+      'Catálogo con fotos múltiples',
+      'Carrito avanzado',
       'WhatsApp Business Pro',
-      'Panel avanzado',
-      'PWA App',
-      'Cotizador IA',
-      'Soporte 24/7',
+      'Panel con gráficos avanzados',
+      'PWA App instalable',
+      'Notificaciones push',
+      'Cotizador IA integrado',
+      'Chat IA para clientes',
+      'Reportes CSV/PDF',
+      'Inventario con alertas',
       'Dominio personalizado',
+      'SEO optimizado',
+      'Integración Yape/Plin',
+      'Soporte 24/7 (2h)',
+      'SSL + backups diarios',
+      'Setup personalizado + onboarding 1a1',
     ],
     highlighted: true,
     cta: 'Elegir Premium',
@@ -370,15 +394,20 @@ const plans = [
     price: 'Cotizar',
     period: '',
     description: 'Solución a medida',
+    badge: null,
     features: [
       'Todo en Premium',
       'Usuarios ilimitados',
       'API personalizada',
       'Integración ERP/CRM',
-      'SLA garantizado',
+      'SLA garantizado 99.99%',
       'Manager dedicado',
       'Capacitación incluida',
       'Multi-sucursal',
+      'White label',
+      'Desarrollo custom',
+      'Soporte 24/7 dedicado',
+      'Setup enterprise completo',
     ],
     highlighted: false,
     cta: 'Contactar Ventas',
@@ -985,7 +1014,7 @@ export default function SaasLanding() {
               Planes para cada etapa de tu negocio
             </h2>
             <p className="mt-4 text-neutral-500 text-lg max-w-2xl mx-auto">
-              Comienza gratis y escala según creces. Sin contratos de permanencia.
+              Invierte en tu negocio desde el día uno. Setup incluido en todos los planes. Sin contratos de permanencia.
             </p>
           </FadeInUp>
 
@@ -999,10 +1028,10 @@ export default function SaasLanding() {
                       : 'border-neutral-100 hover:border-neutral-200 hover:shadow-md'
                   } transition-all duration-300 py-0 gap-0`}
                 >
-                  {plan.highlighted && (
+                  {(plan.highlighted || plan.badge) && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-md">
-                        ⭐ Recomendado
+                      <Badge className={`${plan.highlighted ? 'bg-amber-500 hover:bg-amber-500' : 'bg-neutral-900 hover:bg-neutral-900'} text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider`}>
+                        {plan.highlighted ? '⭐ ' : ''}{plan.badge || 'Recomendado'}
                       </Badge>
                     </div>
                   )}
@@ -1161,8 +1190,8 @@ export default function SaasLanding() {
                   ¿Listo para crear tu tienda online?
                 </h2>
                 <p className="mt-4 text-neutral-500 text-lg leading-relaxed">
-                  Únete a más de 500 tiendas que ya están vendiendo más con nuestra plataforma.
-                  Comienza gratis hoy y escala sin límites.
+                  Únete a más de 800 tiendas que ya están vendiendo más con nuestra plataforma.
+                  Invierte en tu negocio hoy y escala sin límites.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -1171,7 +1200,7 @@ export default function SaasLanding() {
                     className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/20"
                     onClick={() => setView('register')}
                   >
-                    Crear mi Tienda Gratis
+                    Crear mi Tienda
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                   <a
@@ -1324,7 +1353,7 @@ export default function SaasLanding() {
               <div className="relative z-10 px-6 py-14 sm:px-12 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-white/70 text-sm mb-6 backdrop-blur-sm border border-white/10">
                   <Shield className="w-4 h-4" />
-                  Comienza sin compromiso
+                  Setup incluido en todos los planes
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight max-w-2xl mx-auto">
@@ -1340,7 +1369,7 @@ export default function SaasLanding() {
                     className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-10 h-14 text-base font-semibold shadow-xl shadow-amber-500/25"
                     onClick={() => setView('register')}
                   >
-                    Crear mi Tienda Gratis
+                    Crear mi Tienda
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </div>
