@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Upload, ImageIcon, X, Loader2 } from 'lucide-react'
+import { Upload, ImageIcon, X, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface ImageUploadProps {
@@ -25,6 +25,7 @@ export function ImageUpload({
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
+  const [uploadInfo, setUploadInfo] = useState<{ sizeKB: number; format: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const maxBytes = maxSizeMB * 1024 * 1024
@@ -33,14 +34,15 @@ export function ImageUpload({
   const uploadFile = useCallback(
     async (file: File) => {
       setError(null)
+      setUploadInfo(null)
 
       if (!validTypes.includes(file.type)) {
-        setError('Tipo de archivo inválido. Usa JPG, PNG, WebP o GIF')
+        setError('Tipo inválido. Usa JPG, PNG, WebP o GIF')
         return
       }
 
       if (file.size > maxBytes) {
-        setError(`El archivo es demasiado grande. Máximo ${maxSizeMB}MB`)
+        setError(`Archivo muy grande. Máximo ${maxSizeMB}MB`)
         return
       }
 
@@ -72,13 +74,19 @@ export function ImageUpload({
         setProgress(100)
         onChange(data.url)
 
-        // Brief delay to show 100% before hiding progress
+        if (data.sizeKB) {
+          setUploadInfo({
+            sizeKB: data.sizeKB,
+            format: data.format || 'auto',
+          })
+        }
+
         setTimeout(() => {
           setUploading(false)
           setProgress(0)
         }, 400)
       } catch {
-        setError('Error de conexión al subir la imagen')
+        setError('Error de conexión al subir')
         setUploading(false)
         setProgress(0)
       }
@@ -91,7 +99,6 @@ export function ImageUpload({
     if (file) {
       uploadFile(file)
     }
-    // Reset input so the same file can be re-selected
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -122,12 +129,7 @@ export function ImageUpload({
   const handleRemove = () => {
     onChange('')
     setError(null)
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    setUploadInfo(null)
   }
 
   return (
@@ -140,16 +142,24 @@ export function ImageUpload({
         className="hidden"
       />
 
-      {/* Show image preview if uploaded */}
       {value ? (
         <div className="relative group rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50">
           <div className="aspect-video w-full">
             <img
               src={value}
-              alt="Producto"
+              alt="Imagen subida"
               className="w-full h-full object-cover"
             />
           </div>
+
+          {/* Cloudinary optimization badge */}
+          {uploadInfo && (
+            <div className="absolute top-2 left-2 bg-green-500/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              Cloudinary · {uploadInfo.sizeKB}KB · {uploadInfo.format}
+            </div>
+          )}
+
           {/* Overlay on hover */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <Button
@@ -173,7 +183,6 @@ export function ImageUpload({
               Quitar
             </Button>
           </div>
-          {/* Remove button (always visible on mobile) */}
           <Button
             type="button"
             variant="secondary"
@@ -185,7 +194,6 @@ export function ImageUpload({
           </Button>
         </div>
       ) : (
-        /* Upload dropzone */
         <div
           onClick={() => !uploading && fileInputRef.current?.click()}
           onDrop={handleDrop}
@@ -210,7 +218,7 @@ export function ImageUpload({
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-neutral-700">
-                  Subiendo imagen...
+                  Optimizando y subiendo...
                 </p>
                 {progress > 0 && (
                   <div className="mt-2 w-48 mx-auto">
@@ -222,6 +230,9 @@ export function ImageUpload({
                     </div>
                   </div>
                 )}
+                <p className="text-[10px] text-neutral-400 mt-1.5">
+                  Cloudinary optimiza automáticamente: WebP + compresión inteligente
+                </p>
               </div>
             </>
           ) : (
@@ -237,13 +248,15 @@ export function ImageUpload({
                 <p className="text-xs text-neutral-400 mt-1">
                   JPG, PNG, WebP o GIF (máx. {maxSizeMB}MB)
                 </p>
+                <p className="text-[10px] text-green-600 mt-1 font-medium">
+                  Se optimiza automáticamente con Cloudinary
+                </p>
               </div>
             </>
           )}
         </div>
       )}
 
-      {/* Error message */}
       {error && (
         <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
           <X className="w-3 h-3 flex-shrink-0" />

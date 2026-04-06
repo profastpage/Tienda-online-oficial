@@ -38,6 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ImageUpload } from '@/components/image-upload'
 import { useAuthStore } from '@/stores/auth-store'
 
 interface CategoryItem {
@@ -345,13 +346,27 @@ export function AdminCategories() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-neutral-700">URL de imagen</Label>
-              <Input
+              <Label className="text-sm font-medium text-neutral-700">Imagen de categoría</Label>
+              <ImageUpload
                 value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                placeholder="https://ejemplo.com/imagen.jpg"
-                className="h-10 rounded-lg text-sm border-neutral-200"
+                onChange={(url) => setForm({ ...form, image: url })}
+                storeSlug={user?.store?.slug || 'store'}
+                folder="categories"
+                className="w-full"
               />
+              {!form.image && (
+                <p className="text-xs text-neutral-400 mt-1">
+                  O ingresa una URL directamente:
+                </p>
+              )}
+              {!form.image || true && (
+                <Input
+                  value={form.image}
+                  onChange={(e) => setForm({ ...form, image: e.target.value })}
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  className="h-9 rounded-lg text-xs border-neutral-200"
+                />
+              )}
             </div>
 
             <div className="space-y-2">
