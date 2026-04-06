@@ -11,16 +11,10 @@ export async function GET(request: Request) {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    const [totalProducts, totalOrders, totalCustomers, recentOrders, revenueData, pendingCount, leadsCount, ordersToday, recentPayments] = await Promise.all([
-      db.product.count({ where: { storeId } }),
-      db.order.count({ where: { storeId } }),
-      db.storeUser.count({ where: { storeId, role: 'customer' } }),
-      db.order.findMany({ where: { storeId }, orderBy: { createdAt: 'desc' }, take: 5, include: { items: true } }),
-      db.order.aggregate({ where: { storeId, status: { in: ['delivered', 'shipped', 'confirmed', 'preparing'] } }, _sum: { total: true } }),
-      db.order.count({ where: { storeId, status: 'pending' } }),
-      db.lead.count({ where: { status: 'new' } }),
-      db.order.count({ where: { storeId, createdAt: { gte: todayStart } } }),
-      db.order.findMany({
+    // recentPayments is isolated in case PaymentMethod table doesn't exist
+    let recentPayments: any[] = []
+    try {
+      recentPayments = await db.order.findMany({
         where: { storeId },
         take: 10,
         orderBy: { createdAt: 'desc' },
@@ -31,7 +25,36 @@ export async function GET(request: Request) {
           paymentMethod: { select: { name: true, type: true } },
           createdAt: true,
         },
-      }),
+      })
+    } catch {
+      // PaymentMethod table may not exist on fresh deploy, fetch without it
+      try {
+        recentPayments = await db.order.findMany({
+          where: { storeId },
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            orderNumber: true,
+            total: true,
+            status: true,
+            createdAt: true,
+          },
+        })
+      } catch {
+        // Even orders table might not exist yet; leave as empty
+        recentPayments = []
+      }
+    }
+
+    const [totalProducts, totalOrders, totalCustomers, recentOrders, revenueData, pendingCount, leadsCount, ordersToday] = await Promise.all([
+      db.product.count({ where: { storeId } }),
+      db.order.count({ where: { storeId } }),
+      db.storeUser.count({ where: { storeId, role: 'customer' } }),
+      db.order.findMany({ where: { storeId }, orderBy: { createdAt: 'desc' }, take: 5, include: { items: true } }),
+      db.order.aggregate({ where: { storeId, status: { in: ['delivered', 'shipped', 'confirmed', 'preparing'] } }, _sum: { total: true } }),
+      db.order.count({ where: { storeId, status: 'pending' } }),
+      db.lead.count({ where: { status: 'new' } }),
+      db.order.count({ where: { storeId, createdAt: { gte: todayStart } } }),
     ])
 
     const totalRevenue = revenueData._sum.total || 0
@@ -71,7 +94,7 @@ export async function GET(request: Request) {
 
     // Map back
     let idx = 0
-    for (const [key, value] of dayMap) {
+    for (const [, value] of dayMap) {
       dailySales[idx].total = Math.round(value.total * 100) / 100
       dailySales[idx].orders = value.orders
       idx++

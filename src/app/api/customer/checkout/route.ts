@@ -32,36 +32,55 @@ export async function POST(request: Request) {
     const orderCount = await db.order.count({ where: { storeId } })
     const orderNumber = `TOO-${String(orderCount + 1).padStart(5, '0')}`
 
-    // Create order with items
-    const order = await db.order.create({
-      data: {
-        orderNumber,
-        customerName,
-        customerPhone,
-        customerAddress: customerAddress || '',
-        total,
-        notes: notes || '',
-        status: 'pending',
-        storeId,
-        userId: userId || null,
-        paymentMethodId: paymentMethodId || null,
-        items: {
-          create: items.map((item: any) => ({
-            productId: item.id,
-            productName: item.name,
-            productImage: item.image || '',
-            price: item.price,
-            quantity: item.quantity,
-            size: item.size || '',
-            color: item.color || '',
-          })),
+    // Build order data
+    const orderData: Record<string, unknown> = {
+      orderNumber,
+      customerName,
+      customerPhone,
+      customerAddress: customerAddress || '',
+      total,
+      notes: notes || '',
+      status: 'pending',
+      storeId,
+      userId: userId || null,
+      items: {
+        create: items.map((item: any) => ({
+          productId: item.id,
+          productName: item.name,
+          productImage: item.image || '',
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size || '',
+          color: item.color || '',
+        })),
+      },
+    }
+
+    // Only include paymentMethodId if it exists
+    if (paymentMethodId) {
+      orderData.paymentMethodId = paymentMethodId
+    }
+
+    // Try creating with paymentMethod include first
+    let order
+    try {
+      order = await db.order.create({
+        data: orderData,
+        include: {
+          items: true,
+          paymentMethod: { select: { name: true, type: true } },
         },
-      },
-      include: {
-        items: true,
-        paymentMethod: { select: { name: true, type: true } },
-      },
-    })
+      })
+    } catch {
+      // PaymentMethod table may not exist on fresh deploy – retry without relation
+      delete orderData.paymentMethodId
+      order = await db.order.create({
+        data: orderData,
+        include: {
+          items: true,
+        },
+      })
+    }
 
     return NextResponse.json({
       id: order.id,

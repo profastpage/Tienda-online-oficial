@@ -30,6 +30,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ methods })
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch payment methods' }, { status: 500 })
+    // If PaymentMethod table doesn't exist (e.g. fresh deploy without db push),
+    // return empty array so storefront falls back to hardcoded payment methods
+    return NextResponse.json({ methods: [] })
   }
 }
