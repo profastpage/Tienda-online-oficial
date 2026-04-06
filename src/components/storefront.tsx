@@ -87,7 +87,7 @@ const heroImages = [
   '/images/hero/banner-3.png',
 ]
 
-const brands = ['NIKE', 'ADIDAS', 'PUMA', 'NEW BALANCE', 'VANS', 'CONVERSE', 'JORDAN', 'REEBOK']
+const brands = ['KUNA', 'ÑAÑA', 'MISTURA', 'ALPACA', 'TUMI', 'INTI', 'WAYKI', 'CHAKRA']
 
 export default function Storefront() {
   const [products, setProducts] = useState<Product[]>([])

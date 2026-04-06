@@ -256,7 +256,7 @@ function ActivityFeed() {
 const WHATSAPP_NUMBER = '51933667414'
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80&auto=format'
 
-const brands = ['NIKE', 'ADIDAS', 'PUMA', 'NEW BALANCE', 'VANS', 'CONVERSE', 'JORDAN', 'REEBOK', 'UNDER ARMOUR', 'FILA']
+const brands = ['KUNA', 'ÑAÑA', 'MISTURA', 'ALPACA', 'TUMI', 'INTI', 'WAYKI', 'CHAKRA', 'WARI', 'PAYKU']
 
 const features = [
   {
@@ -296,7 +296,7 @@ const steps = [
     icon: <UserPlus className="w-8 h-8" />,
     step: '01',
     title: 'Regístrate',
-    description: 'Crea tu cuenta en 30 segundos. Sin tarjeta de crédito ni compromisos. Comienza gratis.',
+    description: 'Crea tu cuenta en 30 segundos. Elige tu plan ideal y personaliza tu tienda al instante.',
   },
   {
     icon: <Settings className="w-8 h-8" />,
@@ -327,7 +327,7 @@ const plans = [
       'Tema personalizable',
     ],
     highlighted: false,
-    cta: 'Comenzar Gratis',
+    cta: 'Crear Tienda',
   },
   {
     name: 'Pro',
@@ -689,7 +689,7 @@ export default function SaasLanding() {
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/30"
               onClick={() => setView('register')}
             >
-              Comenzar Gratis
+              Crear Tienda
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button
@@ -729,9 +729,9 @@ export default function SaasLanding() {
             className="hidden lg:flex items-center justify-center gap-10 mt-12"
           >
             {[
-              { value: '500+', label: 'Tiendas Activas' },
-              { value: 'S/2M+', label: 'Ventas Procesadas' },
-              { value: '99.9%', label: 'Uptime' },
+              { value: '847+', label: 'Tiendas Activas' },
+              { value: 'S/3.2M+', label: 'Ventas Procesadas' },
+              { value: '99.9%', label: 'Disponibilidad' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <p className="text-2xl font-bold text-white">
@@ -941,7 +941,7 @@ export default function SaasLanding() {
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-12 font-semibold shadow-lg shadow-amber-500/20"
               onClick={() => setView('register')}
             >
-              Comenzar Ahora — Es Gratis
+              Crear Tienda Ahora
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </FadeInUp>
@@ -953,10 +953,10 @@ export default function SaasLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { value: '500+', label: 'Tiendas Activas', icon: <Store className="w-6 h-6" /> },
-              { value: 'S/2M+', label: 'Ventas Procesadas', icon: <BarChart3 className="w-6 h-6" /> },
-              { value: '10000+', label: 'Productos Publicados', icon: <Globe className="w-6 h-6" /> },
-              { value: '99.9%', label: 'Uptime', icon: <Shield className="w-6 h-6" /> },
+              { value: '847+', label: 'Tiendas Activas en Perú', icon: <Store className="w-6 h-6" /> },
+              { value: 'S/3.2M+', label: 'Ventas Procesadas', icon: <BarChart3 className="w-6 h-6" /> },
+              { value: '28400+', label: 'Productos Publicados', icon: <Globe className="w-6 h-6" /> },
+              { value: '99.9%', label: 'Disponibilidad', icon: <Shield className="w-6 h-6" /> },
             ].map((stat) => (
               <StaggerItem key={stat.label}>
                 <div className="text-center">
@@ -1427,36 +1427,31 @@ export default function SaasLanding() {
       </footer>
 
       {/* ═══════════════════ FLOATING ACTION BUTTONS ═══════════════════ */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
-        {/* PWA Install Button */}
-        {canInstallPwa && (
-          <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={installPwa}
-            className="flex items-center gap-2 px-5 py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors animate-holographic-border"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="relative flex h-5 w-5 items-center justify-center">
-              <Download className="w-4 h-4" />
-              <span className="absolute inset-0 rounded-full animate-holographic-shimmer" />
-            </span>
-            <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
-          </motion.button>
-        )}
+      {/* Install App - Bottom LEFT */}
+      {canInstallPwa && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          onClick={installPwa}
+          className="fixed bottom-6 left-4 sm:left-6 z-50 flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-full bg-neutral-900 text-white shadow-lg hover:bg-neutral-800 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Download className="w-4 h-4 shrink-0" />
+          <span className="text-xs font-semibold whitespace-nowrap">Instalar App</span>
+        </motion.button>
+      )}
 
-        {/* WhatsApp Floating Button */}
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110 animate-wa-pulse"
-          aria-label="Contactar por WhatsApp"
+      {/* WhatsApp Floating Button - Bottom RIGHT */}
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-4 sm:right-6 z-50 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110 animate-wa-pulse"
+        aria-label="Contactar por WhatsApp"
         >
           <WhatsAppIcon className="w-7 h-7" />
         </a>
-      </div>
     </div>
   )
 }
