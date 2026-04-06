@@ -163,7 +163,7 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
       <Button
         variant="ghost"
         size="icon"
-        className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm md:opacity-0 md:group-hover:opacity-100`}
+        className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10`}
         onClick={(e) => e.stopPropagation()}
       >
         <Heart className={`w-4 h-4`} />
@@ -1873,7 +1873,29 @@ Gracias!`)
                 <Badge variant="secondary" className="w-fit text-xs uppercase tracking-wider mb-2">
                   {selectedProduct.category.name}
                 </Badge>
-                <h2 className="text-2xl font-bold text-foreground">{selectedProduct.name}</h2>
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-2xl font-bold text-foreground">{selectedProduct.name}</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-10 w-10 rounded-full shrink-0 transition-all ${wishlist.isInWishlist(selectedProduct.id) ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'}`}
+                    onClick={() => {
+                      wishlist.toggleItem({
+                        id: selectedProduct.id,
+                        name: selectedProduct.name,
+                        price: selectedProduct.price,
+                        image: selectedProduct.image,
+                        slug: selectedProduct.slug,
+                      })
+                      toast({
+                        title: wishlist.isInWishlist(selectedProduct.id) ? 'Eliminado de favoritos' : 'Agregado a favoritos',
+                        description: selectedProduct.name,
+                      })
+                    }}
+                  >
+                    <Heart className={`w-5 h-5 ${wishlist.isInWishlist(selectedProduct.id) ? 'fill-red-500' : ''}`} />
+                  </Button>
+                </div>
                 <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
                   {selectedProduct.description}
                 </p>
