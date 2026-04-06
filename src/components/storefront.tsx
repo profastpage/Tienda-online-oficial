@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2 } from 'lucide-react'
+import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -81,6 +81,110 @@ function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: str
   return <span>{prefix}{count}{postfix}</span>
 }
 
+// Swipeable product image component for mobile (Instagram-style)
+function SwipeableProductImage({ product, onClick }: { product: Product; onClick?: () => void }) {
+  const [currentView, setCurrentView] = useState(0)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+  const isDragging = useRef(false)
+
+  const views = [
+    { objectPosition: 'center', label: '1/3' },
+    { objectPosition: 'center 30%', label: '2/3' },
+    { objectPosition: 'center 60%', label: '3/3' },
+  ]
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    isDragging.current = true
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    if (!isDragging.current) return
+    isDragging.current = false
+    const diff = touchStartX.current - touchEndX.current
+    const minSwipe = 50
+    if (Math.abs(diff) > minSwipe) {
+      if (diff > 0 && currentView < views.length - 1) {
+        setCurrentView((prev) => prev + 1)
+      } else if (diff < 0 && currentView > 0) {
+        setCurrentView((prev) => prev - 1)
+      }
+    }
+    touchStartX.current = 0
+    touchEndX.current = 0
+  }
+
+  return (
+    <div
+      className="relative aspect-square overflow-hidden bg-muted"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onClick={onClick}
+    >
+      <img
+        src={product.image}
+        alt={product.name}
+        className="w-full h-full object-cover transition-all duration-300 ease-out md:group-hover:scale-105"
+        style={{ objectPosition: views[currentView].objectPosition }}
+        draggable={false}
+      />
+      {/* Mobile swipe indicator dots - only visible on mobile */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 md:hidden z-10">
+        {views.map((_, idx) => (
+          <div
+            key={idx}
+            className={`h-1 rounded-full transition-all duration-300 ${
+              idx === currentView ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
+            }`}
+          />
+        ))}
+      </div>
+      {/* Badges */}
+      <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        {product.discount && (
+          <Badge className="bg-red-500 hover:bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+            -{product.discount}%
+          </Badge>
+        )}
+        {product.isNew && (
+          <Badge className="bg-neutral-900 hover:bg-neutral-900 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+            NUEVO
+          </Badge>
+        )}
+      </div>
+      {/* Wishlist button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm md:opacity-0 md:group-hover:opacity-100`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Heart className={`w-4 h-4`} />
+      </Button>
+      {/* Desktop Quick View Overlay */}
+      <div className="hidden md:block absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <Button
+          size="sm"
+          className="w-full bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-xs font-semibold"
+          onClick={(e) => {
+            e.stopPropagation()
+            onClick?.()
+          }}
+        >
+          Ver Detalles
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 const heroImages = [
   '/images/hero/banner.png',
   '/images/hero/banner-2.png',
@@ -106,6 +210,8 @@ export default function Storefront() {
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [selectedImageView, setSelectedImageView] = useState(0)
   const galleryRef = useRef<HTMLDivElement>(null)
+  const productDetailTouchStart = useRef(0)
+  const productDetailTouchEnd = useRef(0)
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
 
@@ -193,6 +299,10 @@ export default function Storefront() {
     const matchSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchCategory && matchSearch
   })
+
+  // Offers: products with active discount
+  const offerProducts = products.filter((p) => p.discount && p.discount > 0)
+  const hasOffers = offerProducts.length > 0
 
   // WhatsApp order message builder
   const getWhatsAppOrderUrl = useCallback(() => {
@@ -518,8 +628,9 @@ Gracias!`)
                   </span>
                 </h2>
                 <p className="mt-5 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                  Descubre nuestra colección premium de streetwear. Calidad, diseño y comodidad en cada prenda.
-                  Pedidos fáciles por WhatsApp.
+                  {hasOffers
+                    ? 'Ofertas exclusivas en streetwear. Calidad, diseño y precios increíbles en cada prenda.'
+                    : 'Descubre nuestra colección premium de streetwear. Calidad, diseño y comodidad en cada prenda.'}
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Button
@@ -534,9 +645,19 @@ Gracias!`)
                     variant="outline"
                     size="lg"
                     className="rounded-full px-8 h-12 text-sm font-semibold border-border hover:bg-muted"
-                    onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
+                    onClick={() => {
+                      if (hasOffers) {
+                        document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' })
+                      } else {
+                        document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
+                      }
+                    }}
                   >
-                    Pedir por WhatsApp
+                    {hasOffers ? (
+                      <><Flame className="w-4 h-4 mr-1.5 text-orange-500" /> Ver Ofertas</>
+                    ) : (
+                      <><LayoutGrid className="w-4 h-4 mr-1.5" /> Ver Categorías</>
+                    )}
                   </Button>
                 </div>
                 {/* Trust indicators */}
@@ -640,8 +761,134 @@ Gracias!`)
           </div>
         </section>
 
+        {/* Ofertas Section - Instagram Stories Style */}
+        {hasOffers && (
+          <section id="ofertas" className="py-12 bg-gradient-to-b from-orange-50/50 to-background dark:from-orange-950/20 dark:to-background">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="flex items-end sm:items-center justify-between mb-6 gap-4"
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Flame className="w-5 h-5 text-orange-500" />
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+                      Ofertas
+                    </h2>
+                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                      {offerProducts.length} productos
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-sm md:text-base">
+                    Los mejores precios en productos seleccionados
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full text-xs font-medium shrink-0"
+                  onClick={() => {
+                    setActiveCategory(null)
+                    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                >
+                  Ver todo
+                  <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              </motion.div>
+
+              {/* Horizontal Scrollable Carousel - Instagram Stories Style */}
+              <div className="relative">
+                {/* Mobile: full horizontal scroll, Desktop: grid */}
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:pb-0">
+                  {offerProducts.map((product, index) => {
+                    const savings = product.comparePrice
+                      ? (product.comparePrice - product.price).toFixed(2)
+                      : ((product.price * (product.discount || 0)) / 100).toFixed(2)
+                    return (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group snap-start shrink-0 w-[260px] md:w-auto"
+                      >
+                        <div
+                          className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-border h-full flex flex-col"
+                          onClick={() => openProduct(product)}
+                        >
+                          {/* Product Image with swipe hint */}
+                          <div className="relative aspect-square overflow-hidden bg-muted">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            />
+                            {/* Gradient overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                            {/* Discount Badge - large and prominent */}
+                            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                              <Badge className="bg-red-500 hover:bg-red-500 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow-lg shadow-red-500/30">
+                                -{product.discount}%
+                              </Badge>
+                            </div>
+                            {/* Savings tag */}
+                            <div className="absolute bottom-3 left-3 right-3">
+                              <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center justify-between">
+                                <span className="text-white/80 text-[11px]">Ahorras</span>
+                                <span className="text-white font-bold text-sm">S/ {savings}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Product Info */}
+                          <div className="p-4 flex flex-col flex-1">
+                            <p className="text-[11px] text-muted-foreground/70 uppercase tracking-wider font-medium">
+                              {product.category.name}
+                            </p>
+                            <h3 className="mt-1 font-semibold text-foreground text-sm leading-snug line-clamp-2 group-hover:text-foreground/70 transition-colors">
+                              {product.name}
+                            </h3>
+                            <div className="mt-auto pt-3">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                                  S/ {product.price.toFixed(2)}
+                                </span>
+                                {product.comparePrice && (
+                                  <span className="text-sm text-muted-foreground/70 line-through">
+                                    S/ {product.comparePrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-2">
+                                {(JSON.parse(product.colors) as { name: string; hex: string }[]).slice(0, 4).map((color, i) => (
+                                  <span
+                                    key={i}
+                                    className="w-3.5 h-3.5 rounded-full border border-border"
+                                    style={{ backgroundColor: color.hex }}
+                                    title={color.name}
+                                  />
+                                ))}
+                                <span className="text-[11px] text-muted-foreground/70 ml-1">
+                                  {(JSON.parse(product.sizes) as string[]).length} tallas
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Categories Section */}
-        <section className="py-16 bg-background">
+        <section id="categories" className="py-16 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -751,62 +998,12 @@ Gracias!`)
                     >
                       <div
                         className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-border h-full flex flex-col"
-                        onClick={() => openProduct(product)}
                       >
-                        {/* Product Image */}
-                        <div className="relative aspect-square overflow-hidden bg-muted">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          />
-                          {/* Badges */}
-                          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                            {product.discount && (
-                              <Badge className="bg-red-500 hover:bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                                -{product.discount}%
-                              </Badge>
-                            )}
-                            {product.isNew && (
-                              <Badge className="bg-neutral-900 hover:bg-neutral-900 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                                NUEVO
-                              </Badge>
-                            )}
-                          </div>
-                          {/* Wishlist button */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm ${
-                              isWished ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              wishlist.toggleItem({
-                                id: product.id,
-                                name: product.name,
-                                price: product.price,
-                                image: product.image,
-                                slug: product.slug,
-                              })
-                            }}
-                          >
-                            <Heart className={`w-4 h-4 ${isWished ? 'fill-red-500 text-red-500' : 'text-foreground/70'}`} />
-                          </Button>
-                          {/* Quick View Overlay */}
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <Button
-                              size="sm"
-                              className="w-full bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-xs font-semibold"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openProduct(product)
-                              }}
-                            >
-                              Ver Detalles
-                            </Button>
-                          </div>
-                        </div>
+                        {/* Swipeable Product Image - Instagram Style */}
+                        <SwipeableProductImage
+                          product={product}
+                          onClick={() => openProduct(product)}
+                        />
 
                         {/* Product Info */}
                         <div className="p-4 flex flex-col flex-1">
@@ -909,7 +1106,52 @@ Gracias!`)
           </div>
         </section>
 
-        {/* Promo Banner */}
+        {/* Promo Banner - Dynamic: Offers or Categories */}
+        {hasOffers ? (
+        <section className="py-16 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl overflow-hidden"
+            >
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="p-8 md:p-12 lg:p-16">
+                  <Badge className="mb-4 bg-white/10 text-white hover:bg-white/10 border-white/20 text-xs tracking-wider uppercase">
+                    🔥 Ofertas Activas
+                  </Badge>
+                  <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                    Hasta {Math.max(...offerProducts.map(p => p.discount || 0))}% de descuento
+                  </h2>
+                  <p className="mt-4 text-white/80 text-lg">
+                    {offerProducts.length} productos en oferta. ¡No te pierdas estas oportunidades!
+                  </p>
+                  <Button
+                    size="lg"
+                    className="mt-6 bg-white dark:bg-neutral-800 text-orange-600 dark:text-orange-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full px-8 h-12 font-semibold"
+                    onClick={() => document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    <Flame className="w-4 h-4 mr-1.5" />
+                    Ver Todas las Ofertas
+                    <ChevronRight className="ml-1 w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="hidden md:block h-full min-h-[300px] relative">
+                  <div className="absolute inset-0 bg-black/20" />
+                  {offerProducts[0] && (
+                    <img
+                      src={offerProducts[0].image}
+                      alt="Productos en oferta"
+                      className="w-full h-full object-cover opacity-60"
+                    />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+        ) : (
         <section className="py-16 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
@@ -921,27 +1163,28 @@ Gracias!`)
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div className="p-8 md:p-12 lg:p-16">
                   <Badge className="mb-4 bg-white/10 text-white hover:bg-white/10 border-white/20 text-xs tracking-wider uppercase">
-                    Oferta Limitada
+                    Nueva Colección
                   </Badge>
                   <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                    15% de descuento en toda la colección de Hoodies
+                    Descubre las categorías de nuestra tienda
                   </h2>
                   <p className="mt-4 text-muted-foreground/70 text-lg">
-                    Usa el código <span className="text-white font-bold">URBAN15</span> en tu pedido por WhatsApp. Válido hasta agotar stock.
+                    Encuentra todo lo que necesitas. Explora nuestras categorías y encuentra tu estilo perfecto.
                   </p>
                   <Button
                     size="lg"
                     className="mt-6 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full px-8 h-12 font-semibold"
-                    onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
+                    onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    Pedir por WhatsApp
+                    <LayoutGrid className="w-4 h-4 mr-1.5" />
+                    Ver Categorías
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </Button>
                 </div>
                 <div className="hidden md:block h-full min-h-[300px]">
                   <img
                     src="/images/products/hoodie-gray.png"
-                    alt="Hoodies Collection"
+                    alt="Nuestra Colección"
                     className="w-full h-full object-cover opacity-60"
                   />
                 </div>
@@ -949,6 +1192,7 @@ Gracias!`)
             </motion.div>
           </div>
         </section>
+        )}
 
         {/* Features */}
         <section className="py-16 bg-muted border-t border-b border-border">
@@ -1110,9 +1354,19 @@ Gracias!`)
                   variant="outline"
                   size="lg"
                   className="rounded-full px-8 h-12 font-semibold border-border hover:bg-muted"
-                  onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
+                  onClick={() => {
+                    if (hasOffers) {
+                      document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' })
+                    } else {
+                      document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }}
                 >
-                  Contáctanos por WhatsApp
+                  {hasOffers ? (
+                    <><Flame className="w-4 h-4 mr-1.5 text-orange-500" /> Ver Ofertas</>
+                  ) : (
+                    <><LayoutGrid className="w-4 h-4 mr-1.5" /> Ver Categorías</>
+                  )}
                 </Button>
               </div>
               <p className="mt-6 text-sm text-muted-foreground/70">
@@ -1267,7 +1521,7 @@ Gracias!`)
           transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          aria-label="Pedir por WhatsApp"
+          aria-label="Contactar por WhatsApp"
         >
           <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -1363,12 +1617,20 @@ Gracias!`)
                 </Button>
                 <Button
                   className="w-full h-12 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
-                  onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
+                  onClick={() => {
+                    cart.closeCart()
+                    if (hasOffers) {
+                      document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' })
+                    } else {
+                      document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }}
                 >
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
-                  Pedir por WhatsApp
+                  {hasOffers ? (
+                    <><Flame className="w-5 h-5 mr-2" /> Ver Ofertas</>
+                  ) : (
+                    <><LayoutGrid className="w-5 h-5 mr-2" /> Ver Categorías</>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -1511,8 +1773,24 @@ Gracias!`)
             <div className="grid md:grid-cols-2">
               {/* Instagram-style Photo Gallery */}
               <div className="bg-muted relative">
-                {/* Main Image with Navigation */}
-                <div className="aspect-square relative overflow-hidden group">
+                {/* Main Image with Navigation + Swipe Support */}
+                <div
+                  className="aspect-square relative overflow-hidden group"
+                  onTouchStart={(e) => { productDetailTouchStart.current = e.touches[0].clientX }}
+                  onTouchMove={(e) => { productDetailTouchEnd.current = e.touches[0].clientX }}
+                  onTouchEnd={() => {
+                    const diff = productDetailTouchStart.current - productDetailTouchEnd.current
+                    if (Math.abs(diff) > 50) {
+                      if (diff > 0 && selectedImageView < 3) {
+                        setSelectedImageView(selectedImageView + 1)
+                        scrollToGalleryImage(selectedImageView + 1)
+                      } else if (diff < 0 && selectedImageView > 0) {
+                        setSelectedImageView(selectedImageView - 1)
+                        scrollToGalleryImage(selectedImageView - 1)
+                      }
+                    }
+                  }}
+                >
                   <img
                     src={selectedProduct.image}
                     alt={`${selectedProduct.name} - Vista ${selectedImageView + 1}`}
@@ -1536,20 +1814,20 @@ Gracias!`)
                   <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full font-medium">
                     {selectedImageView + 1} / 4
                   </div>
-                  {/* Left Arrow */}
+                  {/* Left Arrow - always visible on mobile, hover on desktop */}
                   {selectedImageView > 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView - 1); scrollToGalleryImage(selectedImageView - 1) }}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all md:opacity-0 md:group-hover:opacity-100"
                     >
                       <ChevronLeft className="w-5 h-5 text-foreground" />
                     </button>
                   )}
-                  {/* Right Arrow */}
+                  {/* Right Arrow - always visible on mobile, hover on desktop */}
                   {selectedImageView < 3 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView + 1); scrollToGalleryImage(selectedImageView + 1) }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all md:opacity-0 md:group-hover:opacity-100"
                     >
                       <ChevronRight className="w-5 h-5 text-foreground" />
                     </button>
