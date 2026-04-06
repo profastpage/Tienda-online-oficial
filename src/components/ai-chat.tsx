@@ -91,9 +91,9 @@ export default function AiChat() {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button - LEFT side to avoid overlap with right-side floating buttons */}
       <motion.div
-        className="fixed bottom-40 right-4 z-50"
+        className="fixed bottom-6 left-4 z-50"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -131,16 +131,16 @@ export default function AiChat() {
         </Button>
       </motion.div>
 
-      {/* Pulse animation ring */}
+      {/* Pulse animation ring - LEFT side */}
       {!isOpen && (
         <motion.div
-          className="fixed bottom-40 right-4 z-40 w-14 h-14 rounded-full bg-purple-500/20"
+          className="fixed bottom-6 left-4 z-40 w-14 h-14 rounded-full bg-purple-500/20"
           animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         />
       )}
 
-      {/* Chat Window */}
+      {/* Chat Window - LEFT side, positioned above the button */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -148,7 +148,7 @@ export default function AiChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-44 right-4 z-50 w-[calc(100vw-2rem)] sm:w-[360px] h-[480px] max-h-[80vh] bg-background rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden"
+            className="fixed bottom-24 left-4 z-50 w-[calc(100vw-2rem)] sm:w-[360px] h-[480px] max-h-[70vh] bg-background rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 flex items-center gap-3 shrink-0">

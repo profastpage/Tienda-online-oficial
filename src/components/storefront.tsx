@@ -123,28 +123,45 @@ export default function Storefront() {
     return () => clearInterval(timer)
   }, [])
 
-  // Fetch data
+  // Fetch data with retry logic
   useEffect(() => {
+    let cancelled = false
+
+    async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(url)
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const data = await res.json()
+          return data
+        } catch (err) {
+          console.warn(`[Storefront] Fetch ${url} attempt ${i + 1}/${retries} failed:`, err)
+          if (i < retries - 1) await new Promise(r => setTimeout(r, delay * (i + 1)))
+          else throw err
+        }
+      }
+    }
+
     async function fetchData() {
       try {
-        const [productsRes, categoriesRes, testimonialsRes] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/categories'),
-          fetch('/api/testimonials'),
+        const [productsData, categoriesData, testimonialsData] = await Promise.all([
+          fetchWithRetry('/api/products?store=urban-store'),
+          fetchWithRetry('/api/categories?store=urban-store'),
+          fetchWithRetry('/api/testimonials?store=urban-store'),
         ])
-        const productsData = await productsRes.json()
-        const categoriesData = await categoriesRes.json()
-        const testimonialsData = await testimonialsRes.json()
+        if (cancelled) return
+        console.log(`[Storefront] Loaded: ${Array.isArray(productsData) ? productsData.length : 0} products, ${Array.isArray(categoriesData) ? categoriesData.length : 0} categories`)
         setProducts(Array.isArray(productsData) ? productsData : [])
         setCategories(Array.isArray(categoriesData) ? categoriesData : [])
         setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : [])
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('[Storefront] Error fetching data:', error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     fetchData()
+    return () => { cancelled = true }
   }, [])
 
   const filteredProducts = products.filter((p) => {
@@ -746,17 +763,38 @@ export default function Storefront() {
 
             {!loading && filteredProducts.length === 0 && (
               <div className="text-center py-16">
-                <p className="text-muted-foreground/70 text-lg">No se encontraron productos</p>
-                <Button
-                  variant="outline"
-                  className="mt-4 rounded-full"
-                  onClick={() => {
-                    setActiveCategory(null)
-                    setSearchQuery('')
-                  }}
-                >
-                  Ver todos los productos
-                </Button>
+                <div className="text-5xl mb-4">🛍️</div>
+                <p className="text-muted-foreground text-lg font-medium">
+                  {activeCategory || searchQuery
+                    ? 'No se encontraron productos con ese filtro'
+                    : 'No se encontraron productos'}
+                </p>
+                <p className="text-muted-foreground/60 text-sm mt-1">
+                  {activeCategory || searchQuery
+                    ? 'Intenta con otra categoría o término de búsqueda'
+                    : 'Intenta recargar la página'}
+                </p>
+                <div className="flex items-center justify-center gap-3 mt-5">
+                  {(activeCategory || searchQuery) && (
+                    <Button
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => {
+                        setActiveCategory(null)
+                        setSearchQuery('')
+                      }}
+                    >
+                      Ver todos los productos
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => window.location.reload()}
+                  >
+                    Recargar página
+                  </Button>
+                </div>
               </div>
             )}
           </div>
