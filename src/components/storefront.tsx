@@ -13,6 +13,7 @@ import { useWishlistStore } from '@/stores/wishlist-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { useViewStore } from '@/stores/view-store'
 import { useTheme } from 'next-themes'
+import AiChat from '@/components/ai-chat'
 
 interface Product {
   id: string
@@ -210,8 +211,8 @@ export default function Storefront() {
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrollY > 50
-            ? 'bg-white/95 backdrop-blur-md shadow-sm border-b'
-            : 'bg-white border-b border-transparent'
+            ? 'bg-background/95 backdrop-blur-md shadow-sm border-b'
+            : 'bg-background border-b border-transparent'
         }`}
       >
         {/* Top bar */}
@@ -237,10 +238,10 @@ export default function Storefront() {
                   <ShoppingBag className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold tracking-tight text-neutral-900 leading-none">
+                  <h1 className="text-xl font-bold tracking-tight text-foreground leading-none">
                     URBAN STYLE
                   </h1>
-                  <p className="text-[10px] text-neutral-400 tracking-widest uppercase hidden sm:block">
+                  <p className="text-[10px] text-muted-foreground/70 tracking-widest uppercase hidden sm:block">
                     Premium Streetwear
                   </p>
                 </div>
@@ -253,7 +254,7 @@ export default function Storefront() {
                 <a
                   key={item}
                   href="#"
-                  className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors relative group"
+                  className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors relative group"
                 >
                   {item}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-neutral-900 group-hover:w-full transition-all duration-300" />
@@ -266,7 +267,7 @@ export default function Storefront() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-neutral-600 hover:text-neutral-900"
+                className="text-foreground/70 hover:text-foreground"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label="Toggle dark mode"
               >
@@ -275,25 +276,25 @@ export default function Storefront() {
               </Button>
               {user ? (
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900" onClick={() => setView(user.role === 'admin' ? 'admin' : 'customer')}>
+                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => setView(user.role === 'admin' ? 'admin' : 'customer')}>
                     <div className="w-6 h-6 rounded-full bg-neutral-900 flex items-center justify-center text-white text-[10px] font-bold">{user.name.charAt(0)}</div>
                     <span className="max-w-[80px] truncate">{user.name}</span>
                   </Button>
-                  <Button variant="ghost" size="icon" className="text-neutral-400 hover:text-red-500 h-8 w-8" onClick={() => logout()}>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground/70 hover:text-red-500 h-8 w-8" onClick={() => logout()}>
                     <LogOut className="w-4 h-4" />
                   </Button>
                 </div>
               ) : (
-                <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900" onClick={() => setView('auth')}>
+                <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground" onClick={() => setView('auth')}>
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline text-xs font-medium">Ingresar</span>
                 </Button>
               )}
               <div className="hidden sm:flex items-center relative">
-                <Search className="absolute left-3 w-4 h-4 text-neutral-400" />
+                <Search className="absolute left-3 w-4 h-4 text-muted-foreground/70" />
                 <Input
                   placeholder="Buscar productos..."
-                  className="pl-9 w-48 lg:w-64 h-9 text-sm bg-neutral-50 border-neutral-200 rounded-full focus:ring-1 focus:ring-neutral-300"
+                  className="pl-9 w-48 lg:w-64 h-9 text-sm bg-muted border-border rounded-full focus:ring-1 focus:ring-ring"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -301,7 +302,7 @@ export default function Storefront() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-neutral-600 hover:text-neutral-900 relative"
+                className="text-foreground/70 hover:text-foreground relative"
                 onClick={wishlist.toggleWishlist}
               >
                 <Heart className={`w-5 h-5 ${wishlist.totalItems() > 0 ? 'fill-red-500 text-red-500' : ''}`} />
@@ -314,7 +315,7 @@ export default function Storefront() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-neutral-600 hover:text-neutral-900 relative"
+                className="text-foreground/70 hover:text-foreground relative"
                 onClick={cart.toggleCart}
               >
                 <ShoppingBag className="w-5 h-5" />
@@ -334,21 +335,21 @@ export default function Storefront() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t bg-white"
+            className="md:hidden border-t bg-background"
           >
             <div className="px-4 py-3">
               <div className="flex items-center relative mb-3">
-                <Search className="absolute left-3 w-4 h-4 text-neutral-400" />
+                <Search className="absolute left-3 w-4 h-4 text-muted-foreground/70" />
                 <Input
                   placeholder="Buscar productos..."
-                  className="pl-9 h-9 text-sm bg-neutral-50 border-neutral-200 rounded-full"
+                  className="pl-9 h-9 text-sm bg-muted border-border rounded-full"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
               >
                 <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
@@ -359,7 +360,7 @@ export default function Storefront() {
                   <a
                     key={item}
                     href="#"
-                    className="block px-3 py-2.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
+                    className="block px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                   >
                     {item}
                   </a>
@@ -372,7 +373,7 @@ export default function Storefront() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-neutral-50 via-white to-neutral-100">
+        <section className="relative overflow-hidden bg-gradient-to-br from-muted via-background to-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <motion.div
@@ -380,17 +381,17 @@ export default function Storefront() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7 }}
               >
-                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-700 hover:bg-neutral-100">
+                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-700 hover:bg-muted">
                   Nueva Colección 2026
                 </Badge>
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight tracking-tight">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-tight">
                   Estilo urbano
                   <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground via-foreground/70 to-foreground/50">
                     sin límites
                   </span>
                 </h2>
-                <p className="mt-5 text-lg text-neutral-500 max-w-lg leading-relaxed">
+                <p className="mt-5 text-lg text-muted-foreground max-w-lg leading-relaxed">
                   Descubre nuestra colección premium de streetwear. Calidad, diseño y comodidad en cada prenda.
                   Pedidos fáciles por WhatsApp.
                 </p>
@@ -406,14 +407,14 @@ export default function Storefront() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="rounded-full px-8 h-12 text-sm font-semibold border-neutral-300 hover:bg-neutral-50"
+                    className="rounded-full px-8 h-12 text-sm font-semibold border-border hover:bg-muted"
                     onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
                   >
                     Pedir por WhatsApp
                   </Button>
                 </div>
                 {/* Trust indicators */}
-                <div className="mt-10 flex items-center gap-6 text-sm text-neutral-500">
+                <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                       <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -434,7 +435,7 @@ export default function Storefront() {
                 transition={{ duration: 0.7, delay: 0.2 }}
                 className="relative"
               >
-                <div className="relative aspect-[4/3] lg:aspect-auto lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl shadow-neutral-900/10">
+                <div className="relative aspect-[4/3] lg:aspect-auto lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl shadow-lg">
                   {/* Hero carousel with crossfade */}
                   {heroImages.map((img, idx) => (
                     <img
@@ -465,15 +466,15 @@ export default function Storefront() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="absolute -bottom-4 -left-4 md:left-4 bg-white rounded-xl shadow-lg p-4 border"
+                  className="absolute -bottom-4 -left-4 md:left-4 bg-card rounded-xl shadow-lg p-4 border"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                       <span className="text-lg">⭐</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-neutral-900">4.8/5</p>
-                      <p className="text-xs text-neutral-500">+200 reseñas</p>
+                      <p className="text-sm font-bold text-foreground">4.8/5</p>
+                      <p className="text-xs text-muted-foreground">+200 reseñas</p>
                     </div>
                   </div>
                 </motion.div>
@@ -481,15 +482,15 @@ export default function Storefront() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="hidden md:block absolute -bottom-4 right-4 bg-white rounded-xl shadow-lg p-4 border"
+                  className="hidden md:block absolute -bottom-4 right-4 bg-card rounded-xl shadow-lg p-4 border"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                       <span className="text-lg">🚚</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-neutral-900">Envío rápido</p>
-                      <p className="text-xs text-neutral-500">1-3 días hábiles</p>
+                      <p className="text-sm font-bold text-foreground">Envío rápido</p>
+                      <p className="text-xs text-muted-foreground">1-3 días hábiles</p>
                     </div>
                   </div>
                 </motion.div>
@@ -499,7 +500,7 @@ export default function Storefront() {
         </section>
 
         {/* Brand Marquee */}
-        <section className="py-6 bg-neutral-50 border-y border-neutral-200 overflow-hidden">
+        <section className="py-6 bg-muted border-y border-border overflow-hidden">
           <div className="flex animate-marquee">
             {[...Array(2)].map((_, setIdx) => (
               <div key={setIdx} className="flex shrink-0 items-center gap-12 px-6">
@@ -514,7 +515,7 @@ export default function Storefront() {
         </section>
 
         {/* Categories Section */}
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -522,10 +523,10 @@ export default function Storefront() {
               viewport={{ once: true }}
               className="text-center mb-10"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                 Explora por Categoría
               </h2>
-              <p className="mt-3 text-neutral-500 text-lg">
+              <p className="mt-3 text-muted-foreground text-lg">
                 Encuentra exactamente lo que buscas
               </p>
             </motion.div>
@@ -566,7 +567,7 @@ export default function Storefront() {
         </section>
 
         {/* Products Section */}
-        <section id="products" className="py-16 bg-neutral-50">
+        <section id="products" className="py-16 bg-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -575,12 +576,12 @@ export default function Storefront() {
               className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10 gap-4"
             >
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                   {activeCategory
                     ? categories.find((c) => c.slug === activeCategory)?.name || 'Productos'
                     : 'Productos Destacados'}
                 </h2>
-                <p className="mt-2 text-neutral-500">
+                <p className="mt-2 text-muted-foreground">
                   {loading ? 'Cargando...' : `${filteredProducts.length} productos encontrados`}
                 </p>
               </div>
@@ -598,7 +599,7 @@ export default function Storefront() {
             {loading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl overflow-hidden border border-neutral-100 animate-pulse">
+                  <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border animate-pulse">
                     <div className="aspect-square bg-neutral-200" />
                     <div className="p-4 space-y-3">
                       <div className="h-3 bg-neutral-200 rounded w-16" />
@@ -623,7 +624,7 @@ export default function Storefront() {
                       className="group"
                     >
                       <div
-                        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-neutral-100 h-full flex flex-col"
+                        className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-border h-full flex flex-col"
                         onClick={() => openProduct(product)}
                       >
                         {/* Product Image */}
@@ -650,7 +651,7 @@ export default function Storefront() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`absolute top-3 right-3 h-8 w-8 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-sm ${
+                            className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm ${
                               isWished ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                             }`}
                             onClick={(e) => {
@@ -664,13 +665,13 @@ export default function Storefront() {
                               })
                             }}
                           >
-                            <Heart className={`w-4 h-4 ${isWished ? 'fill-red-500 text-red-500' : 'text-neutral-600'}`} />
+                            <Heart className={`w-4 h-4 ${isWished ? 'fill-red-500 text-red-500' : 'text-foreground/70'}`} />
                           </Button>
                           {/* Quick View Overlay */}
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                             <Button
                               size="sm"
-                              className="w-full bg-white text-neutral-900 hover:bg-neutral-100 rounded-lg text-xs font-semibold"
+                              className="w-full bg-white text-foreground hover:bg-muted rounded-lg text-xs font-semibold"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 openProduct(product)
@@ -683,10 +684,10 @@ export default function Storefront() {
 
                         {/* Product Info */}
                         <div className="p-4 flex flex-col flex-1">
-                          <p className="text-[11px] text-neutral-400 uppercase tracking-wider font-medium">
+                          <p className="text-[11px] text-muted-foreground/70 uppercase tracking-wider font-medium">
                             {product.category.name}
                           </p>
-                          <h3 className="mt-1 font-semibold text-neutral-900 text-sm leading-snug line-clamp-2 group-hover:text-neutral-600 transition-colors">
+                          <h3 className="mt-1 font-semibold text-foreground text-sm leading-snug line-clamp-2 group-hover:text-foreground/70 transition-colors">
                             {product.name}
                           </h3>
                           {/* Rating */}
@@ -706,16 +707,16 @@ export default function Storefront() {
                                 </svg>
                               ))}
                             </div>
-                            <span className="text-[11px] text-neutral-400">({product.reviewCount})</span>
+                            <span className="text-[11px] text-muted-foreground/70">({product.reviewCount})</span>
                           </div>
                           {/* Price */}
                           <div className="mt-auto pt-3">
                             <div className="flex items-baseline gap-2">
-                              <span className="text-lg font-bold text-neutral-900">
+                              <span className="text-lg font-bold text-foreground">
                                 S/ {product.price.toFixed(2)}
                               </span>
                               {product.comparePrice && (
-                                <span className="text-sm text-neutral-400 line-through">
+                                <span className="text-sm text-muted-foreground/70 line-through">
                                   S/ {product.comparePrice.toFixed(2)}
                                 </span>
                               )}
@@ -725,12 +726,12 @@ export default function Storefront() {
                               {(JSON.parse(product.colors) as { name: string; hex: string }[]).map((color, i) => (
                                 <span
                                   key={i}
-                                  className="w-3.5 h-3.5 rounded-full border border-neutral-200"
+                                  className="w-3.5 h-3.5 rounded-full border border-border"
                                   style={{ backgroundColor: color.hex }}
                                   title={color.name}
                                 />
                               ))}
-                              <span className="text-[11px] text-neutral-400 ml-1">
+                              <span className="text-[11px] text-muted-foreground/70 ml-1">
                                 {(JSON.parse(product.sizes) as string[]).length} tallas
                               </span>
                             </div>
@@ -745,7 +746,7 @@ export default function Storefront() {
 
             {!loading && filteredProducts.length === 0 && (
               <div className="text-center py-16">
-                <p className="text-neutral-400 text-lg">No se encontraron productos</p>
+                <p className="text-muted-foreground/70 text-lg">No se encontraron productos</p>
                 <Button
                   variant="outline"
                   className="mt-4 rounded-full"
@@ -762,7 +763,7 @@ export default function Storefront() {
         </section>
 
         {/* Promo Banner */}
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -778,12 +779,12 @@ export default function Storefront() {
                   <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
                     15% de descuento en toda la colección de Hoodies
                   </h2>
-                  <p className="mt-4 text-neutral-400 text-lg">
+                  <p className="mt-4 text-muted-foreground/70 text-lg">
                     Usa el código <span className="text-white font-bold">URBAN15</span> en tu pedido por WhatsApp. Válido hasta agotar stock.
                   </p>
                   <Button
                     size="lg"
-                    className="mt-6 bg-white text-neutral-900 hover:bg-neutral-100 rounded-full px-8 h-12 font-semibold"
+                    className="mt-6 bg-white text-foreground hover:bg-muted rounded-full px-8 h-12 font-semibold"
                     onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
                   >
                     Pedir por WhatsApp
@@ -803,7 +804,7 @@ export default function Storefront() {
         </section>
 
         {/* Features */}
-        <section className="py-16 bg-neutral-50 border-t border-b border-neutral-200">
+        <section className="py-16 bg-muted border-t border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {[
@@ -821,8 +822,8 @@ export default function Storefront() {
                   className="text-center"
                 >
                   <div className="text-3xl mb-3">{feature.icon}</div>
-                  <h3 className="font-bold text-neutral-900 text-sm">{feature.title}</h3>
-                  <p className="text-neutral-500 text-sm mt-1">{feature.desc}</p>
+                  <h3 className="font-bold text-foreground text-sm">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm mt-1">{feature.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -830,7 +831,7 @@ export default function Storefront() {
         </section>
 
         {/* Testimonials */}
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -838,10 +839,10 @@ export default function Storefront() {
               viewport={{ once: true }}
               className="text-center mb-10"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                 Lo que dicen nuestros clientes
               </h2>
-              <p className="mt-3 text-neutral-500 text-lg">
+              <p className="mt-3 text-muted-foreground text-lg">
                 Reseñas verificadas de compradores reales
               </p>
             </motion.div>
@@ -853,7 +854,7 @@ export default function Storefront() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-neutral-50 rounded-2xl p-6 border border-neutral-100 hover:shadow-md transition-shadow"
+                  className="bg-muted rounded-2xl p-6 border border-border hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center gap-1 mb-4">
                     {[...Array(5)].map((_, i) => (
@@ -870,7 +871,7 @@ export default function Storefront() {
                       </svg>
                     ))}
                   </div>
-                  <p className="text-neutral-600 text-sm leading-relaxed mb-4">
+                  <p className="text-foreground/70 text-sm leading-relaxed mb-4">
                     &ldquo;{testimonial.content}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
@@ -878,8 +879,8 @@ export default function Storefront() {
                       {testimonial.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-semibold text-neutral-900 text-sm">{testimonial.name}</p>
-                      <p className="text-neutral-400 text-xs">{testimonial.role}</p>
+                      <p className="font-semibold text-foreground text-sm">{testimonial.name}</p>
+                      <p className="text-muted-foreground/70 text-xs">{testimonial.role}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -889,10 +890,10 @@ export default function Storefront() {
         </section>
 
         {/* Newsletter Section */}
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-background">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">Recibe ofertas exclusivas</h2>
-            <p className="mt-2 text-neutral-500">Suscríbete y obtén un 10% de descuento en tu primera compra</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">Recibe ofertas exclusivas</h2>
+            <p className="mt-2 text-muted-foreground">Suscríbete y obtén un 10% de descuento en tu primera compra</p>
             <div className="mt-6 flex gap-2 max-w-md mx-auto">
               <Input
                 placeholder="tu@email.com"
@@ -904,7 +905,7 @@ export default function Storefront() {
                 Suscribirme
               </Button>
             </div>
-            <p className="mt-3 text-xs text-neutral-400">Sin spam. Puedes darte de baja cuando quieras.</p>
+            <p className="mt-3 text-xs text-muted-foreground/70">Sin spam. Puedes darte de baja cuando quieras.</p>
           </div>
         </section>
 
@@ -928,7 +929,7 @@ export default function Storefront() {
                   <p className="text-4xl md:text-5xl font-bold">
                     <AnimatedCounter target={stat.value} />
                   </p>
-                  <p className="text-neutral-400 mt-2">{stat.label}</p>
+                  <p className="text-muted-foreground/70 mt-2">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -943,10 +944,10 @@ export default function Storefront() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                 ¿Listo para encontrar tu estilo?
               </h2>
-              <p className="mt-4 text-neutral-500 text-lg max-w-2xl mx-auto">
+              <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
                 Únete a cientos de clientes que ya confiaron en nosotros. Tu próxima prenda favorita te está esperando.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
@@ -961,13 +962,13 @@ export default function Storefront() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="rounded-full px-8 h-12 font-semibold border-neutral-300 hover:bg-neutral-50"
+                  className="rounded-full px-8 h-12 font-semibold border-border hover:bg-muted"
                   onClick={() => window.open(getWhatsAppOrderUrl(), '_blank')}
                 >
                   Contáctanos por WhatsApp
                 </Button>
               </div>
-              <p className="mt-6 text-sm text-neutral-400">
+              <p className="mt-6 text-sm text-muted-foreground/70">
                 Envío gratis desde S/199 · Pago contra entrega · Garantía de 30 días
               </p>
             </motion.div>
@@ -983,11 +984,11 @@ export default function Storefront() {
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-neutral-900" />
+                  <ShoppingBag className="w-5 h-5 text-foreground" />
                 </div>
                 <span className="text-xl font-bold tracking-tight">URBAN STYLE</span>
               </div>
-              <p className="text-neutral-400 text-sm leading-relaxed mb-4">
+              <p className="text-muted-foreground/70 text-sm leading-relaxed mb-4">
                 Tu tienda de streetwear de confianza. Moda urbana premium con pedidos fáciles por WhatsApp.
               </p>
               <div className="flex gap-3">
@@ -997,7 +998,7 @@ export default function Storefront() {
                     href="#"
                     className="w-9 h-9 bg-neutral-800 hover:bg-neutral-700 rounded-full flex items-center justify-center transition-colors"
                   >
-                    <span className="text-xs text-neutral-400 capitalize">{social[0]}</span>
+                    <span className="text-xs text-muted-foreground/70 capitalize">{social[0]}</span>
                   </a>
                 ))}
               </div>
@@ -1009,7 +1010,7 @@ export default function Storefront() {
               <ul className="space-y-2.5">
                 {['Polos', 'Hoodies', 'Pantalones', 'Zapatos', 'Novedades'].map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">
+                    <a href="#" className="text-sm text-muted-foreground/70 hover:text-white transition-colors">
                       {link}
                     </a>
                   </li>
@@ -1022,7 +1023,7 @@ export default function Storefront() {
               <ul className="space-y-2.5">
                 {['FAQ', 'Guía de tallas', 'Devoluciones', 'Contacto', 'Términos'].map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">
+                    <a href="#" className="text-sm text-muted-foreground/70 hover:text-white transition-colors">
                       {link}
                     </a>
                   </li>
@@ -1032,7 +1033,7 @@ export default function Storefront() {
 
             <div>
               <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Contacto</h3>
-              <div className="space-y-3 text-sm text-neutral-400">
+              <div className="space-y-3 text-sm text-muted-foreground/70">
                 <p className="flex items-center gap-2">
                   <span>📍</span> Lima, Perú
                 </p>
@@ -1048,10 +1049,10 @@ export default function Storefront() {
               </div>
               {/* Payment methods */}
               <div className="mt-4">
-                <h4 className="text-xs text-neutral-500 mb-2">Métodos de pago</h4>
+                <h4 className="text-xs text-muted-foreground mb-2">Métodos de pago</h4>
                 <div className="flex flex-wrap gap-2">
                   {['Efectivo', 'Yape', 'Plin', 'Transferencia'].map((method) => (
-                    <span key={method} className="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded">
+                    <span key={method} className="text-[10px] bg-neutral-800 text-muted-foreground/70 px-2 py-1 rounded">
                       {method}
                     </span>
                   ))}
@@ -1062,7 +1063,7 @@ export default function Storefront() {
 
           <Separator className="my-8 bg-neutral-800" />
 
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <p>&copy; 2026 Urban Style. Todos los derechos reservados.</p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-white transition-colors">Términos y condiciones</a>
@@ -1126,8 +1127,8 @@ export default function Storefront() {
               <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
                 <ShoppingBag className="w-8 h-8 text-neutral-300" />
               </div>
-              <p className="text-neutral-500 font-medium">Tu carrito está vacío</p>
-              <p className="text-neutral-400 text-sm mt-1">Explora nuestro catálogo y encuentra tu estilo</p>
+              <p className="text-muted-foreground font-medium">Tu carrito está vacío</p>
+              <p className="text-muted-foreground/70 text-sm mt-1">Explora nuestro catálogo y encuentra tu estilo</p>
               <Button
                 variant="outline"
                 className="mt-4 rounded-full"
@@ -1146,19 +1147,19 @@ export default function Storefront() {
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm text-neutral-900 truncate">{item.name}</h4>
-                        <p className="text-xs text-neutral-400 mt-0.5">Talla: {item.size} · Color: {item.color}</p>
+                        <h4 className="font-semibold text-sm text-foreground truncate">{item.name}</h4>
+                        <p className="text-xs text-muted-foreground/70 mt-0.5">Talla: {item.size} · Color: {item.color}</p>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2 border rounded-full">
                             <button
-                              className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+                              className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                               onClick={() => cart.updateQuantity(item.id, item.size, item.quantity - 1)}
                             >
                               <Minus className="w-3 h-3" />
                             </button>
                             <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
                             <button
-                              className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+                              className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                               onClick={() => cart.updateQuantity(item.id, item.size, item.quantity + 1)}
                             >
                               <Plus className="w-3 h-3" />
@@ -1179,10 +1180,10 @@ export default function Storefront() {
               </div>
               <SheetFooter className="border-t pt-4 flex-col gap-3">
                 <div className="w-full flex items-center justify-between">
-                  <span className="text-neutral-500">Subtotal</span>
+                  <span className="text-muted-foreground">Subtotal</span>
                   <span className="text-xl font-bold">S/ {cart.totalPrice().toFixed(2)}</span>
                 </div>
-                <p className="text-xs text-neutral-400 w-full text-left">
+                <p className="text-xs text-muted-foreground/70 w-full text-left">
                   Envío calculado al momento del pedido
                 </p>
                 <Button
@@ -1222,8 +1223,8 @@ export default function Storefront() {
               <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
                 <Heart className="w-8 h-8 text-neutral-300" />
               </div>
-              <p className="text-neutral-500 font-medium">Tu lista está vacía</p>
-              <p className="text-neutral-400 text-sm mt-1">Guarda tus productos favoritos aquí</p>
+              <p className="text-muted-foreground font-medium">Tu lista está vacía</p>
+              <p className="text-muted-foreground/70 text-sm mt-1">Guarda tus productos favoritos aquí</p>
               <Button
                 variant="outline"
                 className="mt-4 rounded-full"
@@ -1251,7 +1252,7 @@ export default function Storefront() {
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm text-neutral-900 truncate cursor-pointer hover:text-neutral-600 transition-colors"
+                        <h4 className="font-semibold text-sm text-foreground truncate cursor-pointer hover:text-foreground/70 transition-colors"
                           onClick={() => {
                             const prod = products.find((p) => p.id === item.id)
                             if (prod) {
@@ -1262,7 +1263,7 @@ export default function Storefront() {
                         >
                           {item.name}
                         </h4>
-                        <p className="text-sm font-bold text-neutral-900 mt-1">S/ {item.price.toFixed(2)}</p>
+                        <p className="text-sm font-bold text-foreground mt-1">S/ {item.price.toFixed(2)}</p>
                         <div className="flex items-center justify-between mt-2">
                           <Button
                             size="sm"
@@ -1318,18 +1319,18 @@ export default function Storefront() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            className="relative bg-card rounded-3xl overflow-hidden shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors"
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-colors"
               onClick={() => {
                 setSelectedProduct(null)
                 setSelectedSize('')
                 setSelectedColor('')
               }}
             >
-              <X className="w-5 h-5 text-neutral-600" />
+              <X className="w-5 h-5 text-foreground/70" />
             </button>
 
             <div className="grid md:grid-cols-2">
@@ -1364,7 +1365,7 @@ export default function Storefront() {
                   {selectedImageView > 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView - 1); scrollToGalleryImage(selectedImageView - 1) }}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all opacity-0 group-hover:opacity-100"
                     >
                       <ChevronLeft className="w-5 h-5 text-neutral-700" />
                     </button>
@@ -1373,7 +1374,7 @@ export default function Storefront() {
                   {selectedImageView < 3 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView + 1); scrollToGalleryImage(selectedImageView + 1) }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all opacity-0 group-hover:opacity-100"
                     >
                       <ChevronRight className="w-5 h-5 text-neutral-700" />
                     </button>
@@ -1419,8 +1420,8 @@ export default function Storefront() {
                 <Badge variant="secondary" className="w-fit text-xs uppercase tracking-wider mb-2">
                   {selectedProduct.category.name}
                 </Badge>
-                <h2 className="text-2xl font-bold text-neutral-900">{selectedProduct.name}</h2>
-                <p className="mt-2 text-neutral-500 text-sm leading-relaxed">
+                <h2 className="text-2xl font-bold text-foreground">{selectedProduct.name}</h2>
+                <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
                   {selectedProduct.description}
                 </p>
 
@@ -1441,19 +1442,19 @@ export default function Storefront() {
                       </svg>
                     ))}
                   </div>
-                  <span className="text-sm text-neutral-500">
+                  <span className="text-sm text-muted-foreground">
                     {selectedProduct.rating} ({selectedProduct.reviewCount} reseñas)
                   </span>
                 </div>
 
                 {/* Price */}
                 <div className="flex items-baseline gap-3 mt-4">
-                  <span className="text-3xl font-bold text-neutral-900">
+                  <span className="text-3xl font-bold text-foreground">
                     S/ {selectedProduct.price.toFixed(2)}
                   </span>
                   {selectedProduct.comparePrice && (
                     <>
-                      <span className="text-lg text-neutral-400 line-through">
+                      <span className="text-lg text-muted-foreground/70 line-through">
                         S/ {selectedProduct.comparePrice.toFixed(2)}
                       </span>
                       <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-xs">
@@ -1467,7 +1468,7 @@ export default function Storefront() {
 
                 {/* Size Selection */}
                 <div>
-                  <p className="text-sm font-semibold text-neutral-900 mb-2">Talla</p>
+                  <p className="text-sm font-semibold text-foreground mb-2">Talla</p>
                   <div className="flex flex-wrap gap-2">
                     {(JSON.parse(selectedProduct.sizes) as string[]).map((size) => (
                       <button
@@ -1476,7 +1477,7 @@ export default function Storefront() {
                         className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
                           selectedSize === size
                             ? 'border-neutral-900 bg-neutral-900 text-white'
-                            : 'border-neutral-200 text-neutral-600 hover:border-neutral-400'
+                            : 'border-border text-foreground/70 hover:border-neutral-400'
                         }`}
                       >
                         {size}
@@ -1488,8 +1489,8 @@ export default function Storefront() {
                 {/* Color Selection */}
                 {(JSON.parse(selectedProduct.colors) as { name: string; hex: string }[]).length > 0 && (
                   <div className="mt-4">
-                    <p className="text-sm font-semibold text-neutral-900 mb-2">
-                      Color {selectedColor && <span className="font-normal text-neutral-500">· {selectedColor}</span>}
+                    <p className="text-sm font-semibold text-foreground mb-2">
+                      Color {selectedColor && <span className="font-normal text-muted-foreground">· {selectedColor}</span>}
                     </p>
                     <div className="flex items-center gap-2">
                       {(JSON.parse(selectedProduct.colors) as { name: string; hex: string }[]).map((color) => (
@@ -1500,7 +1501,7 @@ export default function Storefront() {
                           className={`w-8 h-8 rounded-full cursor-pointer hover:scale-110 transition-all ${
                             selectedColor === color.name
                               ? 'ring-2 ring-neutral-900 ring-offset-2'
-                              : 'border-2 border-neutral-200'
+                              : 'border-2 border-border'
                           }`}
                           style={{ backgroundColor: color.hex }}
                         />
@@ -1535,7 +1536,7 @@ export default function Storefront() {
                     )}
                   </Button>
                   {!selectedSize && !addedToCart && (
-                    <p className="text-xs text-center text-neutral-400 mt-2">
+                    <p className="text-xs text-center text-muted-foreground/70 mt-2">
                       Selecciona una talla para continuar
                     </p>
                   )}
@@ -1545,6 +1546,7 @@ export default function Storefront() {
           </motion.div>
         </div>
       )}
+      <AiChat />
     </div>
   )
 }
