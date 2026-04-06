@@ -17,6 +17,7 @@ const PLANS = [
     name: 'Básico',
     price: 'S/49',
     period: '/mes',
+    setupFee: 'S/200',
     description: 'Ideal para emprendedores que inician',
     features: [
       'Hasta 50 productos',
@@ -29,6 +30,7 @@ const PLANS = [
       'Soporte por email (48h)',
       'SSL gratuito',
       'Responsive móvil',
+      'Setup inicial incluido',
     ],
     setupIncluded: 'Asistente de configuración guiada',
     icon: <ShoppingBag className="w-5 h-5" />,
@@ -40,6 +42,7 @@ const PLANS = [
     name: 'Pro',
     price: 'S/89',
     period: '/mes',
+    setupFee: 'S/250',
     description: 'Para negocios en crecimiento',
     features: [
       'Hasta 200 productos',
@@ -48,14 +51,14 @@ const PLANS = [
       'Carrito de compras avanzado',
       'WhatsApp Business API',
       'Panel de métricas y reportes',
-      'PWA App instalable',
+      '\uD83D\uDCF1 PWA App instalable',
       'Notificaciones de pedidos',
       'Control de inventario',
       'Categorías ilimitadas',
-      'Tema personalizable premium',
+      'Tema premium personalizable',
       'Soporte prioritario (12h)',
-      'SSL gratuito',
-      'Responsive móvil',
+      'SSL + backups automáticos',
+      'Setup + capacitación video',
     ],
     setupIncluded: 'Configuración asistida + capacitación en video',
     icon: <Zap className="w-5 h-5" />,
@@ -68,6 +71,7 @@ const PLANS = [
     name: 'Premium',
     price: 'S/129',
     period: '/mes',
+    setupFee: 'S/300',
     description: 'La mejor inversión para escalar',
     features: [
       'Productos ilimitados',
@@ -76,10 +80,10 @@ const PLANS = [
       'Carrito de compras avanzado',
       'WhatsApp Business Pro',
       'Panel avanzado con gráficos',
-      'PWA App instalable',
-      'Notificaciones push',
-      'Cotizador IA integrado',
-      'Chat IA para clientes',
+      '\uD83D\uDCF1 PWA App instalable',
+      '\uD83D\uDD14 Notificaciones push reales (desde panel admin)',
+      '\uD83E\uDD16 Cotizador IA integrado',
+      '\uD83D\uDCAC Chat IA para clientes',
       'Reportes avanzados CSV/PDF',
       'Control de inventario con alertas',
       'Dominio personalizado',
@@ -87,7 +91,7 @@ const PLANS = [
       'Integración Yape/Plin',
       'Soporte 24/7 (2h)',
       'SSL gratuito + backups diarios',
-      'Manager de cuenta dedicado',
+      'Setup personalizado + onboarding 1a1',
     ],
     setupIncluded: 'Setup completo personalizado + onboarding 1a1 + 30 días de acompañamiento',
     icon: <Star className="w-5 h-5" />,
@@ -236,6 +240,9 @@ export default function RegisterPage() {
                             </div>
                             <p className="text-xs text-neutral-500 mt-0.5">{plan.description}</p>
                             <p className="text-xl font-extrabold text-neutral-900 mt-2">{plan.price}<span className="text-sm font-normal text-neutral-500">/mes</span></p>
+                            {plan.setupFee && (
+                              <p className="text-xs text-neutral-500 mt-0.5">+ pago único instalación <span className="font-bold text-neutral-700">{plan.setupFee}</span></p>
+                            )}
                             <p className="text-[11px] text-green-600 font-medium mt-1 flex items-center gap-1">
                               <Check className="w-3 h-3" />
                               {plan.setupIncluded}
@@ -398,7 +405,8 @@ export default function RegisterPage() {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between"><span className="text-neutral-500">Plan</span><span className="font-medium">{getSelectedPlan()?.name}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500">Precio</span><span className="font-bold text-amber-600">{getSelectedPlan()?.price}{getSelectedPlan()?.period}</span></div>
+                          <div className="flex justify-between"><span className="text-neutral-500">Mensualidad</span><span className="font-bold text-amber-600">{getSelectedPlan()?.price}{getSelectedPlan()?.period}</span></div>
+                          {getSelectedPlan()?.setupFee && <div className="flex justify-between"><span className="text-neutral-500">Instalación (pago único)</span><span className="font-bold text-neutral-700">{getSelectedPlan()?.setupFee}</span></div>}
                           <div className="flex justify-between"><span className="text-neutral-500">Nombre</span><span className="font-medium">{formData.name}</span></div>
                           <div className="flex justify-between"><span className="text-neutral-500">Email</span><span className="font-medium">{formData.email}</span></div>
                           <div className="flex justify-between"><span className="text-neutral-500">Tienda</span><span className="font-medium">{formData.storeName || '—'}</span></div>

@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ArrowRight,
+  LogIn,
   Zap,
   Store,
   UserPlus,
@@ -200,13 +201,13 @@ function ActivityFeed() {
   const activities = [
     { text: 'María de Lima acaba de crear su tienda', icon: <Store className="w-3.5 h-3.5" /> },
     { text: 'Carlos completó su primera venta — S/350', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: '+12 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
+    { text: '+3 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
     { text: 'Ana de Cusco acaba de registrarse', icon: <UserPlus className="w-3.5 h-3.5" /> },
     { text: 'Pedro completó su primera venta — S/580', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: '+8 ventas procesadas en la última hora', icon: <BarChart3 className="w-3.5 h-3.5" /> },
+    { text: '+3 ventas procesadas en la última hora', icon: <BarChart3 className="w-3.5 h-3.5" /> },
     { text: 'Lucía de Arequipa acaba de crear su tienda', icon: <Store className="w-3.5 h-3.5" /> },
     { text: 'Roberto completó su primera venta — S/220', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: '+15 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
+    { text: '+5 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
     { text: 'Gaby de Trujillo se unió a Premium', icon: <Star className="w-3.5 h-3.5" /> },
   ]
 
@@ -317,6 +318,7 @@ const plans = [
     name: 'Básico',
     price: 'S/49',
     period: '/mes',
+    setupFee: 'S/200' as string | null,
     description: 'Ideal para emprendedores',
     badge: null,
     features: [
@@ -339,6 +341,7 @@ const plans = [
     name: 'Pro',
     price: 'S/89',
     period: '/mes',
+    setupFee: 'S/250' as string | null,
     description: 'Negocios en crecimiento',
     badge: 'POPULAR',
     features: [
@@ -348,8 +351,8 @@ const plans = [
       'Carrito avanzado',
       'WhatsApp Business API',
       'Panel métricas y reportes',
-      'PWA App instalable',
-      'Notificaciones pedidos',
+      '📱 PWA App instalable',
+      'Notificaciones de pedidos',
       'Control de inventario',
       'Categorías ilimitadas',
       'Tema premium personalizable',
@@ -364,19 +367,20 @@ const plans = [
     name: 'Premium',
     price: 'S/129',
     period: '/mes',
+    setupFee: 'S/300' as string | null,
     description: 'La mejor inversión',
     badge: 'RECOMENDADO',
     features: [
-      'Productos ilimitados',
+      '✅ Productos ilimitados',
       '10 usuarios administrador',
       'Catálogo con fotos múltiples',
       'Carrito avanzado',
       'WhatsApp Business Pro',
       'Panel con gráficos avanzados',
-      'PWA App instalable',
-      'Notificaciones push',
-      'Cotizador IA integrado',
-      'Chat IA para clientes',
+      '📱 PWA App instalable',
+      '🔔 Notificaciones push reales (desde panel admin)',
+      '🤖 Cotizador IA integrado',
+      '💬 Chat IA para clientes',
       'Reportes CSV/PDF',
       'Inventario con alertas',
       'Dominio personalizado',
@@ -384,7 +388,7 @@ const plans = [
       'Integración Yape/Plin',
       'Soporte 24/7 (2h)',
       'SSL + backups diarios',
-      'Setup personalizado + onboarding 1a1',
+      'Setup personalizado + onboarding 1a1 + 30 días acompañamiento',
     ],
     highlighted: true,
     cta: 'Elegir Premium',
@@ -393,10 +397,11 @@ const plans = [
     name: 'Empresarial',
     price: 'Cotizar',
     period: '',
+    setupFee: null as string | null,
     description: 'Solución a medida',
     badge: null,
     features: [
-      'Todo en Premium',
+      '✅ Todo en Premium',
       'Usuarios ilimitados',
       'API personalizada',
       'Integración ERP/CRM',
@@ -499,6 +504,7 @@ export default function SaasLanding() {
   const [scrollY, setScrollY] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [canInstallPwa, setCanInstallPwa] = useState(false)
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
 
   // Lead form state
   const [formData, setFormData] = useState({
@@ -619,7 +625,6 @@ export default function SaasLanding() {
                   <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
                     <Store className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-white font-bold text-lg tracking-tight">Tienda Online Oficial</span>
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
                   {navLinks.map((link) => (
@@ -632,14 +637,22 @@ export default function SaasLanding() {
                     </a>
                   ))}
                 </nav>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="text-neutral-300 hover:text-white hidden sm:inline-flex"
+                    size="icon"
+                    className="text-neutral-300 hover:text-white"
                     onClick={() => setView('auth')}
                   >
-                    Iniciar Sesión
+                    <LogIn className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-neutral-300 hover:text-white"
+                    onClick={() => setView('register')}
+                  >
+                    <UserPlus className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
@@ -758,8 +771,8 @@ export default function SaasLanding() {
             className="hidden lg:flex items-center justify-center gap-10 mt-12"
           >
             {[
-              { value: '847+', label: 'Tiendas Activas' },
-              { value: 'S/3.2M+', label: 'Ventas Procesadas' },
+              { value: '238+', label: 'Tiendas Activas' },
+              { value: 'S/350000', label: 'Ventas Procesadas' },
               { value: '99.9%', label: 'Disponibilidad' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
@@ -784,8 +797,8 @@ export default function SaasLanding() {
               <Zap className="w-5 h-5 text-green-400" />
             </div>
             <div>
-              <p className="text-white text-sm font-semibold">+32 ventas hoy</p>
-              <p className="text-neutral-400 text-xs">↑ 18% vs ayer</p>
+              <p className="text-white text-sm font-semibold">+8 ventas hoy</p>
+              <p className="text-neutral-400 text-xs">↑ 12% vs ayer</p>
             </div>
           </div>
         </motion.div>
@@ -810,54 +823,76 @@ export default function SaasLanding() {
         {/* Bottom fade to white */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
-        {/* Mobile nav bar at bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 p-4 sm:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                    <Menu className="w-6 h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80 bg-white">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
-                        <Store className="w-4 h-4 text-white" />
-                      </div>
-                      Tienda Online Oficial
-                    </SheetTitle>
-                  </SheetHeader>
-                  <nav className="mt-6 space-y-1">
-                    {navLinks.map((link) => (
-                      <a
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        {link.label}
-                      </a>
-                    ))}
-                    <Separator className="my-3" />
-                    <button
-                      onClick={() => { setView('auth'); setMobileMenuOpen(false) }}
-                      className="block w-full text-left px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
+        {/* Top nav bar (mobile + desktop) */}
+        <div className="absolute top-0 left-0 right-0 z-10 p-4 sm:p-6">
+          <div className="flex items-center justify-between">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                  <Menu className="w-6 h-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 bg-white">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
+                      <Store className="w-4 h-4 text-white" />
+                    </div>
+                    Tienda Online Oficial
+                  </SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6 space-y-1">
+                  {navLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
                     >
-                      Iniciar Sesión
-                    </button>
-                  </nav>
-                </SheetContent>
-              </Sheet>
+                      {link.label}
+                    </a>
+                  ))}
+                  <Separator className="my-3" />
+                  <button
+                    onClick={() => { setView('auth'); setMobileMenuOpen(false) }}
+                    className="block w-full text-left px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Iniciar Sesión
+                  </button>
+                  <button
+                    onClick={() => { setView('register'); setMobileMenuOpen(false) }}
+                    className="block w-full text-left px-4 py-3 text-amber-600 hover:bg-amber-50 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Registrarse
+                  </button>
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={() => setView('auth')}
+              >
+                <LogIn className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={() => setView('register')}
+              >
+                <UserPlus className="w-5 h-5" />
+              </Button>
+              <Button
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-4 font-semibold"
+                onClick={() => setView('register')}
+              >
+                Crear Tienda
+              </Button>
             </div>
-            <Button
-              size="sm"
-              className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-4 font-semibold"
-              onClick={() => setView('register')}
-            >
-              Crear Tienda
-            </Button>
           </div>
         </div>
       </section>
@@ -982,9 +1017,9 @@ export default function SaasLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { value: '847+', label: 'Tiendas Activas en Perú', icon: <Store className="w-6 h-6" /> },
-              { value: 'S/3.2M+', label: 'Ventas Procesadas', icon: <BarChart3 className="w-6 h-6" /> },
-              { value: '28400+', label: 'Productos Publicados', icon: <Globe className="w-6 h-6" /> },
+              { value: '238+', label: 'Tiendas Activas en Perú', icon: <Store className="w-6 h-6" /> },
+              { value: 'S/350000', label: 'Ventas Procesadas', icon: <BarChart3 className="w-6 h-6" /> },
+              { value: '4200+', label: 'Productos Publicados', icon: <Globe className="w-6 h-6" /> },
               { value: '99.9%', label: 'Disponibilidad', icon: <Shield className="w-6 h-6" /> },
             ].map((stat) => (
               <StaggerItem key={stat.label}>
@@ -1021,12 +1056,18 @@ export default function SaasLanding() {
           <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {plans.map((plan) => (
               <StaggerItem key={plan.name}>
+                <div
+                  className="relative"
+                  onMouseEnter={() => setExpandedPlan(plan.name)}
+                  onMouseLeave={() => setExpandedPlan(null)}
+                  onClick={() => setExpandedPlan(expandedPlan === plan.name ? null : plan.name)}
+                >
                 <Card
                   className={`relative h-full flex flex-col ${
                     plan.highlighted
                       ? 'border-amber-500 shadow-xl shadow-amber-500/10 ring-2 ring-amber-500/20'
                       : 'border-neutral-100 hover:border-neutral-200 hover:shadow-md'
-                  } transition-all duration-300 py-0 gap-0`}
+                  } transition-all duration-300 py-0 gap-0 cursor-pointer`}
                 >
                   {(plan.highlighted || plan.badge) && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -1047,10 +1088,16 @@ export default function SaasLanding() {
                       {plan.period && (
                         <span className="text-neutral-400 text-sm ml-1">{plan.period}</span>
                       )}
+                      {plan.setupFee && (
+                        <div className="mt-1">
+                          <span className="text-sm text-neutral-500">+ pago único de instalación </span>
+                          <span className="text-sm font-bold text-neutral-700">{plan.setupFee}</span>
+                        </div>
+                      )}
                     </div>
                     <Separator className="mb-6" />
                     <ul className="space-y-3">
-                      {plan.features.map((feature) => (
+                      {plan.features.slice(0, 6).map((feature) => (
                         <li key={feature} className="flex items-start gap-2.5 text-sm">
                           <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${plan.highlighted ? 'bg-amber-100' : 'bg-green-100'}`}>
                             <Check className={`w-2.5 h-2.5 ${plan.highlighted ? 'text-amber-600' : 'text-green-600'}`} />
@@ -1058,6 +1105,9 @@ export default function SaasLanding() {
                           <span className="text-neutral-600">{feature}</span>
                         </li>
                       ))}
+                      <li className="text-xs text-amber-600 font-medium pt-1">
+                        +{plan.features.length - 6} funciones más →
+                      </li>
                     </ul>
                   </CardContent>
                   <CardFooter className="pt-0">
@@ -1067,12 +1117,77 @@ export default function SaasLanding() {
                           ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
                           : 'bg-neutral-900 hover:bg-neutral-800 text-white'
                       }`}
-                      onClick={() => setView('register')}
+                      onClick={(e) => { e.stopPropagation(); setView('register') }}
                     >
                       {plan.cta}
                     </Button>
                   </CardFooter>
                 </Card>
+
+                {/* Hover/Click benefits popup overlay */}
+                <AnimatePresence>
+                  {expandedPlan === plan.name && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute inset-0 z-20 bg-white rounded-2xl shadow-2xl border border-amber-200 p-6 overflow-y-auto max-h-[520px] flex flex-col"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-neutral-900">Todo lo que incluye el plan {plan.name}</h3>
+                          <p className="text-sm text-neutral-500">{plan.description}</p>
+                        </div>
+                        <button
+                          onClick={() => setExpandedPlan(null)}
+                          className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center transition-colors shrink-0 ml-2"
+                        >
+                          <X className="w-4 h-4 text-neutral-500" />
+                        </button>
+                      </div>
+                      <div className="mb-4">
+                        <span className={`text-3xl font-bold ${plan.highlighted ? 'text-amber-600' : 'text-neutral-900'}`}>
+                          {plan.price}
+                        </span>
+                        {plan.period && (
+                          <span className="text-neutral-400 text-sm ml-1">{plan.period}</span>
+                        )}
+                        {plan.setupFee && (
+                          <div className="mt-1">
+                            <span className="text-sm text-neutral-500">+ pago único de instalación </span>
+                            <span className="text-sm font-bold text-neutral-700">{plan.setupFee}</span>
+                          </div>
+                        )}
+                      </div>
+                      <ul className="space-y-2.5 flex-1">
+                        {plan.features.map((feature) => {
+                          const isSpecial = feature.startsWith('📱') || feature.startsWith('🔔') || feature.startsWith('🤖') || feature.startsWith('💬') || feature.startsWith('✅')
+                          return (
+                            <li key={feature} className="flex items-start gap-2.5 text-sm">
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isSpecial ? 'bg-amber-100' : 'bg-green-100'}`}>
+                                <Check className={`w-3 h-3 ${isSpecial ? 'text-amber-600' : 'text-green-600'}`} />
+                              </div>
+                              <span className={`text-neutral-700 ${isSpecial ? 'font-medium' : ''}`}>{feature}</span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                      <Button
+                        className={`w-full rounded-full h-11 font-semibold mt-4 shrink-0 ${
+                          plan.highlighted
+                            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
+                            : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                        }`}
+                        onClick={() => { setExpandedPlan(null); setView('register') }}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                </div>
               </StaggerItem>
             ))}
           </StaggerContainer>
@@ -1190,7 +1305,7 @@ export default function SaasLanding() {
                   ¿Listo para crear tu tienda online?
                 </h2>
                 <p className="mt-4 text-neutral-500 text-lg leading-relaxed">
-                  Únete a más de 800 tiendas que ya están vendiendo más con nuestra plataforma.
+                  Únete a más de 200 tiendas que ya están vendiendo más con nuestra plataforma.
                   Invierte en tu negocio hoy y escala sin límites.
                 </p>
 
@@ -1304,9 +1419,9 @@ export default function SaasLanding() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="no-seguro">No estoy seguro</SelectItem>
-                          <SelectItem value="basico">Básico — S/49/mes</SelectItem>
-                          <SelectItem value="pro">Pro — S/89/mes</SelectItem>
-                          <SelectItem value="premium">Premium — S/129/mes</SelectItem>
+                          <SelectItem value="basico">Básico — S/49/mes + S/200 setup</SelectItem>
+                          <SelectItem value="pro">Pro — S/89/mes + S/250 setup</SelectItem>
+                          <SelectItem value="premium">Premium — S/129/mes + S/300 setup</SelectItem>
                           <SelectItem value="empresarial">Empresarial — Cotizar</SelectItem>
                         </SelectContent>
                       </Select>
@@ -1360,7 +1475,7 @@ export default function SaasLanding() {
                   Empieza a vender online hoy
                 </h2>
                 <p className="mt-4 text-neutral-400 text-lg max-w-xl mx-auto">
-                  Más de 500 tiendas confían en nosotros. Tu tienda podría ser la siguiente.
+                  Más de 200 tiendas confían en nosotros. Tu tienda podría ser la siguiente.
                 </p>
 
                 <div className="mt-8">
