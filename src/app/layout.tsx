@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
+import { AuthHydrator } from "@/components/auth-hydrator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -117,6 +118,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
+          {/* Auth hydration runs once globally, before any child renders */}
+          <AuthHydrator />
           {children}
           <Toaster />
         </ThemeProvider>

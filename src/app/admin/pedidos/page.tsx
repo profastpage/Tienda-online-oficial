@@ -1,21 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { usePathname } from 'next/navigation'
-import { AdminPanel } from '@/components/admin/admin-panel'
-import { useViewStore } from '@/stores/view-store'
-import { URL_TO_ADMIN_SECTION } from '@/lib/navigation'
+import { AdminOrders } from '@/components/admin/admin-orders'
 
 export default function AdminPedidosPage() {
-  const pathname = usePathname()
-  const setAdminSection = useViewStore((s) => s.setAdminSection)
-  const setView = useViewStore((s) => s.setView)
-
-  useEffect(() => {
-    setView('admin')
-    const section = URL_TO_ADMIN_SECTION[pathname] || 'dashboard'
-    setAdminSection(section as 'orders')
-  }, [pathname, setAdminSection, setView])
-
-  return <AdminPanel />
+  return <AdminOrders />
 }

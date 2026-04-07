@@ -1,17 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
-import { CustomerPanel } from '@/components/customer/customer-panel'
-import { useViewStore } from '@/stores/view-store'
+import { useRouter } from 'next/navigation'
 
 export default function ClientePage() {
-  const setCustomerSection = useViewStore((s) => s.setCustomerSection)
-  const setView = useViewStore((s) => s.setView)
-
+  const router = useRouter()
   useEffect(() => {
-    setView('customer')
-    setCustomerSection('dashboard')
-  }, [setCustomerSection, setView])
-
-  return <CustomerPanel />
+    router.replace('/cliente/dashboard')
+  }, [router])
+  return null
 }
