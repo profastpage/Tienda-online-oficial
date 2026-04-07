@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +21,21 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Tienda no encontrada' },
         { status: 404 }
+      )
+    }
+
+    // Check plan limits (monthly orders) before creating order
+    const plan = store.plan || 'free'
+    const limitCheck = await checkPlanLimit(db, storeId, 'orders', plan)
+    if (!limitCheck.allowed) {
+      const config = getPlanConfig(plan)
+      return NextResponse.json(
+        {
+          error: `Esta tienda ha alcanzado el límite mensual de pedidos del plan ${config.name} (${limitCheck.limit}). El vendedor debe actualizar su plan.`,
+          currentPlan: plan,
+          limit: limitCheck.limit,
+        },
+        { status: 403 }
       )
     }
 

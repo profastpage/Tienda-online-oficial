@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
+import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 
 export async function GET(request: Request) {
   try {
@@ -42,6 +43,23 @@ export async function POST(request: Request) {
 
     // Use storeId from JWT token, not from request body
     const storeId = auth.user.storeId
+
+    // Check plan limits before creating product
+    const store = await db.store.findUnique({ where: { id: storeId }, select: { plan: true } })
+    const plan = store?.plan || 'free'
+    const limitCheck = await checkPlanLimit(db, storeId, 'products', plan)
+    if (!limitCheck.allowed) {
+      const config = getPlanConfig(plan)
+      return NextResponse.json(
+        {
+          error: `Has alcanzado el límite de productos de tu plan ${config.name} (${limitCheck.limit}). Actualiza a Pro o Premium para más productos.`,
+          currentPlan: plan,
+          limit: limitCheck.limit,
+          current: limitCheck.current,
+        },
+        { status: 403 }
+      )
+    }
 
     const product = await db.product.create({
       data: {

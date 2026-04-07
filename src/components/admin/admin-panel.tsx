@@ -13,6 +13,7 @@ import {
   X,
   Store,
   ChevronRight,
+  Crown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -25,6 +26,7 @@ import { AdminProducts } from './admin-products'
 import { AdminCategories } from './admin-categories'
 import { AdminOrders } from './admin-orders'
 import { AdminSettings } from './admin-settings'
+import { AdminPlan } from './admin-plan'
 
 interface NavItem {
   id: AdminSection
@@ -38,6 +40,7 @@ const navItems: NavItem[] = [
   { id: 'categories', label: 'Categorías', icon: FolderOpen },
   { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
   { id: 'settings', label: 'Configuración', icon: Settings },
+  { id: 'plan', label: 'Mi Plan', icon: Crown },
 ]
 
 const sectionTitles: Record<AdminSection, string> = {
@@ -46,6 +49,7 @@ const sectionTitles: Record<AdminSection, string> = {
   categories: 'Categorías',
   orders: 'Pedidos',
   settings: 'Configuración',
+  plan: 'Mi Plan',
 }
 
 function SidebarNav({
@@ -169,6 +173,8 @@ export function AdminPanel() {
         return <AdminOrders />
       case 'settings':
         return <AdminSettings />
+      case 'plan':
+        return <AdminPlan />
       default:
         return <AdminDashboard />
     }

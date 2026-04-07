@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Eye,
   ShoppingCart,
@@ -11,17 +11,33 @@ import {
   Package,
   Clock,
   CreditCard,
+  Trash2,
+  Search,
+  X,
+  ArrowUp,
+  ArrowDown,
+  Save,
+  Loader2,
+  DollarSign,
+  AlertTriangle,
+  Mail,
+  Hash,
+  Layers,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -55,6 +71,18 @@ interface PaymentMethodInfo {
   type: string
 }
 
+interface MercadoPagoPaymentInfo {
+  id: string
+  preferenceId: string
+  paymentId: string | null
+  status: string
+  paymentType: string
+  lastFourDigits: string
+  installments: number
+  payerEmail: string
+  createdAt: string
+}
+
 interface Order {
   id: string
   orderNumber: string
@@ -67,6 +95,7 @@ interface Order {
   createdAt: string
   items: OrderItem[]
   paymentMethod: PaymentMethodInfo | null
+  mercadoPagoPayment: MercadoPagoPaymentInfo | null
 }
 
 type StatusFilter = 'all' | 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled'
@@ -115,6 +144,28 @@ const paymentMethodIcon: Record<string, string> = {
   tarjeta: '💳',
 }
 
+const mpStatusBadge: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-green-100 text-green-700',
+  authorized: 'bg-green-100 text-green-700',
+  in_process: 'bg-blue-100 text-blue-700',
+  in_mediation: 'bg-orange-100 text-orange-700',
+  rejected: 'bg-red-100 text-red-700',
+  cancelled: 'bg-red-100 text-red-700',
+  refunded: 'bg-neutral-100 text-neutral-600',
+}
+
+const mpStatusLabel: Record<string, string> = {
+  pending: 'Pendiente',
+  approved: 'Aprobado',
+  authorized: 'Autorizado',
+  in_process: 'En proceso',
+  in_mediation: 'En mediación',
+  rejected: 'Rechazado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
+}
+
 const statusOptions = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']
 
 export function AdminOrders() {
@@ -124,19 +175,42 @@ export function AdminOrders() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all')
   const [viewOrder, setViewOrder] = useState<Order | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+  const [deleteOrder, setDeleteOrder] = useState<Order | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [editNotes, setEditNotes] = useState('')
+  const [isEditingNotes, setIsEditingNotes] = useState(false)
+  const [savingNotes, setSavingNotes] = useState(false)
+
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const storeId = user?.storeId || ''
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [searchQuery])
 
   const fetchOrders = useCallback(async () => {
     try {
       const params = new URLSearchParams({ storeId })
       if (activeFilter !== 'all') params.set('status', activeFilter)
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      params.set('sort', sortOrder)
       const res = await fetch(`/api/admin/orders?${params}`)
       if (res.ok) setOrders(await res.json())
     } catch {
       // silent
     }
-  }, [storeId, activeFilter])
+  }, [storeId, activeFilter, debouncedSearch, sortOrder])
 
   useEffect(() => {
     fetchOrders().finally(() => setLoading(false))
@@ -164,6 +238,46 @@ export function AdminOrders() {
     }
   }
 
+  const handleDeleteOrder = async () => {
+    if (!deleteOrder) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/orders?id=${deleteOrder.id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setDeleteOrder(null)
+        if (viewOrder?.id === deleteOrder.id) setViewOrder(null)
+        await fetchOrders()
+      }
+    } catch {
+      // silent
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleSaveNotes = async () => {
+    if (!viewOrder) return
+    setSavingNotes(true)
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: viewOrder.id, notes: editNotes }),
+      })
+      if (res.ok) {
+        const updatedOrder = await res.json()
+        setViewOrder(updatedOrder)
+        setIsEditingNotes(false)
+      }
+    } catch {
+      // silent
+    } finally {
+      setSavingNotes(false)
+    }
+  }
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)
     return d.toLocaleDateString('es-PE', {
@@ -174,6 +288,11 @@ export function AdminOrders() {
       minute: '2-digit',
     })
   }
+
+  // Statistics
+  const totalOrders = orders.length
+  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0)
+  const pendingCount = orders.filter((o) => o.status === 'pending').length
 
   if (loading) {
     return (
@@ -214,6 +333,80 @@ export function AdminOrders() {
             )}
           </Button>
         ))}
+      </div>
+
+      {/* Search bar & sort toggle */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Buscar por número de pedido o nombre del cliente..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-10 pl-10 pr-9 text-sm rounded-xl border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+          className="h-10 rounded-xl border-neutral-200 text-neutral-600 hover:bg-neutral-50 gap-2 px-4"
+        >
+          {sortOrder === 'desc' ? (
+            <ArrowDown className="w-4 h-4" />
+          ) : (
+            <ArrowUp className="w-4 h-4" />
+          )}
+          <span className="text-xs font-medium">
+            {sortOrder === 'desc' ? 'Más recientes' : 'Más antiguos'}
+          </span>
+        </Button>
+      </div>
+
+      {/* Statistics bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card className="rounded-xl border-neutral-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0">
+              <ShoppingCart className="w-5 h-5 text-neutral-500" />
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400 font-medium">Total pedidos</p>
+              <p className="text-lg font-bold text-neutral-900">{totalOrders}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl border-neutral-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400 font-medium">Ingresos totales</p>
+              <p className="text-lg font-bold text-neutral-900">S/ {totalRevenue.toFixed(2)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl border-neutral-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400 font-medium">Pendientes</p>
+              <p className="text-lg font-bold text-neutral-900">{pendingCount}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Orders table */}
@@ -279,7 +472,15 @@ export function AdminOrders() {
                         </span>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        {order.paymentMethod ? (
+                        {order.mercadoPagoPayment ? (
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              mpStatusBadge[order.mercadoPagoPayment.status] || 'bg-neutral-100 text-neutral-600'
+                            }`}
+                          >
+                            💳 MP
+                          </span>
+                        ) : order.paymentMethod ? (
                           <span
                             className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                               paymentMethodBadge[order.paymentMethod.type.toLowerCase()] || 'bg-neutral-100 text-neutral-600'
@@ -321,14 +522,30 @@ export function AdminOrders() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-neutral-400 hover:text-neutral-900"
-                          onClick={() => setViewOrder(order)}
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-neutral-400 hover:text-neutral-900"
+                            onClick={() => {
+                              setViewOrder(order)
+                              setEditNotes(order.notes)
+                              setIsEditingNotes(false)
+                            }}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          {(order.status === 'pending' || order.status === 'cancelled') && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-neutral-400 hover:text-red-600"
+                              onClick={() => setDeleteOrder(order)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -338,8 +555,8 @@ export function AdminOrders() {
                       <div className="flex flex-col items-center gap-2">
                         <ShoppingCart className="w-10 h-10 text-neutral-300" />
                         <p className="text-neutral-400 text-sm">
-                          {activeFilter === 'all'
-                            ? 'No hay pedidos aún'
+                          {activeFilter === 'all' || debouncedSearch
+                            ? 'No se encontraron pedidos'
                             : `No hay pedidos ${statusLabel[activeFilter]?.toLowerCase()}s`}
                         </p>
                       </div>
@@ -358,6 +575,52 @@ export function AdminOrders() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteOrder} onOpenChange={(open) => !open && setDeleteOrder(null)}>
+        <DialogContent className="sm:max-w-[420px] p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              Eliminar pedido
+            </DialogTitle>
+            <DialogDescription className="text-sm text-neutral-500 mt-2">
+              ¿Estás seguro de que deseas eliminar el pedido <strong>#{deleteOrder?.orderNumber.slice(-6)}</strong> de <strong>{deleteOrder?.customerName}</strong>? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 mt-4">
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                className="rounded-xl border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                disabled={deleting}
+              >
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteOrder}
+              disabled={deleting}
+              className="rounded-xl bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Eliminar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* View order dialog */}
       <Dialog open={!!viewOrder} onOpenChange={(open) => !open && setViewOrder(null)}>
@@ -381,7 +644,7 @@ export function AdminOrders() {
                     >
                       {statusLabel[viewOrder.status]}
                     </Badge>
-                    {viewOrder.paymentMethod && (
+                    {viewOrder.paymentMethod && !viewOrder.mercadoPagoPayment && (
                       <span
                         className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full ${
                           paymentMethodBadge[viewOrder.paymentMethod.type.toLowerCase()] || 'bg-neutral-100 text-neutral-600'
@@ -397,6 +660,88 @@ export function AdminOrders() {
                     {formatDate(viewOrder.createdAt)}
                   </div>
                 </div>
+
+                {/* MercadoPago payment info */}
+                {viewOrder.mercadoPagoPayment && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-neutral-400" />
+                        Pago con MercadoPago
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center">
+                            <Hash className="w-4 h-4 text-neutral-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-neutral-400">Estado MP</p>
+                            <span
+                              className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                mpStatusBadge[viewOrder.mercadoPagoPayment.status] || 'bg-neutral-100 text-neutral-600'
+                              }`}
+                            >
+                              {mpStatusLabel[viewOrder.mercadoPagoPayment.status] || viewOrder.mercadoPagoPayment.status}
+                            </span>
+                          </div>
+                        </div>
+                        {viewOrder.mercadoPagoPayment.paymentType && (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center">
+                              <Layers className="w-4 h-4 text-neutral-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-neutral-400">Tipo de pago</p>
+                              <p className="text-sm font-medium text-neutral-900">
+                                {viewOrder.mercadoPagoPayment.paymentType}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {viewOrder.mercadoPagoPayment.lastFourDigits && (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center">
+                              <CreditCard className="w-4 h-4 text-neutral-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-neutral-400">Últimos 4 dígitos</p>
+                              <p className="text-sm font-medium text-neutral-900">
+                                •••• {viewOrder.mercadoPagoPayment.lastFourDigits}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {viewOrder.mercadoPagoPayment.installments > 1 && (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center">
+                              <Layers className="w-4 h-4 text-neutral-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-neutral-400">Cuotas</p>
+                              <p className="text-sm font-medium text-neutral-900">
+                                {viewOrder.mercadoPagoPayment.installments} cuotas
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {viewOrder.mercadoPagoPayment.payerEmail && (
+                          <div className="flex items-center gap-2.5 sm:col-span-2">
+                            <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center">
+                              <Mail className="w-4 h-4 text-neutral-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-neutral-400">Email del pagador</p>
+                              <p className="text-sm font-medium text-neutral-900">
+                                {viewOrder.mercadoPagoPayment.payerEmail}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <Separator />
 
@@ -499,17 +844,67 @@ export function AdminOrders() {
                 <Separator />
 
                 {/* Notes */}
-                {viewOrder.notes && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <StickyNote className="w-4 h-4 text-neutral-400" />
-                      <h4 className="text-sm font-semibold text-neutral-900">Notas</h4>
-                    </div>
-                    <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg border border-neutral-100">
-                      {viewOrder.notes}
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <StickyNote className="w-4 h-4 text-neutral-400" />
+                    <h4 className="text-sm font-semibold text-neutral-900">Notas</h4>
                   </div>
-                )}
+                  {isEditingNotes ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        placeholder="Agregar notas sobre el pedido..."
+                        rows={3}
+                        className="text-sm rounded-xl border-neutral-200 resize-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSaveNotes}
+                          disabled={savingNotes}
+                          className="h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium px-3"
+                        >
+                          {savingNotes ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              Guardando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-3.5 h-3.5 mr-1.5" />
+                              Guardar
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingNotes(false)
+                            setEditNotes(viewOrder.notes)
+                          }}
+                          disabled={savingNotes}
+                          className="h-8 rounded-lg border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-xs font-medium px-3"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg border border-neutral-100 min-h-[40px] cursor-pointer hover:border-neutral-200 transition-colors"
+                      onClick={() => {
+                        setEditNotes(viewOrder.notes)
+                        setIsEditingNotes(true)
+                      }}
+                    >
+                      {viewOrder.notes || (
+                        <span className="text-neutral-400 italic">Click para agregar notas...</span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Total */}
                 <div className="flex items-center justify-between p-4 bg-neutral-900 rounded-xl">
