@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     // Check plan limits before creating product
     const store = await db.store.findUnique({ where: { id: storeId }, select: { plan: true } })
-    const plan = store?.plan || 'free'
+    const plan = store?.plan || 'basico'
     const planConfig = getPlanConfig(plan)
 
     // Check images per product limit

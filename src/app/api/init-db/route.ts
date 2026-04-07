@@ -34,8 +34,6 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}))
-    // DATABASE_URL from body is informational — getDb() handles connection internally
-    // This endpoint is designed to be called after Turso (or another remote DB) is configured
     console.log('[api/init-db] Database seeding initiated', body?.DATABASE_URL ? '(remote URL provided)' : '(using default connection)')
 
     const db = await getDb()
@@ -65,22 +63,37 @@ export async function POST(request: Request) {
 
     const storeId = store.id
 
-    // 2. Upsert Admin User
+    // 2. Upsert Admin User (admin@urbanstyle.pe - matches login page test account)
     await db.storeUser.upsert({
-      where: { email_storeId: { email: 'admin@urbanstore.pe', storeId } },
+      where: { email_storeId: { email: 'admin@urbanstyle.pe', storeId } },
       update: {},
       create: {
-        id: uid(),
-        email: 'admin@urbanstore.pe',
-        password: '$2b$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu6GK',
-        name: 'Admin Urban',
+        id: 'seed-admin-001',
+        email: 'admin@urbanstyle.pe',
+        password: '$2b$10$GVQcWTi4dfqJoiLNcmp0EupYzPu2OO4GO1gWiUAoqvW9hcqpy9AAy',
+        name: 'Admin Urban Style',
         phone: '51999999999',
         role: 'admin',
         storeId,
       },
     })
 
-    // 3. Upsert Categories
+    // 3. Upsert Customer Test User (cliente@email.com - matches login page test account)
+    await db.storeUser.upsert({
+      where: { email_storeId: { email: 'cliente@email.com', storeId } },
+      update: {},
+      create: {
+        id: 'seed-client-001',
+        email: 'cliente@email.com',
+        password: '$2b$10$7QKH/7wCqEt6J0ufdz8hG.qpjNeatsnuDZ3WCd/l0bDTONL1nx4aG',
+        name: 'Cliente Demo',
+        phone: '51988888888',
+        role: 'customer',
+        storeId,
+      },
+    })
+
+    // 4. Upsert Categories
     const categoryIdMap: Record<string, string> = {}
     for (const cat of seedCategories) {
       const created = await db.category.upsert({
@@ -104,7 +117,7 @@ export async function POST(request: Request) {
       categoryIdMap[cat.slug] = created.id
     }
 
-    // 4. Upsert Products
+    // 5. Upsert Products
     for (const p of seedProducts) {
       const catId = categoryIdMap[p.category.slug]
       if (!catId) continue
@@ -151,7 +164,7 @@ export async function POST(request: Request) {
       })
     }
 
-    // 5. Upsert Testimonials
+    // 6. Upsert Testimonials
     for (const t of seedTestimonials) {
       await db.testimonial.upsert({
         where: { id: t.id },
@@ -178,6 +191,8 @@ export async function POST(request: Request) {
       message: 'Database seeded successfully',
       data: {
         store: storeId,
+        adminUser: 'admin@urbanstyle.pe',
+        customerUser: 'cliente@email.com',
         categories: seedCategories.length,
         products: seedProducts.length,
         testimonials: seedTestimonials.length,

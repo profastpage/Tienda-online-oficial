@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     // Plan distribution
     const planDistribution: Record<string, number> = {}
     for (const store of stores) {
-      const plan = store.plan || 'free'
+      const plan = store.plan || 'basico'
       planDistribution[plan] = (planDistribution[plan] || 0) + 1
     }
 

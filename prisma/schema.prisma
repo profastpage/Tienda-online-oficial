@@ -16,7 +16,7 @@ model Store {
   address        String   @default("")
   description    String   @default("")
   isActive       Boolean  @default(true)
-  plan           String   @default("free")
+  plan           String   @default("basico")
   users          StoreUser[]
   categories     Category[]
   products       Product[]

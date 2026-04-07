@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     // Check plan limits before creating category
     const store = await db.store.findUnique({ where: { id: storeId }, select: { plan: true } })
-    const plan = store?.plan || 'free'
+    const plan = store?.plan || 'basico'
     const limitCheck = await checkPlanLimit(db, storeId, 'categories', plan)
     if (!limitCheck.allowed) {
       const config = getPlanConfig(plan)

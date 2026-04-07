@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     // Check plan limits (monthly orders) before creating order
-    const plan = store.plan || 'free'
+    const plan = store.plan || 'basico'
     const limitCheck = await checkPlanLimit(db, storeId, 'orders', plan)
     if (!limitCheck.allowed) {
       const config = getPlanConfig(plan)
