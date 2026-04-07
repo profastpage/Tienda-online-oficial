@@ -2,38 +2,16 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { getDb } from '@/lib/db'
 import { canUseFeature } from '@/lib/plan-limits'
-import ZAI from 'z-ai-web-dev-sdk'
 
 export async function POST(request: Request) {
   try {
+    // 1. Auth
     const auth = await requireAdmin(request)
     if (auth.error) return auth.error
 
     const storeId = auth.user.storeId
-    const db = await getDb()
 
-    // Fetch store to check plan
-    const store = await db.store.findUnique({
-      where: { id: storeId },
-      select: { plan: true, name: true },
-    })
-
-    if (!store) {
-      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
-    }
-
-    // Check plan feature access
-    if (!canUseFeature(store.plan, 'ai_assistant')) {
-      return NextResponse.json(
-        {
-          error: 'El asistente de IA no está disponible en tu plan actual. Actualiza a Premium para acceder a esta funcionalidad.',
-          code: 'PLAN_UPGRADE_REQUIRED',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Parse request body
+    // 2. Parse body
     let body: { action: string; context?: Record<string, unknown> }
     try {
       body = await request.json()
@@ -43,65 +21,54 @@ export async function POST(request: Request) {
 
     const { action, context } = body
 
-    // Initialize AI SDK
-    const zai = await ZAI.create()
-
-    // Build store context data
-    const storeContext = await buildStoreContext(db, storeId, store.name, action)
-
-    // Handle different actions
-    let systemPrompt = ''
-    let userMessage = ''
-
-    switch (action) {
-      case 'inventory_analysis': {
-        systemPrompt = buildInventoryAnalysisPrompt(storeContext)
-        userMessage = 'Analiza el inventario actual de la tienda y proporciona insights detallados sobre stock bajo, sugerencias de precios y distribución por categorías. Responde en español con formato claro y organizado usando listas.'
-        break
-      }
-
-      case 'order_insights': {
-        systemPrompt = buildOrderInsightsPrompt(storeContext)
-        userMessage = 'Analiza los pedidos recientes de los últimos 30 días y proporciona insights sobre tendencias, productos más vendidos y patrones de ingresos. Responde en español con formato claro.'
-        break
-      }
-
-      case 'restock_suggestions': {
-        systemPrompt = buildRestockPrompt(storeContext)
-        userMessage = 'Analiza la frecuencia de pedidos versus el inventario actual y sugiere qué productos reabastecer y en qué cantidades. Prioriza por urgencia. Responde en español.'
-        break
-      }
-
-      case 'chat': {
-        const message = (context?.message as string) || ''
-        if (!message) {
-          return NextResponse.json({ error: 'El mensaje es requerido para el chat' }, { status: 400 })
-        }
-        systemPrompt = buildChatPrompt(storeContext)
-        userMessage = message
-        break
-      }
-
-      default:
-        return NextResponse.json(
-          { error: `Acción no reconocida: ${action}` },
-          { status: 400 }
-        )
+    if (!action || !['inventory_analysis', 'order_insights', 'restock_suggestions', 'chat'].includes(action)) {
+      return NextResponse.json({ error: `Acción no reconocida: ${action || 'vacía'}` }, { status: 400 })
     }
 
-    // Call AI
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-    })
+    if (action === 'chat' && !(context?.message as string)?.trim()) {
+      return NextResponse.json({ error: 'El mensaje es requerido para el chat' }, { status: 400 })
+    }
 
-    const aiResponse = completion.choices[0]?.message?.content || 'Lo siento, no pude generar una respuesta.'
+    // 3. DB + plan check
+    let plan = 'basico'
+    let storeName = 'Mi Tienda'
+
+    try {
+      const db = await getDb()
+      const store = await db.store.findUnique({
+        where: { id: storeId },
+        select: { plan: true, name: true },
+      })
+      if (store) {
+        plan = store.plan
+        storeName = store.name
+      }
+    } catch (dbErr) {
+      console.warn('[AI API] DB lookup failed, using defaults:', dbErr)
+    }
+
+    if (!canUseFeature(plan, 'ai_assistant')) {
+      return NextResponse.json(
+        {
+          error: 'El asistente de IA no está disponible en tu plan actual. Actualiza a Premium para acceder a esta funcionalidad.',
+          code: 'PLAN_UPGRADE_REQUIRED',
+        },
+        { status: 403 }
+      )
+    }
+
+    // 4. Build store context (resilient — each query independently)
+    const storeContext = await buildStoreContextSafe(storeId, storeName)
+
+    // 5. Build prompts
+    const { systemPrompt, userMessage } = buildPrompts(action, storeContext, context)
+
+    // 6. Call AI with timeout + fallback
+    let aiResponse = await callAIWithFallback(systemPrompt, userMessage, action, storeContext)
 
     return NextResponse.json({ success: true, data: aiResponse, action })
   } catch (error) {
-    console.error('[AI API] Error:', error)
+    console.error('[AI API] Unhandled error:', error)
     return NextResponse.json(
       { error: 'Error al procesar la solicitud con IA. Por favor, intenta de nuevo.' },
       { status: 500 }
@@ -109,352 +76,407 @@ export async function POST(request: Request) {
   }
 }
 
-// ─── Store Context Builder ──────────────────────────────────────────────────
+// ─── AI Call with Timeout + Fallback ─────────────────────────────────────────
 
-interface StoreContext {
-  storeName: string
-  products: {
-    id: string
-    name: string
-    price: number
-    comparePrice: number | null
-    inStock: boolean
-    category: string
-    createdAt: string
-    isFeatured: boolean
-    isNew: boolean
-    discount: number | null
-  }[]
-  orders: {
-    id: string
-    orderNumber: string
-    customerName: string
-    total: number
-    status: string
-    createdAt: string
-    items: { productName: string; quantity: number; price: number }[]
-  }[]
-  categories: { name: string; productCount: number }[]
-  orderStats: {
-    total: number
-    totalRevenue: number
-    pending: number
-    delivered: number
-    cancelled: number
-    avgOrderValue: number
+async function callAIWithFallback(
+  systemPrompt: string,
+  userMessage: string,
+  action: string,
+  ctx: StoreContext
+): Promise<string> {
+  // Try ZAI SDK
+  try {
+    const ZAI = (await import('z-ai-web-dev-sdk')).default
+    const zai = await ZAI.create()
+
+    // Race between AI call and 30s timeout
+    const aiPromise = zai.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+    })
+
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), 30000)
+    )
+
+    const result = await Promise.race([aiPromise, timeoutPromise])
+
+    if (result && result.choices?.[0]?.message?.content) {
+      return result.choices[0].message.content
+    }
+    console.warn('[AI API] AI returned empty or timed out, using fallback')
+  } catch (aiErr) {
+    console.error('[AI API] AI call failed:', aiErr)
+  }
+
+  // Fallback: generate a data-driven response without AI
+  return generateFallbackResponse(action, ctx)
+}
+
+// ─── Fallback Responses (no AI needed) ───────────────────────────────────────
+
+function generateFallbackResponse(action: string, ctx: StoreContext): string {
+  switch (action) {
+    case 'inventory_analysis':
+      return generateInventoryFallback(ctx)
+    case 'order_insights':
+      return generateOrderInsightsFallback(ctx)
+    case 'restock_suggestions':
+      return generateRestockFallback(ctx)
+    case 'chat':
+      return `💡 Aquí un resumen rápido de tu tienda **${ctx.storeName}**:\n\n📦 **Productos:** ${ctx.products.length} registrados\n📋 **Categorías:** ${ctx.categories.length}\n🛒 **Pedidos (30d):** ${ctx.orderStats.total}\n💰 **Ingresos:** S/ ${ctx.orderStats.totalRevenue.toFixed(2)}\n\nEscribe una pregunta específica o usa las acciones rápidas para un análisis detallado.`
+    default:
+      return 'Lo siento, no pude generar una respuesta en este momento. Intenta de nuevo.'
   }
 }
 
-async function buildStoreContext(
-  db: Awaited<ReturnType<typeof getDb>>,
-  storeId: string,
-  storeName: string,
-  action: string
-): Promise<StoreContext> {
-  // Fetch products
-  const products = await db.product.findMany({
-    where: { storeId },
-    select: {
-      id: true,
-      name: true,
-      price: true,
-      comparePrice: true,
-      inStock: true,
-      category: { select: { name: true } },
-      createdAt: true,
-      isFeatured: true,
-      isNew: true,
-      discount: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+function generateInventoryFallback(ctx: StoreContext): string {
+  const outOfStock = ctx.products.filter((p) => !p.inStock)
+  const featured = ctx.products.filter((p) => p.isFeatured)
+  const withoutCompare = ctx.products.filter((p) => !p.comparePrice)
+  const avgPrice = ctx.products.length > 0 ? ctx.products.reduce((s, p) => s + p.price, 0) / ctx.products.length : 0
+  const byCategory = ctx.categories.map((c) => `  - ${c.name}: ${c.productCount} productos`).join('\n')
 
-  // Fetch orders (last 30 days)
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  let report = `## 📊 Análisis de Inventario — ${ctx.storeName}\n\n`
+  report += `**Resumen General:**\n  - Total de productos: ${ctx.products.length}\n  - Precio promedio: S/ ${avgPrice.toFixed(2)}\n  - Productos destacados: ${featured.length}\n  - Sin precio de comparación: ${withoutCompare.length}\n\n`
 
-  const orders = await db.order.findMany({
-    where: { storeId, createdAt: { gte: thirtyDaysAgo } },
-    select: {
-      id: true,
-      orderNumber: true,
-      customerName: true,
-      total: true,
-      status: true,
-      createdAt: true,
-      items: {
+  if (outOfStock.length > 0) {
+    report += `🚨 **Productos sin stock (${outOfStock.length}):**\n`
+    outOfStock.forEach((p) => { report += `  - ${p.name} (S/ ${p.price.toFixed(2)})\n` })
+    report += '\n'
+  } else {
+    report += '✅ Todos los productos están en stock.\n\n'
+  }
+
+  report += `**Distribución por categorías:**\n${byCategory}\n\n`
+
+  if (withoutCompare.length > 0 && withoutCompare.length <= 10) {
+    report += `💡 **Sugerencia:** Agrega precios de comparación a estos productos para mostrar descuentos:\n`
+    withoutCompare.forEach((p) => { report += `  - ${p.name}\n` })
+  }
+
+  return report
+}
+
+function generateOrderInsightsFallback(ctx: StoreContext): string {
+  const s = ctx.orderStats
+  let report = `## 🛒 Insights de Pedidos — ${ctx.storeName}\n\n`
+  report += `**Estadísticas (últimos 30 días):**\n`
+  report += `  - Total de pedidos: ${s.total}\n`
+  report += `  - Ingresos totales: S/ ${s.totalRevenue.toFixed(2)}\n`
+  report += `  - Valor promedio: S/ ${s.avgOrderValue.toFixed(2)}\n`
+  report += `  - Pendientes: ${s.pending} | Entregados: ${s.delivered} | Cancelados: ${s.cancelled}\n\n`
+
+  if (ctx.orders.length > 0) {
+    // Top products by sales
+    const productSales = new Map<string, { qty: number; rev: number }>()
+    for (const o of ctx.orders) {
+      for (const i of o.items) {
+        const e = productSales.get(i.productName)
+        if (e) { e.qty += i.quantity; e.rev += i.price * i.quantity }
+        else { productSales.set(i.productName, { qty: i.quantity, rev: i.price * i.quantity }) }
+      }
+    }
+    const top = [...productSales.entries()].sort((a, b) => b[1].rev - a[1].rev).slice(0, 5)
+
+    if (top.length > 0) {
+      report += `🏆 **Top 5 productos más vendidos:**\n`
+      top.forEach(([name, d], i) => { report += `  ${i + 1}. ${name} — ${d.qty} uds, S/ ${d.rev.toFixed(2)}\n` })
+      report += '\n'
+    }
+
+    const delivered = ctx.orders.filter((o) => o.status === 'delivered')
+    if (delivered.length > 0) {
+      report += `📦 **Últimos pedidos entregados:**\n`
+      delivered.slice(0, 5).forEach((o) => {
+        report += `  - #${o.orderNumber.slice(-6)} | ${o.customerName} | S/ ${o.total.toFixed(2)}\n`
+      })
+    }
+  } else {
+    report += '📭 No hay pedidos en los últimos 30 días. ¡Anima a tus clientes con promociones!'
+  }
+
+  return report
+}
+
+function generateRestockFallback(ctx: StoreContext): string {
+  // Calculate demand
+  const demand = new Map<string, number>()
+  for (const o of ctx.orders) {
+    for (const i of o.items) {
+      demand.set(i.productName, (demand.get(i.productName) || 0) + i.quantity)
+    }
+  }
+
+  const urgent: string[] = []
+  const watch: string[] = []
+  const noDemand: string[] = []
+
+  for (const p of ctx.products) {
+    const d = demand.get(p.name) || 0
+    if (!p.inStock && d > 0) {
+      urgent.push(`🚨 **${p.name}** — Sin stock, ${d} uds vendidas en 30d → Sugerido: ${Math.max(d * 2, 5)} uds`)
+    } else if (p.inStock && d > 3) {
+      watch.push(`⚠️ **${p.name}** — En stock, alta demanda (${d} uds/30d) → Vigilar nivel`)
+    } else if (d === 0) {
+      noDemand.push(`💡 ${p.name} — Sin ventas en 30d`)
+    }
+  }
+
+  let report = `## 🔄 Sugerencias de Reabastecimiento — ${ctx.storeName}\n\n`
+
+  if (urgent.length > 0) {
+    report += `**URGENTE — Sin stock con demanda:**\n${urgent.join('\n')}\n\n`
+  } else {
+    report += '✅ No hay productos sin stock que tengan demanda activa.\n\n'
+  }
+
+  if (watch.length > 0) {
+    report += `**A VIGILAR — Alto riesgo de agotarse:**\n${watch.join('\n')}\n\n`
+  }
+
+  if (noDemand.length > 0) {
+    report += `**SIN DEMANDA (${noDemand.length} productos):**\n`
+    noDemand.slice(0, 10).forEach((p) => { report += `  ${p}\n` })
+    if (noDemand.length > 10) report += `  ... y ${noDemand.length - 10} más`
+  }
+
+  return report
+}
+
+// ─── Store Context (Resilient) ───────────────────────────────────────────────
+
+interface StoreContext {
+  storeName: string
+  products: { name: string; price: number; comparePrice: number | null; inStock: boolean; category: string; isFeatured: boolean; isNew: boolean }[]
+  orders: { orderNumber: string; customerName: string; total: number; status: string; items: { productName: string; quantity: number; price: number }[] }[]
+  categories: { name: string; productCount: number }[]
+  orderStats: { total: number; totalRevenue: number; pending: number; delivered: number; cancelled: number; avgOrderValue: number }
+}
+
+async function buildStoreContextSafe(storeId: string, storeName: string): Promise<StoreContext> {
+  let products: StoreContext['products'] = []
+  let orders: StoreContext['orders'] = []
+  let categories: StoreContext['categories'] = []
+
+  try {
+    const db = await getDb()
+
+    // Products — with null-safe category
+    try {
+      const raw = await db.product.findMany({
+        where: { storeId },
         select: {
-          productName: true,
-          quantity: true,
-          price: true,
+          name: true, price: true, comparePrice: true, inStock: true,
+          category: { select: { name: true } },
+          isFeatured: true, isNew: true,
         },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+        orderBy: { createdAt: 'desc' },
+      })
+      products = raw.map((p) => ({
+        name: p.name,
+        price: p.price,
+        comparePrice: p.comparePrice,
+        inStock: p.inStock,
+        category: p.category?.name || 'Sin categoría',
+        isFeatured: p.isFeatured,
+        isNew: p.isNew,
+      }))
+    } catch (e) {
+      console.warn('[AI API] Products query failed:', e)
+    }
 
-  // Fetch categories with product counts
-  const categories = await db.category.findMany({
-    where: { storeId },
-    select: {
-      name: true,
-      _count: { select: { products: true } },
-    },
-  })
+    // Orders (last 30 days) — with null-safe items
+    try {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  // Compute order stats
-  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0)
-  const pending = orders.filter((o) => o.status === 'pending').length
-  const delivered = orders.filter((o) => o.status === 'delivered').length
-  const cancelled = orders.filter((o) => o.status === 'cancelled').length
-  const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0
+      const raw = await db.order.findMany({
+        where: { storeId, createdAt: { gte: thirtyDaysAgo } },
+        select: {
+          orderNumber: true, customerName: true, total: true, status: true,
+          items: { select: { productName: true, quantity: true, price: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      orders = raw.map((o) => ({
+        orderNumber: o.orderNumber,
+        customerName: o.customerName,
+        total: o.total,
+        status: o.status,
+        items: (o.items || []).map((i) => ({ productName: i.productName, quantity: i.quantity, price: i.price })),
+      }))
+    } catch (e) {
+      console.warn('[AI API] Orders query failed:', e)
+    }
 
+    // Categories
+    try {
+      const raw = await db.category.findMany({
+        where: { storeId },
+        select: { name: true, _count: { select: { products: true } } },
+      })
+      categories = raw.map((c) => ({ name: c.name, productCount: c._count.products }))
+    } catch (e) {
+      console.warn('[AI API] Categories query failed:', e)
+    }
+  } catch (dbErr) {
+    console.warn('[AI API] DB connection failed, using empty context:', dbErr)
+  }
+
+  // Stats
+  const totalRevenue = orders.reduce((s, o) => s + o.total, 0)
   return {
     storeName,
-    products: products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      comparePrice: p.comparePrice,
-      inStock: p.inStock,
-      category: p.category.name,
-      createdAt: p.createdAt.toISOString(),
-      isFeatured: p.isFeatured,
-      isNew: p.isNew,
-      discount: p.discount,
-    })),
-    orders: orders.map((o) => ({
-      id: o.id,
-      orderNumber: o.orderNumber,
-      customerName: o.customerName,
-      total: o.total,
-      status: o.status,
-      createdAt: o.createdAt.toISOString(),
-      items: o.items.map((i) => ({
-        productName: i.productName,
-        quantity: i.quantity,
-        price: i.price,
-      })),
-    })),
-    categories: categories.map((c) => ({
-      name: c.name,
-      productCount: c._count.products,
-    })),
+    products,
+    orders,
+    categories,
     orderStats: {
       total: orders.length,
       totalRevenue: Math.round(totalRevenue * 100) / 100,
-      pending,
-      delivered,
-      cancelled,
-      avgOrderValue: Math.round(avgOrderValue * 100) / 100,
+      pending: orders.filter((o) => o.status === 'pending').length,
+      delivered: orders.filter((o) => o.status === 'delivered').length,
+      cancelled: orders.filter((o) => o.status === 'cancelled').length,
+      avgOrderValue: orders.length > 0 ? Math.round((totalRevenue / orders.length) * 100) / 100 : 0,
     },
   }
 }
 
 // ─── Prompt Builders ────────────────────────────────────────────────────────
 
-function buildInventoryAnalysisPrompt(ctx: StoreContext): string {
-  const productsSummary = ctx.products
-    .map(
-      (p) =>
-        `- ${p.name} | Precio: S/ ${p.price.toFixed(2)} | ${
-          p.comparePrice ? `Precio comparación: S/ ${p.comparePrice.toFixed(2)}` : 'Sin comparación'
-        } | En stock: ${p.inStock ? 'Sí' : 'No'} | Categoría: ${p.category} | Destacado: ${p.isFeatured ? 'Sí' : 'No'} | Nuevo: ${p.isNew ? 'Sí' : 'No'}`
-    )
-    .join('\n')
+function buildPrompts(
+  action: string,
+  ctx: StoreContext,
+  context?: Record<string, unknown>
+): { systemPrompt: string; userMessage: string } {
+  switch (action) {
+    case 'inventory_analysis': {
+      const productsStr = ctx.products.map((p) =>
+        `- ${p.name} | S/ ${p.price.toFixed(2)} | Stock: ${p.inStock ? 'Sí' : 'NO'} | Cat: ${p.category}`
+      ).join('\n')
+      const catsStr = ctx.categories.map((c) => `- ${c.name}: ${c.productCount}`).join('\n')
 
-  const categoriesSummary = ctx.categories
-    .map((c) => `- ${c.name}: ${c.productCount} productos`)
-    .join('\n')
+      return {
+        systemPrompt: `Eres un asistente experto en gestión de tiendas online. Analiza el inventario y proporciona insights en español.
 
-  const outOfStock = ctx.products.filter((p) => !p.inStock).length
-  const avgPrice = ctx.products.length > 0
-    ? ctx.products.reduce((s, p) => s + p.price, 0) / ctx.products.length
-    : 0
-
-  return `Eres un asistente experto en gestión de tiendas online. Analiza el inventario de la siguiente tienda y proporciona insights accionables en español.
-
-DATOS DE LA TIENDA:
-Nombre: ${ctx.storeName}
-
-RESUMEN DE INVENTARIO:
-- Total de productos: ${ctx.products.length}
-- Productos sin stock: ${outOfStock}
-- Precio promedio: S/ ${avgPrice.toFixed(2)}
-
+TIENDA: ${ctx.storeName}
+PRODUCTOS (${ctx.products.length}):
+${productsStr || 'Sin productos'}
 CATEGORÍAS:
-${categoriesSummary}
+${catsStr || 'Sin categorías'}
 
-PRODUCTOS:
-${productsSummary}
+Responde con:
+1. **Resumen general** del inventario
+2. **Alertas de stock** (sin stock o bajo)
+3. **Sugerencias de precios**
+4. **Distribución por categorías**
+5. **Recomendaciones accionables**
 
-Proporciona un análisis detallado que incluya:
-1. **Resumen general del inventario** - Estado actual, fortalezas y debilidades
-2. **Alertas de stock bajo/sin stock** - Productos que necesitan atención urgente
-3. **Sugerencias de precios** - Productos donde podría ajustarse el precio, productos sin precio de comparación que podrían beneficiarse de uno
-4. **Distribución por categorías** - Análisis de balance entre categorías
-5. **Recomendaciones accionables** - Pasos concretos que el administrador puede tomar
-
-Usa emojis para hacer el análisis más legible y formatos claros con listas numeradas.`
-}
-
-function buildOrderInsightsPrompt(ctx: StoreContext): string {
-  const ordersSummary = ctx.orders
-    .map(
-      (o) =>
-        `- Pedido #${o.orderNumber.slice(-6)} | Cliente: ${o.customerName} | Total: S/ ${o.total.toFixed(2)} | Estado: ${o.status} | Fecha: ${o.createdAt.split('T')[0]} | Items: ${o.items.map((i) => `${i.productName} (x${i.quantity})`).join(', ')}`
-    )
-    .join('\n')
-
-  // Calculate top products
-  const productSales = new Map<string, { name: string; quantity: number; revenue: number }>()
-  for (const order of ctx.orders) {
-    for (const item of order.items) {
-      const existing = productSales.get(item.productName)
-      if (existing) {
-        existing.quantity += item.quantity
-        existing.revenue += item.price * item.quantity
-      } else {
-        productSales.set(item.productName, {
-          name: item.productName,
-          quantity: item.quantity,
-          revenue: item.price * item.quantity,
-        })
+Usa emojis y listas numeradas.`,
+        userMessage: 'Analiza el inventario actual y proporciona insights detallados.',
       }
     }
-  }
-  const topProducts = [...productSales.entries()]
-    .sort((a, b) => b[1].revenue - a[1].revenue)
-    .slice(0, 10)
-    .map(
-      ([, v], i) =>
-        `${i + 1}. ${v.name} - ${v.quantity} vendidos, S/ ${v.revenue.toFixed(2)} ingresos`
-    )
-    .join('\n')
 
-  return `Eres un asistente experto en análisis de ventas para tiendas online. Analiza los pedidos recientes y proporciona insights valiosos en español.
+    case 'order_insights': {
+      const ordersStr = ctx.orders.slice(0, 20).map((o) =>
+        `- #${o.orderNumber.slice(-6)} | ${o.customerName} | S/ ${o.total.toFixed(2)} | ${o.status} | Items: ${o.items.map((i) => `${i.productName}(x${i.quantity})`).join(', ')}`
+      ).join('\n')
 
-DATOS DE LA TIENDA:
-Nombre: ${ctx.storeName}
+      // Top products
+      const sales = new Map<string, { qty: number; rev: number }>()
+      for (const o of ctx.orders) for (const i of o.items) {
+        const e = sales.get(i.productName)
+        if (e) { e.qty += i.quantity; e.rev += i.price * i.quantity }
+        else sales.set(i.productName, { qty: i.quantity, rev: i.price * i.quantity })
+      }
+      const top = [...sales.entries()].sort((a, b) => b[1].rev - a[1].rev).slice(0, 10)
+        .map(([n, d], i) => `${i + 1}. ${n}: ${d.qty} uds, S/ ${d.rev.toFixed(2)}`).join('\n')
 
-ESTADÍSTICAS DE PEDIDOS (últimos 30 días):
-- Total de pedidos: ${ctx.orderStats.total}
-- Ingresos totales: S/ ${ctx.orderStats.totalRevenue.toFixed(2)}
-- Valor promedio por pedido: S/ ${ctx.orderStats.avgOrderValue.toFixed(2)}
-- Pendientes: ${ctx.orderStats.pending}
-- Entregados: ${ctx.orderStats.delivered}
-- Cancelados: ${ctx.orderStats.cancelled}
+      const s = ctx.orderStats
 
-PRODUCTOS MÁS VENDIDOS:
-${topProducts || 'No hay datos suficientes'}
+      return {
+        systemPrompt: `Eres un asistente experto en análisis de ventas. Analiza pedidos recientes en español.
+
+TIENDA: ${ctx.storeName}
+PEDIDOS (30d): ${s.total} | Ingresos: S/ ${s.totalRevenue.toFixed(2)} | Promedio: S/ ${s.avgOrderValue.toFixed(2)}
+Pendientes: ${s.pending} | Entregados: ${s.delivered} | Cancelados: ${s.cancelled}
+
+TOP PRODUCTOS:
+${top || 'Sin datos'}
 
 PEDIDOS RECIENTES:
-${ordersSummary || 'No hay pedidos en los últimos 30 días'}
+${ordersStr || 'Sin pedidos'}
 
-Proporciona un análisis detallado que incluya:
-1. **Resumen de ventas** - Panorama general del período
-2. **Tendencias observadas** - Patrones en las ventas, días o productos con más actividad
-3. **Top productos** - Análisis de los productos más vendidos y por qué podrían destacar
-4. **Patrones de ingresos** - Distribución de ingresos, oportunidades de crecimiento
-5. **Recomendaciones** - Acciones concretas para mejorar las ventas
+Responde con:
+1. **Resumen de ventas**
+2. **Tendencias**
+3. **Top productos** con análisis
+4. **Patrones de ingresos**
+5. **Recomendaciones**
 
-Usa emojis para hacer el análisis más legible y formatos claros con listas numeradas.`
-}
-
-function buildRestockPrompt(ctx: StoreContext): string {
-  // Calculate product demand from orders
-  const productDemand = new Map<string, { name: string; totalQuantity: number; lastOrdered: string }>()
-  for (const order of ctx.orders) {
-    for (const item of order.items) {
-      const existing = productDemand.get(item.productName)
-      if (existing) {
-        existing.totalQuantity += item.quantity
-        if (order.createdAt > existing.lastOrdered) {
-          existing.lastOrdered = order.createdAt
-        }
-      } else {
-        productDemand.set(item.productName, {
-          name: item.productName,
-          totalQuantity: item.quantity,
-          lastOrdered: order.createdAt,
-        })
+Usa emojis y listas.`,
+        userMessage: 'Analiza los pedidos recientes y proporciona insights.',
       }
     }
-  }
 
-  // Build demand vs stock analysis
-  const stockAnalysis = ctx.products.map((p) => {
-    const demand = productDemand.get(p.name)
-    return {
-      name: p.name,
-      price: p.price,
-      inStock: p.inStock,
-      demandQuantity: demand?.totalQuantity || 0,
-      lastOrdered: demand?.lastOrdered || 'Nunca pedido',
-      category: p.category,
+    case 'restock_suggestions': {
+      const demand = new Map<string, number>()
+      for (const o of ctx.orders) for (const i of o.items) demand.set(i.productName, (demand.get(i.productName) || 0) + i.quantity)
+
+      const analysis = ctx.products.map((p) => {
+        const d = demand.get(p.name) || 0
+        return `- ${p.name} | Stock: ${p.inStock ? 'Sí' : 'NO'} | Demanda 30d: ${d} uds | Cat: ${p.category}`
+      }).join('\n')
+
+      return {
+        systemPrompt: `Eres un asistente experto en gestión de inventario. Sugiere reabastecimiento en español.
+
+TIENDA: ${ctx.storeName}
+DEMANDA VS INVENTARIO:
+${analysis || 'Sin datos'}
+
+Responde con lista priorizada:
+1. **Urgentes** — sin stock con demanda
+2. **A vigilar** — stock bajo con alta demanda
+3. **Sugerencias de cantidad**
+4. **Sin demanda** — descatalogar
+5. **Resumen ejecutivo**
+
+Usa emojis 🚨⚠️✅💡 para urgencia.`,
+        userMessage: 'Sugiere qué productos reabastecer y en qué prioridad.',
+      }
     }
-  })
 
-  const analysisStr = stockAnalysis
-    .map(
-      (a) =>
-        `- ${a.name} | En stock: ${a.inStock ? 'Sí' : 'NO'} | Demanda (30d): ${a.demandQuantity} unidades | Último pedido: ${a.lastOrdered.split('T')[0]} | Categoría: ${a.category}`
-    )
-    .join('\n')
+    case 'chat': {
+      const prods = ctx.products.slice(0, 30).map((p) =>
+        `- ${p.name} | S/ ${p.price.toFixed(2)} | Stock: ${p.inStock ? 'Sí' : 'No'}`
+      ).join('\n')
+      const cats = ctx.categories.map((c) => `- ${c.name}: ${c.productCount}`).join('\n')
+      const s = ctx.orderStats
+      const message = (context?.message as string) || ''
 
-  return `Eres un asistente experto en gestión de inventario para tiendas online. Analiza la demanda de productos versus el inventario actual y sugiere qué reabastecer y en qué prioridad.
+      return {
+        systemPrompt: `Eres un asistente inteligente de gestión de tienda online para "${ctx.storeName}". Respondes en español.
 
-DATOS DE LA TIENDA:
-Nombre: ${ctx.storeName}
+INVENTARIO (${ctx.products.length}):
+${prods}
 
-ANÁLISIS DEMANDA VS INVENTARIO (últimos 30 días):
-${analysisStr || 'No hay datos suficientes'}
+CATEGORÍAS:
+${cats}
 
-Proporciona una lista priorizada de reabastecimiento que incluya:
-1. **Productos urgentes** - Sin stock pero con demanda activa (mayor prioridad)
-2. **Productos a vigilar** - Con stock pero alta demanda (riesgo de agotarse)
-3. **Sugerencias de cantidad** - Cantidad sugerida basada en la frecuencia de ventas
-4. **Productos sin demanda** - Que podrían reducir inventario o descatalogarse
-5. **Resumen ejecutivo** - Recomendaciones principales y acciones inmediatas
+PEDIDOS (30d): ${s.total} | Ingresos: S/ ${s.totalRevenue.toFixed(2)} | Promedio: S/ ${s.avgOrderValue.toFixed(2)}
 
-Ordena por prioridad de urgencia. Usa emojis (🚨, ⚠️, ✅, 💡) para indicar niveles de urgencia. Responde en español.`
-}
+REGLAS: Respuesta en español, conciso, con emojis, datos reales de la tienda, sin inventar datos.`,
+        userMessage: message,
+      }
+    }
 
-function buildChatPrompt(ctx: StoreContext): string {
-  const productsSummary = ctx.products
-    .slice(0, 30)
-    .map(
-      (p) =>
-        `- ${p.name} | Precio: S/ ${p.price.toFixed(2)} | Stock: ${p.inStock ? 'Sí' : 'No'} | Cat: ${p.category}`
-    )
-    .join('\n')
-
-  const categoriesSummary = ctx.categories
-    .map((c) => `- ${c.name}: ${c.productCount} productos`)
-    .join('\n')
-
-  return `Eres un asistente inteligente de gestión de tienda online para "${ctx.storeName}". Respondes preguntas del administrador sobre su tienda en español de forma clara y útil.
-
-CONTEXTO ACTUAL DE LA TIENDA:
-
-Inventario (${ctx.products.length} productos):
-${productsSummary}
-
-Categorías:
-${categoriesSummary}
-
-Estadísticas de pedidos (últimos 30 días):
-- Total: ${ctx.orderStats.total} pedidos
-- Ingresos: S/ ${ctx.orderStats.totalRevenue.toFixed(2)}
-- Valor promedio: S/ ${ctx.orderStats.avgOrderValue.toFixed(2)}
-- Pendientes: ${ctx.orderStats.pending} | Entregados: ${ctx.orderStats.delivered} | Cancelados: ${ctx.orderStats.cancelled}
-
-REGLAS:
-- Responde SIEMPRE en español
-- Sé conciso pero informativo
-- Usa emojis cuando sea apropiado para hacer la respuesta más legible
-- Si la pregunta no está relacionada con la tienda, redirige amablemente
-- Proporciona datos específicos de la tienda cuando sea relevante
-- Usa listas numeradas para recomendaciones múltiples
-- No inventes datos que no estén en el contexto proporcionado`
+    default:
+      return {
+        systemPrompt: 'Eres un asistente útil.',
+        userMessage: 'Hola',
+      }
+  }
 }
