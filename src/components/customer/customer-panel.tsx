@@ -141,9 +141,10 @@ function CustomerDashboard() {
 
   useEffect(() => {
     if (!user) return
+    const userId = user.id
     async function fetchStats() {
       try {
-        const res = await fetch(`/api/customer/orders?userId=${user.id}`)
+        const res = await fetch(`/api/customer/orders?userId=${userId}`)
         if (res.ok) {
           const orders = await res.json()
           setStats({

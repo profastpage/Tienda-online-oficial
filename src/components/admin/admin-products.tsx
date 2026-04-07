@@ -540,7 +540,7 @@ export function AdminProducts() {
               <ImageUpload
                 value={form.image}
                 onChange={(url) => setForm({ ...form, image: url })}
-                storeSlug={user?.store?.slug || 'store'}
+                storeSlug={user?.storeSlug || 'store'}
                 folder="products"
                 className="w-full"
               />

@@ -350,7 +350,7 @@ export function AdminCategories() {
               <ImageUpload
                 value={form.image}
                 onChange={(url) => setForm({ ...form, image: url })}
-                storeSlug={user?.store?.slug || 'store'}
+                storeSlug={user?.storeSlug || 'store'}
                 folder="categories"
                 className="w-full"
               />

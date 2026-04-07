@@ -120,8 +120,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const passwordMismatch = formData.confirmPassword && formData.password !== formData.confirmPassword
-  const passwordTooShort = formData.password && formData.password.length < 6
+  const passwordMismatch = Boolean(formData.confirmPassword && formData.password !== formData.confirmPassword)
+  const passwordTooShort = Boolean(formData.password && formData.password.length < 6)
 
   const handleNext = () => {
     if (step === 1 && selectedPlan) setStep(2)
@@ -371,22 +371,24 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Plan summary */}
-                  {getSelectedPlan() && (
+                  {getSelectedPlan() && (() => {
+                    const plan = getSelectedPlan()!
+                    return (
                     <Card className="bg-neutral-50">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3 mb-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getSelectedPlan().color}`}>
-                            {getSelectedPlan().icon}
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${plan.color}`}>
+                            {plan.icon}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-neutral-900">Plan {getSelectedPlan()?.name}</h3>
-                            <p className="text-xs text-neutral-500">{getSelectedPlan()?.description}</p>
+                            <h3 className="font-semibold text-neutral-900">Plan {plan.name}</h3>
+                            <p className="text-xs text-neutral-500">{plan.description}</p>
                           </div>
                         </div>
 
                         <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-3">Incluye:</h4>
                         <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                          {getSelectedPlan()?.features.map((feature) => (
+                          {plan.features.map((feature: string) => (
                             <li key={feature} className="flex items-start gap-2 text-xs">
                               <Check className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
                               <span className="text-neutral-600">{feature}</span>
@@ -397,23 +399,24 @@ export default function RegisterPage() {
                         <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
                           <p className="text-xs font-semibold text-amber-800 flex items-center gap-1">
                             <Settings className="w-3.5 h-3.5" />
-                            Setup: {getSelectedPlan()?.setupIncluded}
+                            Setup: {plan.setupIncluded}
                           </p>
                         </div>
 
                         <Separator className="my-4" />
 
                         <div className="space-y-2 text-sm">
-                          <div className="flex justify-between"><span className="text-neutral-500">Plan</span><span className="font-medium">{getSelectedPlan()?.name}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500">Mensualidad</span><span className="font-bold text-amber-600">{getSelectedPlan()?.price}{getSelectedPlan()?.period}</span></div>
-                          {getSelectedPlan()?.setupFee && <div className="flex justify-between"><span className="text-neutral-500">Instalación (pago único)</span><span className="font-bold text-neutral-700">{getSelectedPlan()?.setupFee}</span></div>}
+                          <div className="flex justify-between"><span className="text-neutral-500">Plan</span><span className="font-medium">{plan.name}</span></div>
+                          <div className="flex justify-between"><span className="text-neutral-500">Mensualidad</span><span className="font-bold text-amber-600">{plan.price}{plan.period}</span></div>
+                          {plan.setupFee && <div className="flex justify-between"><span className="text-neutral-500">Instalación (pago único)</span><span className="font-bold text-neutral-700">{plan.setupFee}</span></div>}
                           <div className="flex justify-between"><span className="text-neutral-500">Nombre</span><span className="font-medium">{formData.name}</span></div>
                           <div className="flex justify-between"><span className="text-neutral-500">Email</span><span className="font-medium">{formData.email}</span></div>
                           <div className="flex justify-between"><span className="text-neutral-500">Tienda</span><span className="font-medium">{formData.storeName || '—'}</span></div>
                         </div>
                       </CardContent>
                     </Card>
-                  )}
+                    )
+                  })()}
                 </div>
                 <div className="flex gap-3 mt-6">
                   <Button variant="outline" onClick={() => setStep(2)} className="h-12 flex-1">Anterior</Button>

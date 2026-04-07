@@ -35,9 +35,10 @@ export function CustomerProfile() {
 
   useEffect(() => {
     if (!user) return
+    const userId = user.id
     async function fetchProfile() {
       try {
-        const res = await fetch(`/api/customer/profile?userId=${user.id}`)
+        const res = await fetch(`/api/customer/profile?userId=${userId}`)
         if (res.ok) {
           const data = await res.json()
           setProfile({

@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ user: null, token: null, _hydrated: true })
     }
   },
-  getAuthHeaders: () => {
+  getAuthHeaders: (): Record<string, string> => {
     const { token } = get()
     if (!token) return {}
     return { Authorization: `Bearer ${token}` }
