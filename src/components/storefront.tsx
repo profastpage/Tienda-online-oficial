@@ -87,6 +87,9 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
   const isDragging = useRef(false)
+  const wishlist = useWishlistStore()
+  const { toast } = useToast()
+  const isWished = wishlist.isInWishlist(product.id)
 
   const views = [
     { objectPosition: 'center', label: '1/3' },
@@ -164,9 +167,22 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
         variant="ghost"
         size="icon"
         className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10`}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation()
+          wishlist.toggleItem({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            slug: product.slug,
+          })
+          toast({
+            title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
+            description: product.name,
+          })
+        }}
       >
-        <Heart className={`w-4 h-4`} />
+        <Heart className={`w-4 h-4 ${isWished ? 'fill-red-500 text-red-500' : ''}`} />
       </Button>
       {/* Desktop Quick View Overlay */}
       <div className="hidden md:block absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -835,6 +851,28 @@ Gracias!`)
                                 -{product.discount}%
                               </Badge>
                             </div>
+                            {/* Wishlist button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm opacity-100 z-10`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                wishlist.toggleItem({
+                                  id: product.id,
+                                  name: product.name,
+                                  price: product.price,
+                                  image: product.image,
+                                  slug: product.slug,
+                                })
+                                toast({
+                                  title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
+                                  description: product.name,
+                                })
+                              }}
+                            >
+                              <Heart className={`w-4 h-4 ${wishlist.isInWishlist(product.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                            </Button>
                             {/* Savings tag */}
                             <div className="absolute bottom-3 left-3 right-3">
                               <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center justify-between">
@@ -1888,7 +1926,7 @@ Gracias!`)
                         slug: selectedProduct.slug,
                       })
                       toast({
-                        title: wishlist.isInWishlist(selectedProduct.id) ? 'Eliminado de favoritos' : 'Agregado a favoritos',
+                        title: wishlist.isInWishlist(selectedProduct.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
                         description: selectedProduct.name,
                       })
                     }}
