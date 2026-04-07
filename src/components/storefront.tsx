@@ -216,7 +216,7 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
             className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold h-8 w-8 p-0 shrink-0"
             onClick={(e) => {
               e.stopPropagation()
-              const url = `https://wa.me/${typeof window !== 'undefined' ? '51933667414' : ''}?text=${encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${product.name}\n💰 S/ ${product.price.toFixed(2)}`)}`
+              const url = `https://wa.me/${typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414') : ''}?text=${encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${product.name}\n💰 S/ ${product.price.toFixed(2)}`)}`
               window.open(url, '_blank')
             }}
           >
@@ -252,7 +252,7 @@ export default function Storefront() {
   const [currentHero, setCurrentHero] = useState(0)
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [selectedImageView, setSelectedImageView] = useState(0)
-  const [storeWhatsApp, setStoreWhatsApp] = useState('51933667414')
+  const [storeWhatsApp, setStoreWhatsApp] = useState(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414')
   const galleryRef = useRef<HTMLDivElement>(null)
   const productDetailTouchStart = useRef(0)
   const productDetailTouchEnd = useRef(0)
@@ -346,13 +346,11 @@ export default function Storefront() {
           fetchWithRetry('/api/store/payment-methods?storeId=urban-store'),
         ])
         if (cancelled) return
-        console.log(`[Storefront] Loaded: ${Array.isArray(productsData) ? productsData.length : 0} products, ${Array.isArray(categoriesData) ? categoriesData.length : 0} categories`)
         setProducts(Array.isArray(productsData) ? productsData : [])
         setCategories(Array.isArray(categoriesData) ? categoriesData : [])
         setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : [])
         if (Array.isArray(paymentMethodsData?.methods)) {
           setPaymentMethods(paymentMethodsData.methods)
-          console.log(`[Storefront] Loaded ${paymentMethodsData.methods.length} payment methods`)
         }
       } catch (error) {
         console.error('[Storefront] Error fetching data:', error)
@@ -382,10 +380,10 @@ export default function Storefront() {
       ).join('\n')
       const total = `Total: S/ ${cart.totalPrice().toFixed(2)}`
       const fullMessage = encodeURIComponent(`Hola! Quiero hacer un pedido:\n\n${message}\n\n${total}\n\nGracias!`)
-      return `https://wa.me/51933667414?text=${fullMessage}`
+      return `https://wa.me/${storeWhatsApp}?text=${fullMessage}`
     }
     const defaultMsg = encodeURIComponent('Hola! Quiero información sobre sus productos. Gracias!')
-    return `https://wa.me/51933667414?text=${defaultMsg}`
+    return `https://wa.me/${storeWhatsApp}?text=${defaultMsg}`
   }, [cart.items, cart.totalPrice])
 
   const handleAddToCart = (product: Product) => {
@@ -600,7 +598,7 @@ Total: S/ ${createdOrder.total.toFixed(2)}
 Estado: ${createdOrder.status}
 
 Gracias!`)
-    window.open(`https://wa.me/51933667414?text=${message}`, '_blank')
+    window.open(`https://wa.me/${storeWhatsApp}?text=${message}`, '_blank')
   }
 
   return (

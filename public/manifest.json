@@ -1,14 +1,14 @@
 {
-  "name": "Urban Style - Premium Streetwear",
-  "short_name": "Urban Style",
-  "description": "Tu tienda premium de streetwear. Moda urbana, calidad y diseño.",
+  "name": "Tienda Online Oficial",
+  "short_name": "Tienda Online",
+  "description": "Plataforma #1 en Perú para crear tu tienda online profesional. Catálogo digital, carrito de compras, WhatsApp integrado y más.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "orientation": "portrait-primary",
-  "categories": ["shopping", "fashion", "lifestyle"],
+  "categories": ["shopping", "business"],
   "icons": [
     {
       "src": "/icon.svg",

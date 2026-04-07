@@ -27,10 +27,12 @@ import {
   Instagram,
   Twitter,
   Download,
-  Eye,
   Clock,
   Lock,
   Loader2,
+  ShieldCheck,
+  Headphones,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -196,57 +198,26 @@ function CountdownBanner() {
   )
 }
 
-// ─── Social Proof Activity Feed ────────────────────────────────────
-function ActivityFeed() {
-  const activities = [
-    { text: '¡Bienvenido a Tienda Online Oficial!', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: 'Carlos completó su primera venta — S/350', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: '+3 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
-    { text: 'Ana de Cusco acaba de registrarse', icon: <UserPlus className="w-3.5 h-3.5" /> },
-    { text: 'Pedro completó su primera venta — S/580', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: '+3 ventas procesadas en la última hora', icon: <BarChart3 className="w-3.5 h-3.5" /> },
-    { text: 'Lucía de Arequipa acaba de crear su tienda', icon: <Store className="w-3.5 h-3.5" /> },
-    { text: 'Roberto completó su primera venta — S/220', icon: <Zap className="w-3.5 h-3.5" /> },
-    { text: '+5 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
-    { text: 'Gaby de Trujillo se unió a Premium', icon: <Star className="w-3.5 h-3.5" /> },
-  ]
-
-  const [currentIndex, setCurrentIndex] = useState(0)
-  // Use a random stable visitor count on mount via useRef
-  const visitorCountRef = useRef(Math.floor(Math.random() * 121) + 80)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % activities.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [activities.length])
-
+// ─── Trust Banner ─────────────────────────────────────────────────
+function TrustBanner() {
   return (
     <div className="bg-neutral-50 border-y border-neutral-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm text-neutral-600 min-h-[24px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center gap-2"
-            >
-              <span className="flex items-center justify-center w-7 h-7 bg-green-100 text-green-600 rounded-full shrink-0">
-                {activities[currentIndex].icon}
-              </span>
-              <span className="truncate">{activities[currentIndex].text}</span>
-            </motion.div>
-          </AnimatePresence>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-center gap-6 sm:gap-10 text-sm text-neutral-600">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-green-500" />
+          <span className="font-medium">Pagos seguros</span>
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-neutral-500 shrink-0">
-          <Eye className="w-3.5 h-3.5 text-green-500" />
-          <span className="font-medium text-neutral-700">{visitorCountRef.current}</span>
-          <span className="hidden sm:inline">personas viendo esto ahora</span>
-          <span className="sm:hidden">viendo ahora</span>
+        <div className="hidden sm:flex items-center gap-2">
+          <Zap className="w-4 h-4 text-amber-500" />
+          <span className="font-medium">Activación inmediata</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Headphones className="w-4 h-4 text-blue-500" />
+          <span className="font-medium">Soporte 24/7</span>
+        </div>
+        <div className="hidden sm:flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-purple-500" />
+          <span className="font-medium">Sin tarjeta requerida</span>
         </div>
       </div>
     </div>
@@ -254,7 +225,7 @@ function ActivityFeed() {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────
-const WHATSAPP_NUMBER = '51933667414'
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414'
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80&auto=format'
 
 const brands = ['KUNA', 'ÑAÑA', 'MISTURA', 'ALPACA', 'TUMI', 'INTI', 'WAYKI', 'CHAKRA', 'WARI', 'PAYKU']
@@ -835,41 +806,6 @@ export default function SaasLanding() {
           </motion.div>
         </div>
 
-        {/* Decorative floating cards - desktop only */}
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          className="hidden xl:block absolute top-1/4 left-8 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-green-400" />
-            </div>
-            <div>
-              <p className="text-white text-sm font-semibold">+8 ventas hoy</p>
-              <p className="text-neutral-400 text-xs">↑ 12% vs ayer</p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="hidden xl:block absolute bottom-1/3 right-8 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-              <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-            </div>
-            <div>
-              <p className="text-white text-sm font-semibold">4.9/5 estrellas</p>
-              <p className="text-neutral-400 text-xs">+200 reseñas</p>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Bottom fade to white */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
@@ -913,8 +849,8 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* ═══ Social Proof Activity Feed ═══ */}
-      <ActivityFeed />
+      {/* ═══ Trust Banner ═══ */}
+      <TrustBanner />
 
       {/* ═══════════════════ BRAND LOGOS MARQUEE ═══════════════════ */}
       <section className="py-8 bg-neutral-50 border-b border-neutral-200">
