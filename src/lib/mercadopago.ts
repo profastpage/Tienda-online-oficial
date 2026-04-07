@@ -1,16 +1,14 @@
-import mercadopago from 'mercadopago'
+// MercadoPago SDK — dynamic import to avoid ESM/CJS bundling issues with Turbopack
+// The SDK uses default exports that don't work correctly with static imports in Next.js 16
 
-// @ts-expect-error — mercadopago SDK lacks proper TS exports
-const mpConfig = new mercadopago.MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN || '',
-})
+let _mp: any = null
 
-// @ts-expect-error — mercadopago SDK lacks proper TS exports
-const preferenceClient = new mercadopago.Preference(mpConfig)
-// @ts-expect-error — mercadopago SDK lacks proper TS exports
-const paymentClient = new mercadopago.Payment(mpConfig)
-// @ts-expect-error — mercadopago SDK lacks proper TS exports
-const merchantOrderClient = new mercadopago.MerchantOrder(mpConfig)
+async function getMP() {
+  if (!_mp) {
+    _mp = await import('mercadopago')
+  }
+  return _mp
+}
 
 export interface PreferenceItem {
   name: string
@@ -29,6 +27,13 @@ export interface CreatePreferenceData {
 }
 
 export async function createPreference(data: CreatePreferenceData) {
+  const mp = await getMP()
+  const mpConfig = new mp.MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN || '',
+  })
+
+  const preferenceClient = new mp.Preference(mpConfig)
+
   const siteUrl = data.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
   const items = data.items.map((item) => ({
@@ -74,11 +79,21 @@ export async function createPreference(data: CreatePreferenceData) {
 }
 
 export async function getPayment(paymentId: string) {
+  const mp = await getMP()
+  const mpConfig = new mp.MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN || '',
+  })
+  const paymentClient = new mp.Payment(mpConfig)
   const payment: any = await paymentClient.get({ id: Number(paymentId) })
   return payment
 }
 
 export async function getMerchantOrder(merchantOrderId: string) {
+  const mp = await getMP()
+  const mpConfig = new mp.MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN || '',
+  })
+  const merchantOrderClient = new mp.MerchantOrder(mpConfig)
   const order: any = await merchantOrderClient.get({ merchantOrderId: Number(merchantOrderId) })
   return order
 }
