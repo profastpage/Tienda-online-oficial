@@ -17,7 +17,7 @@ interface AuthState {
   token: string | null
   _hydrated: boolean
   setUser: (user: User | null, token?: string | null) => void
-  logout: () => void
+  logout: () => Promise<void>
   hydrate: () => void
   /** Get headers object with Authorization for fetch calls */
   getAuthHeaders: () => Record<string, string>
@@ -39,14 +39,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     set({ user, token: token || null })
   },
-  logout: () => {
+  logout: async () => {
+    // Clear client-side state immediately
     if (typeof window !== 'undefined') {
       localStorage.removeItem('user')
       localStorage.removeItem('auth-token')
-      // Clear the HTTP-only cookie by expiring it
-      document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
     }
     set({ user: null, token: null })
+    // Clear the httpOnly cookie via server endpoint (client JS can't delete httpOnly cookies)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      // Silently fail — the cookie will expire in 7 days anyway
+    }
   },
   hydrate: () => {
     try {

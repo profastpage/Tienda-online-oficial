@@ -144,7 +144,7 @@ function SidebarNav({
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, hydrate } = useAuthStore()
+  const { user, _hydrated: hydrated, logout, hydrate } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -161,13 +161,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setMobileOpen(false)
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
     setMobileOpen(false)
-    router.push('/')
+    await logout()
+    router.push('/login')
   }
 
-  if (!user) {
+  // Redirect to login if no user after hydration
+  if (!user && !hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+  if (!user && hydrated) {
+    router.push('/login')
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-100">
         <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />

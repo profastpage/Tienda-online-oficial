@@ -170,10 +170,10 @@ export function AdminPanel() {
     }
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
     setMobileOpen(false)
-    router.push('/')
+    await logout()
+    router.push('/login')
   }
 
   if (!user) return null

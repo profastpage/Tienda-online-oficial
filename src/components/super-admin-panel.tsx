@@ -158,7 +158,7 @@ export default function SuperAdminPanel() {
               <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Actualizar</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/')} className="text-neutral-500">
+            <Button variant="ghost" size="sm" onClick={async () => { const { logout } = await import('@/stores/auth-store').then(m => m.useAuthStore.getState()); await logout(); router.push('/login') }} className="text-neutral-500">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>

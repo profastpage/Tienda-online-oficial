@@ -22,6 +22,7 @@ function checkRateLimit(ip: string, max: number = 60, windowMs: number = 60000):
 const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/register',
+  '/api/auth/logout',
   '/api/products',
   '/api/categories',
   '/api/testimonials',

@@ -678,7 +678,7 @@ Gracias!`)
                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold">{user.name.charAt(0)}</div>
                     <span className="max-w-[80px] truncate">{user.name}</span>
                   </Button>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground/70 hover:text-red-500 h-8 w-8" onClick={() => logout()}>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground/70 hover:text-red-500 h-8 w-8" onClick={async () => { await logout(); router.push('/login') }}>
                     <LogOut className="w-4 h-4" />
                   </Button>
                 </div>
