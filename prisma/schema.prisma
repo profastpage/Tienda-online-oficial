@@ -23,6 +23,7 @@ model Store {
   orders         Order[]
   testimonials   Testimonial[]
   paymentMethods PaymentMethod[]
+  mercadoPagoPayments MercadoPagoPayment[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -101,6 +102,7 @@ model Order {
   user             StoreUser?    @relation(fields: [userId], references: [id])
   paymentMethodId  String?
   paymentMethod    PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  mercadoPagoPayment MercadoPagoPayment?
   items            OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -169,4 +171,28 @@ model Lead {
 
   @@index([status])
   @@index([source])
+}
+
+model MercadoPagoPayment {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  storeId         String
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  preferenceId    String
+  paymentId       String?
+  status          String   @default("pending")
+  paymentType     String   @default("")
+  lastFourDigits  String   @default("")
+  installments    Int      @default(1)
+  payerEmail      String   @default("")
+  payerDocType    String   @default("")
+  payerDocNumber  String   @default("")
+  metadata        String   @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([status])
+  @@index([paymentId])
 }

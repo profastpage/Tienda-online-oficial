@@ -31,6 +31,10 @@ const PUBLIC_PATHS = [
   '/api/upload',
   '/api/chat',
   '/api/route',
+  '/api/payments/mercadopago/webhook',
+  '/api/payments/mercadopago/success',
+  '/api/payments/mercadopago/failure',
+  '/api/payments/mercadopago/pending',
 ]
 
 // Paths that require admin role

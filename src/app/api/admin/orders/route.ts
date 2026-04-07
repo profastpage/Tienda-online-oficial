@@ -8,6 +8,19 @@ async function fetchOrdersWithPaymentMethod(db: any, where: Record<string, unkno
     include: {
       items: true,
       paymentMethod: { select: { name: true, type: true } },
+      mercadoPagoPayment: {
+        select: {
+          id: true,
+          preferenceId: true,
+          paymentId: true,
+          status: true,
+          paymentType: true,
+          lastFourDigits: true,
+          installments: true,
+          payerEmail: true,
+          createdAt: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -30,6 +43,19 @@ async function fetchOrderWithPaymentMethod(db: any, id: string, data: Record<str
     include: {
       items: true,
       paymentMethod: { select: { name: true, type: true } },
+      mercadoPagoPayment: {
+        select: {
+          id: true,
+          preferenceId: true,
+          paymentId: true,
+          status: true,
+          paymentType: true,
+          lastFourDigits: true,
+          installments: true,
+          payerEmail: true,
+          createdAt: true,
+        },
+      },
     },
   })
 }
@@ -67,7 +93,7 @@ export async function GET(request: Request) {
     try {
       orders = await fetchOrdersWithPaymentMethod(db, where)
     } catch {
-      // PaymentMethod table may not exist on fresh deploy
+      // MercadoPagoPayment or PaymentMethod table may not exist on fresh deploy
       orders = await fetchOrdersWithoutPaymentMethod(db, where)
     }
     return NextResponse.json(orders)
@@ -95,7 +121,7 @@ export async function PUT(request: Request) {
     try {
       order = await fetchOrderWithPaymentMethod(db, id, updateData)
     } catch {
-      // PaymentMethod table may not exist on fresh deploy
+      // MercadoPagoPayment or PaymentMethod table may not exist on fresh deploy
       order = await fetchOrderWithoutPaymentMethod(db, id, updateData)
     }
     return NextResponse.json(order)

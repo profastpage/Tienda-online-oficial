@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid } from 'lucide-react'
+import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -249,6 +249,7 @@ export default function Storefront() {
   const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; type: string; name: string; qrCode: string; accountNumber: string; accountHolder: string; bankName: string}>>([])
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
   const [createdOrder, setCreatedOrder] = useState<{ id: string; orderNumber: string; status: string; total: number; items: any[] } | null>(null)
+  const [mpCheckoutStatus, setMpCheckoutStatus] = useState<string | null>(null)
 
   // Scroll listener
   useEffect(() => {
@@ -384,7 +385,86 @@ export default function Storefront() {
     return '51' + digits
   }
 
+  const isMercadoPagoSelected = selectedPaymentMethod
+    ? paymentMethods.find((m) => m.id === selectedPaymentMethod)?.type === 'mercadopago'
+    : false
+
+  const handleMercadoPagoCheckout = async () => {
+    setCheckoutLoading(true)
+    try {
+      // Step 1: Create the order
+      const formattedPhone = formatPhone(customerPhone)
+      const checkoutResponse = await fetch('/api/customer/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: 'd1whgpglbzf8d42et5xp',
+          customerName,
+          customerPhone: formattedPhone,
+          customerAddress,
+          items: cart.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            image: item.image,
+          })),
+          notes: orderNotes,
+          paymentMethodId: selectedPaymentMethod || null,
+          userId: user?.id || null,
+        }),
+      })
+      const checkoutData = await checkoutResponse.json()
+      if (!checkoutResponse.ok || !checkoutData.id) {
+        throw new Error(checkoutData.message || checkoutData.error || 'Error al crear el pedido')
+      }
+
+      // Step 2: Create MercadoPago preference
+      const mpResponse = await fetch('/api/payments/mercadopago/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: checkoutData.id,
+          storeId: 'd1whgpglbzf8d42et5xp',
+          items: cart.items.map((item) => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+          })),
+          customerName,
+          customerEmail: user?.email || undefined,
+        }),
+      })
+      const mpData = await mpResponse.json()
+      if (!mpResponse.ok || !mpData.initPoint) {
+        throw new Error(mpData.error || 'Error al crear la preferencia de pago')
+      }
+
+      // Step 3: Redirect to MercadoPago checkout
+      toast({
+        title: 'Redirigiendo a MercadoPago...',
+        description: 'Serás redirigido para completar el pago de forma segura.',
+        duration: 3000,
+      })
+      setCreatedOrder(checkoutData)
+      cart.clearCart()
+      window.location.href = mpData.initPoint
+    } catch (error: any) {
+      console.error('[MercadoPago Checkout] Error:', error)
+      toast({ title: 'Error con MercadoPago', description: error.message || 'Intenta de nuevo.', variant: 'destructive' })
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
+
   const handleCheckout = async () => {
+    if (isMercadoPagoSelected) {
+      await handleMercadoPagoCheckout()
+      return
+    }
     setCheckoutLoading(true)
     try {
       const formattedPhone = formatPhone(customerPhone)
@@ -427,6 +507,18 @@ export default function Storefront() {
     }
   }
 
+  // Check URL params for MercadoPago redirect on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const checkoutStatus = params.get('checkout_status')
+    const paymentMethod = params.get('payment_method')
+    if (checkoutStatus && paymentMethod === 'mercadopago') {
+      setMpCheckoutStatus(checkoutStatus)
+      // Clean URL params without reload
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
   const openCheckout = () => {
     cart.closeCart()
     setCheckoutStep(1)
@@ -437,6 +529,7 @@ export default function Storefront() {
     setTermsAccepted(false)
     setSelectedPaymentMethod('')
     setCreatedOrder(null)
+    setMpCheckoutStatus(null)
     setTimeout(() => setCheckoutOpen(true), 150)
   }
 
@@ -625,6 +718,51 @@ Gracias!`)
       </header>
 
       <main className="flex-1">
+        {/* MercadoPago Checkout Status Banner */}
+        {mpCheckoutStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed top-0 left-0 right-0 z-[100] p-3"
+          >
+            <div className={`max-w-lg mx-auto rounded-xl p-4 shadow-lg border flex items-start gap-3 ${
+              mpCheckoutStatus === 'success'
+                ? 'bg-green-50 border-green-200 dark:bg-green-950/50 dark:border-green-800'
+                : mpCheckoutStatus === 'pending'
+                ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:border-amber-800'
+                : 'bg-red-50 border-red-200 dark:bg-red-950/50 dark:border-red-800'
+            }`}>
+              {mpCheckoutStatus === 'success' ? (
+                <ShieldCheck className="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+              ) : mpCheckoutStatus === 'pending' ? (
+                <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              ) : (
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm text-foreground">
+                  {mpCheckoutStatus === 'success' && '¡Pago aprobado! Tu pedido está confirmado.'}
+                  {mpCheckoutStatus === 'pending' && 'Tu pago está siendo procesado.'}
+                  {mpCheckoutStatus === 'failure' && 'El pago fue rechazado.'}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {mpCheckoutStatus === 'success' && 'Te notificaremos cuando tu pedido sea despachado.'}
+                  {mpCheckoutStatus === 'pending' && 'Te notificaremos cuando se confirme el pago.'}
+                  {mpCheckoutStatus === 'failure' && 'Intenta con otro método de pago o comunícate con nosotros.'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => setMpCheckoutStatus(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-muted via-background to-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
@@ -2273,22 +2411,42 @@ Gracias!`)
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Atrás
                 </Button>
-                <Button
-                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
-                  onClick={handleCheckout}
-                  disabled={!termsAccepted || checkoutLoading || (paymentMethods.length > 0 && !selectedPaymentMethod)}
-                >
-                  {checkoutLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Procesando...
-                    </>
-                  ) : (
-                    <>
-                      Confirmar Pedido · S/ {orderTotal.toFixed(2)}
-                    </>
-                  )}
-                </Button>
+                {isMercadoPagoSelected ? (
+                  <Button
+                    className="rounded-xl bg-[#009ee3] hover:bg-[#0086c1] text-white font-semibold"
+                    onClick={handleCheckout}
+                    disabled={!termsAccepted || checkoutLoading}
+                  >
+                    {checkoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Redirigiendo...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pagar con MercadoPago · S/ {orderTotal.toFixed(2)}
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
+                    onClick={handleCheckout}
+                    disabled={!termsAccepted || checkoutLoading || (paymentMethods.length > 0 && !selectedPaymentMethod)}
+                  >
+                    {checkoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        Confirmar Pedido · S/ {orderTotal.toFixed(2)}
+                      </>
+                    )}
+                  </Button>
+                )}
               </DialogFooter>
             </div>
           )}
