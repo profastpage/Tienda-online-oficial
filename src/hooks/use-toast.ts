@@ -10,6 +10,7 @@ import type {
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
+const TOAST_DEFAULT_DURATION = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -140,7 +141,9 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+type Toast = Omit<ToasterToast, "id"> & {
+  duration?: number
+}
 
 function toast({ ...props }: Toast) {
   const id = genId()
@@ -151,6 +154,8 @@ function toast({ ...props }: Toast) {
       toast: { ...props, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  const duration = props.duration ?? TOAST_DEFAULT_DURATION
 
   dispatch({
     type: "ADD_TOAST",
@@ -163,6 +168,13 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  // Auto-dismiss after duration
+  if (duration > 0) {
+    setTimeout(() => {
+      dismiss()
+    }, duration)
+  }
 
   return {
     id: id,

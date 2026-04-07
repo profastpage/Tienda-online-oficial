@@ -179,6 +179,7 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
           toast({
             title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
             description: product.name,
+            duration: 2000,
           })
         }}
       >
@@ -868,6 +869,7 @@ Gracias!`)
                                 toast({
                                   title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
                                   description: product.name,
+                                  duration: 2000,
                                 })
                               }}
                             >
@@ -1928,6 +1930,7 @@ Gracias!`)
                       toast({
                         title: wishlist.isInWishlist(selectedProduct.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
                         description: selectedProduct.name,
+                        duration: 2000,
                       })
                     }}
                   >
