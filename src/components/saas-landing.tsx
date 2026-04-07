@@ -42,9 +42,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { useViewStore } from '@/stores/view-store'
 import { useToast } from '@/hooks/use-toast'
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 
 // ─── WhatsApp Icon SVG ─────────────────────────────────────────────
 function WhatsAppIcon({ className = 'w-5 h-5' }: { className?: string }) {
@@ -499,7 +499,7 @@ function StarRating({ rating }: { rating: number }) {
 
 // ─── Main Component ────────────────────────────────────────────────
 export default function SaasLanding() {
-  const { setView } = useViewStore()
+  const router = useRouter()
   const { toast } = useToast()
   const [scrollY, setScrollY] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -633,13 +633,13 @@ export default function SaasLanding() {
             ))}
             <Separator className="my-3" />
             <button
-              onClick={() => { setView('auth'); setMobileMenuOpen(false) }}
+              onClick={() => { router.push('/login'); setMobileMenuOpen(false) }}
               className="block w-full text-left px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
             >
               Iniciar Sesión
             </button>
             <button
-              onClick={() => { setView('register'); setMobileMenuOpen(false) }}
+              onClick={() => { router.push('/registro'); setMobileMenuOpen(false) }}
               className="block w-full text-left px-4 py-3 text-amber-600 hover:bg-amber-50 rounded-lg text-sm font-medium transition-colors"
             >
               Registrarse
@@ -692,7 +692,7 @@ export default function SaasLanding() {
                     variant="ghost"
                     size="icon"
                     className="text-neutral-300 hover:text-white"
-                    onClick={() => setView('auth')}
+                    onClick={() => router.push('/login')}
                   >
                     <LogIn className="w-4 h-4" />
                   </Button>
@@ -700,14 +700,14 @@ export default function SaasLanding() {
                     variant="ghost"
                     size="icon"
                     className="text-neutral-300 hover:text-white"
-                    onClick={() => setView('register')}
+                    onClick={() => router.push('/registro')}
                   >
                     <UserPlus className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
                     className="bg-amber-500 hover:bg-amber-600 text-white"
-                    onClick={() => setView('register')}
+                    onClick={() => router.push('/registro')}
                   >
                     Crear mi Tienda
                   </Button>
@@ -779,7 +779,7 @@ export default function SaasLanding() {
             <Button
               size="lg"
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/30"
-              onClick={() => setView('register')}
+              onClick={() => router.push('/registro')}
             >
               Crear Tienda
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -788,7 +788,7 @@ export default function SaasLanding() {
               size="lg"
               variant="outline"
               className="rounded-full px-8 h-13 text-base font-semibold border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
-              onClick={() => setView('store-demo')}
+              onClick={() => router.push('/demo')}
             >
               Ver Demo
               <ChevronRight className="ml-2 w-4 h-4" />
@@ -889,7 +889,7 @@ export default function SaasLanding() {
                 variant="ghost"
                 size="icon"
                 className="text-white hover:bg-white/20"
-                onClick={() => setView('auth')}
+                onClick={() => router.push('/login')}
               >
                 <LogIn className="w-5 h-5" />
               </Button>
@@ -897,14 +897,14 @@ export default function SaasLanding() {
                 variant="ghost"
                 size="icon"
                 className="text-white hover:bg-white/20"
-                onClick={() => setView('register')}
+                onClick={() => router.push('/registro')}
               >
                 <UserPlus className="w-5 h-5" />
               </Button>
               <Button
                 size="sm"
                 className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-4 font-semibold"
-                onClick={() => setView('register')}
+                onClick={() => router.push('/registro')}
               >
                 Crear Tienda
               </Button>
@@ -1019,7 +1019,7 @@ export default function SaasLanding() {
             <Button
               size="lg"
               className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-12 font-semibold shadow-lg shadow-amber-500/20"
-              onClick={() => setView('register')}
+              onClick={() => router.push('/registro')}
             >
               Crear Tienda Ahora
               <ArrowRight className="ml-2 w-4 h-4" />
@@ -1133,7 +1133,7 @@ export default function SaasLanding() {
                           ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
                           : 'bg-neutral-900 hover:bg-neutral-800 text-white'
                       }`}
-                      onClick={(e) => { e.stopPropagation(); setView('register') }}
+                      onClick={(e) => { e.stopPropagation(); router.push('/registro') }}
                     >
                       {plan.cta}
                     </Button>
@@ -1196,7 +1196,7 @@ export default function SaasLanding() {
                             ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
                             : 'bg-neutral-900 hover:bg-neutral-800 text-white'
                         }`}
-                        onClick={() => { setExpandedPlan(null); setView('register') }}
+                        onClick={() => { setExpandedPlan(null); router.push('/registro') }}
                       >
                         {plan.cta}
                       </Button>
@@ -1329,7 +1329,7 @@ export default function SaasLanding() {
                   <Button
                     size="lg"
                     className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/20"
-                    onClick={() => setView('register')}
+                    onClick={() => router.push('/registro')}
                   >
                     Crear mi Tienda
                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -1498,7 +1498,7 @@ export default function SaasLanding() {
                   <Button
                     size="lg"
                     className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-10 h-14 text-base font-semibold shadow-xl shadow-amber-500/25"
-                    onClick={() => setView('register')}
+                    onClick={() => router.push('/registro')}
                   >
                     Crear mi Tienda
                     <ArrowRight className="ml-2 w-5 h-5" />

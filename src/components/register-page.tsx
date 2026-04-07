@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useViewStore } from '@/stores/view-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { motion } from 'framer-motion'
 import { ShoppingBag, ArrowRight, ArrowLeft, Store, Check, Eye, EyeOff, Loader2, Shield, Zap, HeadphonesIcon, Smartphone, BarChart3, Bot, MessageCircle, Globe, Clock, Lock, Settings, CreditCard } from 'lucide-react'
@@ -10,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
+import { useRouter } from 'next/navigation'
 
 const PLANS = [
   {
@@ -110,7 +110,7 @@ function Star({ className = 'w-5 h-5' }: { className?: string }) {
 }
 
 export default function RegisterPage() {
-  const { setView } = useViewStore()
+  const router = useRouter()
   const { setUser } = useAuthStore()
   const { toast } = useToast()
   const [step, setStep] = useState(1)
@@ -159,7 +159,7 @@ export default function RegisterPage() {
 
       setUser(data, data.token)
       toast({ title: 'Tienda creada exitosamente!', description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.`, duration: 3000 })
-      setView('admin')
+      router.push('/admin')
     } catch (err: unknown) {
       toast({ title: 'Error al registrar', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' })
     } finally {
@@ -174,7 +174,7 @@ export default function RegisterPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-100">
         <div className="mx-auto max-w-4xl px-4 flex h-14 items-center justify-between">
-          <button onClick={() => setView('landing')} className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Volver
           </button>

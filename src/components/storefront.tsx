@@ -15,8 +15,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCartStore } from '@/stores/cart-store'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useAuthStore } from '@/stores/auth-store'
-import { useViewStore } from '@/stores/view-store'
 import { useTheme } from 'next-themes'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import AiChat from '@/components/ai-chat'
 
@@ -287,7 +287,7 @@ export default function Storefront() {
   const cart = useCartStore()
   const wishlist = useWishlistStore()
   const { user, logout } = useAuthStore()
-  const { setView } = useViewStore()
+  const router = useRouter()
 
   // Checkout state
   const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -674,7 +674,7 @@ Gracias!`)
               </Button>
               {user ? (
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => setView(user.role === 'admin' ? 'admin' : 'customer')}>
+                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => router.push(user.role === 'admin' ? '/admin' : '/cliente')}>
                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold">{user.name.charAt(0)}</div>
                     <span className="max-w-[80px] truncate">{user.name}</span>
                   </Button>
@@ -683,7 +683,7 @@ Gracias!`)
                   </Button>
                 </div>
               ) : (
-                <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground" onClick={() => setView('auth')}>
+                <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground" onClick={() => router.push('/login')}>
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline text-xs font-medium">Ingresar</span>
                 </Button>
@@ -2584,7 +2584,7 @@ Gracias!`)
                   <Button
                     variant="outline"
                     className="w-full rounded-xl font-semibold"
-                    onClick={() => { closeCheckoutAndCleanup(); setView('customer') }}
+                    onClick={() => { closeCheckoutAndCleanup(); router.push('/cliente') }}
                   >
                     Ver mis pedidos
                   </Button>

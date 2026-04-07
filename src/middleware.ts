@@ -51,6 +51,23 @@ const SUPER_ADMIN_PATHS = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ═══ Protect authenticated PAGE routes ═══
+  // Redirect to login if no auth token present
+  if (pathname.startsWith('/admin') || pathname.startsWith('/cliente') || pathname.startsWith('/super-admin')) {
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const jwtToken = token || cookieToken
+
+    if (!jwtToken) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    return NextResponse.next()
+  }
+
+  // ═══ API route protection ═══
   // Skip non-API routes
   if (!pathname.startsWith('/api/')) {
     return NextResponse.next()
@@ -126,5 +143,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/api/:path*', '/admin/:path*', '/cliente/:path*', '/super-admin/:path*'],
 }

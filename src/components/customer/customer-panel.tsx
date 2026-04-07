@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -23,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/auth-store'
 import { useViewStore, type CustomerSection } from '@/stores/view-store'
+import { CUSTOMER_SECTION_URLS, URL_TO_CUSTOMER_SECTION } from '@/lib/navigation'
 import { CustomerOrders } from './customer-orders'
 import { CustomerProfile } from './customer-profile'
 
@@ -135,7 +137,7 @@ function SidebarNav({
 /* Dashboard overview for customers */
 function CustomerDashboard() {
   const user = useAuthStore((s) => s.user)
-  const setCustomerSection = useViewStore((s) => s.setCustomerSection)
+  const router = useRouter()
   const [stats, setStats] = useState({ totalOrders: 0, pendingOrders: 0, deliveredOrders: 0, totalSpent: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -215,7 +217,7 @@ function CustomerDashboard() {
         </p>
         <Button
           className="mt-4 bg-white text-neutral-900 hover:bg-neutral-100 rounded-xl h-10 text-sm font-semibold"
-          onClick={() => setCustomerSection('orders')}
+          onClick={() => router.push('/cliente/pedidos')}
         >
           Ver mis pedidos
           <ChevronRight className="ml-1 w-4 h-4" />
@@ -262,7 +264,7 @@ function CustomerDashboard() {
       >
         <Card
           className="rounded-xl border-neutral-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-          onClick={() => setCustomerSection('orders')}
+          onClick={() => router.push('/cliente/pedidos')}
         >
           <CardContent className="p-5">
             <div className="flex items-center gap-4">
@@ -279,7 +281,7 @@ function CustomerDashboard() {
         </Card>
         <Card
           className="rounded-xl border-neutral-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-          onClick={() => setCustomerSection('profile')}
+          onClick={() => router.push('/cliente/perfil')}
         >
           <CardContent className="p-5">
             <div className="flex items-center gap-4">
@@ -301,18 +303,32 @@ function CustomerDashboard() {
 
 export function CustomerPanel() {
   const { user, logout } = useAuthStore()
-  const { customerSection, setCustomerSection, setView } = useViewStore()
+  const { customerSection, setCustomerSection } = useViewStore()
+  const router = useRouter()
+  const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Sync customer section from URL
+  useEffect(() => {
+    const section = URL_TO_CUSTOMER_SECTION[pathname]
+    if (section && section !== customerSection) {
+      setCustomerSection(section as CustomerSection)
+    }
+  }, [pathname, customerSection, setCustomerSection])
 
   const handleNavigate = (section: CustomerSection) => {
     setCustomerSection(section)
     setMobileOpen(false)
+    const url = CUSTOMER_SECTION_URLS[section]
+    if (url) {
+      router.push(url)
+    }
   }
 
   const handleLogout = () => {
     logout()
-    setView('landing')
     setMobileOpen(false)
+    router.push('/')
   }
 
   if (!user) return null

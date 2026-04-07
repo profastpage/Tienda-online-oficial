@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Package,
@@ -22,6 +23,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuthStore } from '@/stores/auth-store'
 import { useViewStore, type AdminSection } from '@/stores/view-store'
+import { ADMIN_SECTION_URLS, URL_TO_ADMIN_SECTION } from '@/lib/navigation'
 import { AdminDashboard } from './admin-dashboard'
 import { AdminProducts } from './admin-products'
 import { AdminCategories } from './admin-categories'
@@ -146,18 +148,32 @@ function SidebarNav({
 
 export function AdminPanel() {
   const { user, logout } = useAuthStore()
-  const { adminSection, setAdminSection, setView } = useViewStore()
+  const { adminSection, setAdminSection } = useViewStore()
+  const router = useRouter()
+  const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Sync admin section from URL
+  useEffect(() => {
+    const section = URL_TO_ADMIN_SECTION[pathname]
+    if (section && section !== adminSection) {
+      setAdminSection(section as AdminSection)
+    }
+  }, [pathname, adminSection, setAdminSection])
 
   const handleNavigate = (section: AdminSection) => {
     setAdminSection(section)
     setMobileOpen(false)
+    const url = ADMIN_SECTION_URLS[section]
+    if (url) {
+      router.push(url)
+    }
   }
 
   const handleLogout = () => {
     logout()
-    setView('landing')
     setMobileOpen(false)
+    router.push('/')
   }
 
   if (!user) return null

@@ -9,16 +9,19 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/auth-store'
-import { useViewStore } from '@/stores/view-store'
 import { useToast } from '@/hooks/use-toast'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function AuthPage() {
+function AuthPageContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [regRole, setRegRole] = useState<'customer' | 'admin'>('customer')
   const { toast } = useToast()
   const { setUser } = useAuthStore()
-  const { setView } = useViewStore()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get('redirect')
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -37,7 +40,8 @@ export default function AuthPage() {
       if (!res.ok) throw new Error(data.error)
 
       setUser(data, data.token)
-      setView(data.role === 'admin' ? 'admin' : 'customer')
+      const targetUrl = redirectUrl || (data.role === 'admin' ? '/admin' : '/cliente')
+      router.push(targetUrl)
       toast({ title: `¡Bienvenido, ${data.name}!`, description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente', duration: 3000 })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al iniciar sesión', variant: 'destructive' })
@@ -66,7 +70,8 @@ export default function AuthPage() {
       if (!res.ok) throw new Error(data.error)
 
       setUser(data, data.token)
-      setView(data.role === 'admin' ? 'admin' : 'customer')
+      const targetUrl = data.role === 'admin' ? '/admin' : '/cliente'
+      router.push(targetUrl)
       toast({ title: `¡Cuenta creada!`, description: `Bienvenido a ${data.storeName}`, duration: 3000 })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al registrar', variant: 'destructive' })
@@ -80,13 +85,13 @@ export default function AuthPage() {
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <a href="#" className="flex items-center gap-2.5" onClick={() => setView('landing')}>
+          <a href="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-neutral-900 rounded-xl flex items-center justify-center">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-neutral-900">URBAN STYLE</span>
           </a>
-          <Button variant="ghost" onClick={() => setView('landing')}>
+          <Button variant="ghost" onClick={() => router.push('/')}>
             ← Volver a la tienda
           </Button>
         </div>
@@ -227,5 +232,17 @@ export default function AuthPage() {
         </motion.div>
       </main>
     </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <AuthPageContent />
+    </Suspense>
   )
 }

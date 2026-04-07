@@ -1,22 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useViewStore } from '@/stores/view-store'
 import { useAuthStore } from '@/stores/auth-store'
 import SaasLanding from '@/components/saas-landing'
-import Storefront from '@/components/storefront'
-import AuthPage from '@/components/auth-page'
-import RegisterPage from '@/components/register-page'
-import { AdminPanel } from '@/components/admin/admin-panel'
-import { CustomerPanel } from '@/components/customer/customer-panel'
-import SuperAdminPanel from '@/components/super-admin-panel'
+import { VIEW_URLS } from '@/lib/navigation'
 
 export default function Home() {
   const view = useViewStore((s) => s.view)
-  const setView = useViewStore((s) => s.setView)
   const hydrateView = useViewStore((s) => s.hydrate)
   const hydrateAuth = useAuthStore((s) => s.hydrate)
   const hydrated = useViewStore((s) => s._hydrated)
+  const router = useRouter()
 
   // Hydrate stores from localStorage on mount (client-side only)
   useEffect(() => {
@@ -24,16 +20,28 @@ export default function Home() {
     hydrateView()
   }, [])
 
+  // Redirect to correct URL if Zustand view doesn't match current path
+  // This handles backward compat (e.g. user was on /admin and refreshed)
+  useEffect(() => {
+    if (!hydrated) return
+    if (view !== 'landing' && typeof window !== 'undefined' && window.location.pathname === '/') {
+      const url = VIEW_URLS[view]
+      if (url) {
+        router.replace(url)
+      }
+    }
+  }, [hydrated, view, router])
+
   // PWA: Open directly to store when installed as standalone app
   useEffect(() => {
     if (!hydrated) return
     try {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
       if (isStandalone && view === 'landing') {
-        setView('store-demo')
+        router.push('/demo')
       }
     } catch {}
-  }, [hydrated, view, setView])
+  }, [hydrated, view, router])
 
   // Prevent hydration mismatch - render loading until client-side hydrated
   if (!hydrated) {
@@ -47,22 +55,7 @@ export default function Home() {
     )
   }
 
-  switch (view) {
-    case 'landing':
-      return <SaasLanding />
-    case 'register':
-      return <RegisterPage />
-    case 'auth':
-      return <AuthPage />
-    case 'admin':
-      return <AdminPanel />
-    case 'super-admin':
-      return <SuperAdminPanel />
-    case 'customer':
-      return <CustomerPanel />
-    case 'store-demo':
-      return <Storefront />
-    default:
-      return <SaasLanding />
-  }
+  // Root page is always the landing page
+  // All other views are handled by their own route pages (admin, login, demo, etc.)
+  return <SaasLanding />
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useViewStore } from '@/stores/view-store'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Users, ShoppingBag, TrendingUp, Settings, LogOut, Store,
@@ -83,7 +83,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default function SuperAdminPanel() {
-  const { setView } = useViewStore()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [data, setData] = useState<SuperAdminData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -145,7 +145,7 @@ export default function SuperAdminPanel() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 flex h-14 items-center justify-between">
-          <button onClick={() => setView('landing')} className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Inicio
           </button>
@@ -158,7 +158,7 @@ export default function SuperAdminPanel() {
               <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Actualizar</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setView('landing')} className="text-neutral-500">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/')} className="text-neutral-500">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
