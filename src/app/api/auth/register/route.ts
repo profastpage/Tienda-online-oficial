@@ -1,8 +1,18 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { signToken, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
 
 export async function POST(request: Request) {
   try {
+    // Rate limit
+    const ip = getClientIp(request)
+    if (!rateLimit(ip, 5, 60000)) {
+      return NextResponse.json(
+        { error: 'Demasiados intentos. Intenta de nuevo en 1 minuto.' },
+        { status: 429 }
+      )
+    }
+
     const db = await getDb()
     const { email, password, name, phone, address, role, storeName, plan } = await request.json()
 
@@ -12,6 +22,12 @@ export async function POST(request: Request) {
 
     if (password.length < 6) {
       return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
     }
 
     let storeId = ''
@@ -40,15 +56,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Este email ya está registrado' }, { status: 409 })
     }
 
-    // Hash password with bcrypt
-    const bcrypt = await import('bcryptjs')
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await hashPassword(password)
 
     const user = await db.storeUser.create({
       data: { email, password: hashedPassword, name, phone: phone || '', address: address || '', role, storeId },
     })
 
-    return NextResponse.json({ id: user.id, email: user.email, name: user.name, role: user.role, storeId: user.storeId, storeName: storeNameStr || 'Tienda' })
+    // Generate JWT token
+    const token = await signToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      storeId: user.storeId,
+    })
+
+    const response = NextResponse.json({
+      id: user.id, email: user.email, name: user.name, role: user.role,
+      storeId: user.storeId, storeName: storeNameStr || 'Tienda', token,
+    })
+
+    // Set token as HTTP-only cookie
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('[register] Error:', error)
     return NextResponse.json({ error: 'Error al registrar' }, { status: 500 })

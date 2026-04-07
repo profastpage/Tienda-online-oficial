@@ -1,8 +1,25 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/api-auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Rate limit protection
+    if (!checkRateLimit(request, 10, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
+    // Verify SUPER_ADMIN_SECRET from authorization header
+    const superSecret = process.env.SUPER_ADMIN_SECRET
+    if (!superSecret) {
+      return NextResponse.json({ error: 'Super admin access is not configured' }, { status: 503 })
+    }
+
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || authHeader !== `Bearer ${superSecret}`) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
     const db = await getDb()
 
     // Get all stores with user counts and product counts

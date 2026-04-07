@@ -1,18 +1,23 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const db = await getDb()
     const { id } = await params
 
     if (!id) {
       return NextResponse.json({ error: 'id required' }, { status: 400 })
     }
 
+    // Verify store ownership before update
+    const ownership = await verifyStoreOwnership(request, 'paymentMethod', id)
+    if (!ownership.authorized) return ownership.error
+
+    const db = await getDb()
     const body = await request.json()
     const { type, name, isActive, qrCode, accountNumber, accountHolder, bankName, sortOrder } = body
 
@@ -42,13 +47,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const db = await getDb()
     const { id } = await params
 
     if (!id) {
       return NextResponse.json({ error: 'id required' }, { status: 400 })
     }
 
+    // Verify store ownership before delete
+    const ownership = await verifyStoreOwnership(request, 'paymentMethod', id)
+    if (!ownership.authorized) return ownership.error
+
+    const db = await getDb()
     await db.paymentMethod.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch {

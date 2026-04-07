@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/api-auth'
 import {
   seedStore,
   seedCategories,
@@ -16,6 +17,22 @@ function uid() {
 
 export async function POST(request: Request) {
   try {
+    // Rate limit protection
+    if (!checkRateLimit(request, 3, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
+    // Require INIT_DB_SECRET from authorization header
+    const initSecret = process.env.INIT_DB_SECRET
+    if (!initSecret) {
+      return NextResponse.json({ error: 'Database initialization is not configured' }, { status: 503 })
+    }
+
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || authHeader !== `Bearer ${initSecret}`) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
     const body = await request.json().catch(() => ({}))
     // DATABASE_URL from body is informational — getDb() handles connection internally
     // This endpoint is designed to be called after Turso (or another remote DB) is configured

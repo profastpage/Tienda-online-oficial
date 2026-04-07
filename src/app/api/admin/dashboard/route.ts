@@ -1,12 +1,16 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth.error) return auth.error
+
+    // Use storeId from JWT token instead of query param
+    const storeId = auth.user.storeId
+
     const db = await getDb()
-    const { searchParams } = new URL(request.url)
-    const storeId = searchParams.get('storeId')
-    if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
 
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)

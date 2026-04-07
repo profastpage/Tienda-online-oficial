@@ -1,12 +1,21 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth.error) return auth.error
+
     const db = await getDb()
     const { searchParams } = new URL(request.url)
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
+
+    // Verify the admin can only access their own store's data
+    if (storeId !== auth.user.storeId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+    }
 
     const products = await db.product.findMany({
       where: { storeId },
@@ -21,12 +30,18 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth.error) return auth.error
+
     const db = await getDb()
     const body = await request.json()
-    const { storeId, name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, sizes, colors } = body
-    if (!storeId || !name || !slug || !price || !categoryId) {
+    const { name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, sizes, colors } = body
+    if (!name || !slug || !price || !categoryId) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
+
+    // Use storeId from JWT token, not from request body
+    const storeId = auth.user.storeId
 
     const product = await db.product.create({
       data: {
@@ -51,6 +66,10 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const { id, ...data } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+    // Verify store ownership before update
+    const ownership = await verifyStoreOwnership(request, 'product', id)
+    if (!ownership.authorized) return ownership.error
 
     const updateData: Record<string, unknown> = {}
     if (data.name !== undefined) updateData.name = data.name
@@ -78,11 +97,15 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const db = await getDb()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
+    // Verify store ownership before delete
+    const ownership = await verifyStoreOwnership(request, 'product', id)
+    if (!ownership.authorized) return ownership.error
+
+    const db = await getDb()
     await db.product.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch {

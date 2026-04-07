@@ -157,8 +157,8 @@ export default function RegisterPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      setUser(data)
-      toast({ title: 'Tienda creada exitosamente!', description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.` })
+      setUser(data, data.token)
+      toast({ title: 'Tienda creada exitosamente!', description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.`, duration: 3000 })
       setView('admin')
     } catch (err: unknown) {
       toast({ title: 'Error al registrar', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' })

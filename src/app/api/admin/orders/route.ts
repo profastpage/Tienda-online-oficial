@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
 
 async function fetchOrdersWithPaymentMethod(db: any, where: Record<string, unknown>) {
   return db.order.findMany({
@@ -45,11 +46,19 @@ async function fetchOrderWithoutPaymentMethod(db: any, id: string, data: Record<
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth.error) return auth.error
+
     const db = await getDb()
     const { searchParams } = new URL(request.url)
     const storeId = searchParams.get('storeId')
     const status = searchParams.get('status')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
+
+    // Verify the admin can only access their own store's data
+    if (storeId !== auth.user.storeId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+    }
 
     const where: Record<string, unknown> = { storeId }
     if (status) where.status = status
@@ -73,6 +82,10 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const { id, status, notes } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+    // Verify store ownership before update
+    const ownership = await verifyStoreOwnership(request, 'order', id)
+    if (!ownership.authorized) return ownership.error
 
     const updateData: Record<string, unknown> = {}
     if (status) updateData.status = status

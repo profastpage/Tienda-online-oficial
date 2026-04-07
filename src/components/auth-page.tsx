@@ -36,9 +36,9 @@ export default function AuthPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      setUser(data)
+      setUser(data, data.token)
       setView(data.role === 'admin' ? 'admin' : 'customer')
-      toast({ title: `¡Bienvenido, ${data.name}!`, description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente' })
+      toast({ title: `¡Bienvenido, ${data.name}!`, description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente', duration: 3000 })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al iniciar sesión', variant: 'destructive' })
     } finally {
@@ -65,9 +65,9 @@ export default function AuthPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      setUser(data)
+      setUser(data, data.token)
       setView(data.role === 'admin' ? 'admin' : 'customer')
-      toast({ title: `¡Cuenta creada!`, description: `Bienvenido a ${data.storeName}` })
+      toast({ title: `¡Cuenta creada!`, description: `Bienvenido a ${data.storeName}`, duration: 3000 })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al registrar', variant: 'destructive' })
     } finally {

@@ -1,14 +1,14 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dqkr6aovk',
-  api_key: process.env.CLOUDINARY_API_KEY || '698591978222934',
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
+  api_key: process.env.CLOUDINARY_API_KEY || '',
   api_secret: process.env.CLOUDINARY_API_SECRET || '',
 })
 
 export default cloudinary
 
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dqkr6aovk'
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 
 /**
  * Get an optimized Cloudinary URL with transformations

@@ -1,12 +1,21 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth.error) return auth.error
+
     const db = await getDb()
     const { searchParams } = new URL(request.url)
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
+
+    // Verify the admin can only access their own store's data
+    if (storeId !== auth.user.storeId) {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+    }
 
     const categories = await db.category.findMany({
       where: { storeId },
@@ -21,12 +30,18 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (auth.error) return auth.error
+
     const db = await getDb()
     const body = await request.json()
-    const { storeId, name, slug, image, sortOrder } = body
-    if (!storeId || !name || !slug) {
+    const { name, slug, image, sortOrder } = body
+    if (!name || !slug) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
+
+    // Use storeId from JWT token, not from request body
+    const storeId = auth.user.storeId
 
     const category = await db.category.create({
       data: { storeId, name, slug, image: image || '', sortOrder: sortOrder || 0 },
@@ -45,6 +60,10 @@ export async function PUT(request: Request) {
     const { id, name, slug, image, sortOrder } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
+    // Verify store ownership before update
+    const ownership = await verifyStoreOwnership(request, 'category', id)
+    if (!ownership.authorized) return ownership.error
+
     const updateData: Record<string, unknown> = {}
     if (name !== undefined) updateData.name = name
     if (slug !== undefined) updateData.slug = slug
@@ -60,11 +79,15 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const db = await getDb()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
+    // Verify store ownership before delete
+    const ownership = await verifyStoreOwnership(request, 'category', id)
+    if (!ownership.authorized) return ownership.error
+
+    const db = await getDb()
     await db.category.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch {

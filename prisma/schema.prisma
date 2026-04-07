@@ -42,6 +42,7 @@ model StoreUser {
   updatedAt DateTime @updatedAt
 
   @@unique([email, storeId])
+  @@index([storeId, role])
 }
 
 model Category {
@@ -54,6 +55,8 @@ model Category {
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   products  Product[]
   createdAt DateTime @default(now())
+
+  @@index([storeId])
 }
 
 model Product {
@@ -80,6 +83,7 @@ model Product {
   updatedAt   DateTime @updatedAt
 
   @@unique([slug, storeId])
+  @@index([storeId])
 }
 
 model Order {
@@ -100,6 +104,10 @@ model Order {
   items            OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+
+  @@index([storeId])
+  @@index([storeId, createdAt])
+  @@index([userId])
 }
 
 model OrderItem {
@@ -114,6 +122,8 @@ model OrderItem {
   orderId      String
   order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model Testimonial {

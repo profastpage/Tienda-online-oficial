@@ -1,0 +1,126 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+// Simple in-memory rate limiter for middleware
+const rateLimiter = new Map<string, { count: number; resetTime: number }>()
+
+function checkRateLimit(ip: string, max: number = 60, windowMs: number = 60000): boolean {
+  const now = Date.now()
+  const record = rateLimiter.get(ip)
+
+  if (!record || now > record.resetTime) {
+    rateLimiter.set(ip, { count: 1, resetTime: now + windowMs })
+    return true
+  }
+
+  if (record.count >= max) return false
+  record.count++
+  return true
+}
+
+// Routes that should be public (no auth required)
+const PUBLIC_PATHS = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/products',
+  '/api/categories',
+  '/api/testimonials',
+  '/api/store/payment-methods',
+  '/api/leads',
+  '/api/customer/checkout',
+  '/api/upload',
+  '/api/chat',
+  '/api/route',
+]
+
+// Paths that require admin role
+const ADMIN_PATHS = [
+  '/api/admin/',
+]
+
+// Paths that require super-admin
+const SUPER_ADMIN_PATHS = [
+  '/api/super-admin',
+  '/api/init-db',
+]
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Skip non-API routes
+  if (!pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
+  // Allow public routes
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+    // Rate limit login and register more strictly
+    if (pathname.startsWith('/api/auth/login') || pathname.startsWith('/api/auth/register')) {
+      const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                  request.headers.get('x-real-ip') || 'unknown'
+
+      if (!checkRateLimit(ip, 10, 60000)) { // 10 requests per minute for auth
+        return NextResponse.json(
+          { error: 'Demasiados intentos. Intenta de nuevo en 1 minuto.' },
+          { status: 429 }
+        )
+      }
+    }
+    return NextResponse.next()
+  }
+
+  // Protect init-db with secret
+  if (pathname.startsWith('/api/init-db')) {
+    const authHeader = request.headers.get('authorization')
+    const secret = authHeader?.replace('Bearer ', '')
+    if (secret !== process.env.INIT_DB_SECRET) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
+  // Protect super-admin
+  if (pathname.startsWith('/api/super-admin')) {
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    if (!token || token !== process.env.SUPER_ADMIN_SECRET) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
+  // Protect admin routes - require JWT token
+  if (ADMIN_PATHS.some(p => pathname.startsWith(p))) {
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const jwtToken = token || cookieToken
+
+    if (!jwtToken) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
+    // We can't use jose in edge middleware easily, so just check token exists
+    // The actual verification happens in each route handler
+    return NextResponse.next()
+  }
+
+  // Protect customer routes
+  if (pathname.startsWith('/api/customer/') && pathname !== '/api/customer/checkout') {
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const jwtToken = token || cookieToken
+
+    if (!jwtToken) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: '/api/:path*',
+}

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 
 // Cloudinary configuration
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dqkr6aovk'
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 const UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || 'unsigned_upload'
-const API_KEY = process.env.CLOUDINARY_API_KEY || '277572382921522'
+const API_KEY = process.env.CLOUDINARY_API_KEY || ''
 
 interface CloudinaryUploadResponse {
   secure_url: string
@@ -164,19 +164,52 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const publicId = searchParams.get('publicId')
+    const timestamp = Math.floor(Date.now() / 1000).toString()
 
     if (!publicId) {
       return NextResponse.json({ error: 'No publicId' }, { status: 400 })
     }
 
-    // Cloudinary Admin API delete (requires API key + secret, signed)
-    // For now, return success - images can be cleaned up via Cloudinary dashboard
-    // In production with proper auth, implement signed deletion
-    return NextResponse.json({
-      success: true,
-      message: 'Imagen marcada para eliminación',
-    })
-  } catch {
+    // Require auth for deletion
+    const { getAuthUser } = await import('@/lib/auth')
+    const user = await getAuthUser(request)
+    if (!user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
+    const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const API_KEY = process.env.CLOUDINARY_API_KEY
+    const API_SECRET = process.env.CLOUDINARY_API_SECRET
+
+    if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
+      return NextResponse.json({ error: 'Configuración de Cloudinary incompleta' }, { status: 500 })
+    }
+
+    // Generate signature for Cloudinary Admin API
+    const crypto = await import('crypto')
+    const signatureStr = `public_id=${publicId}&timestamp=${timestamp}${API_SECRET}`
+    const signature = crypto.createHash('sha1').update(signatureStr).digest('hex')
+
+    const formData = new FormData()
+    formData.append('public_id', publicId)
+    formData.append('timestamp', timestamp)
+    formData.append('api_key', API_KEY)
+    formData.append('signature', signature)
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`,
+      { method: 'POST', body: formData }
+    )
+
+    const result = await res.json()
+
+    if (result.result !== 'ok') {
+      return NextResponse.json({ error: 'Error al eliminar imagen' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Imagen eliminada' })
+  } catch (error) {
+    console.error('[upload] Delete failed:', error)
     return NextResponse.json({ error: 'Error al eliminar' }, { status: 500 })
   }
 }

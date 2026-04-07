@@ -199,7 +199,7 @@ function CountdownBanner() {
 // ─── Social Proof Activity Feed ────────────────────────────────────
 function ActivityFeed() {
   const activities = [
-    { text: 'María de Lima acaba de crear su tienda', icon: <Store className="w-3.5 h-3.5" /> },
+    { text: '¡Bienvenido a Tienda Online Oficial!', icon: <Zap className="w-3.5 h-3.5" /> },
     { text: 'Carlos completó su primera venta — S/350', icon: <Zap className="w-3.5 h-3.5" /> },
     { text: '+3 tiendas creadas hoy', icon: <UserPlus className="w-3.5 h-3.5" /> },
     { text: 'Ana de Cusco acaba de registrarse', icon: <UserPlus className="w-3.5 h-3.5" /> },
@@ -821,9 +821,9 @@ export default function SaasLanding() {
             className="hidden lg:flex items-center justify-center gap-10 mt-12"
           >
             {[
-              { value: '238+', label: 'Tiendas Activas' },
-              { value: 'S/350000', label: 'Ventas Procesadas' },
-              { value: '99.9%', label: 'Disponibilidad' },
+              { value: '10+', label: 'Tiendas Activas' },
+              { value: '99.9%', label: 'Uptime' },
+              { value: '24/7', label: 'Soporte' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <p className="text-2xl font-bold text-white">
