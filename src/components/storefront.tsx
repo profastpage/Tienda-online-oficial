@@ -192,7 +192,7 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
           toast({
             title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
             description: product.name,
-            duration: 2000,
+            duration: 800,
           })
         }}
       >
@@ -497,7 +497,7 @@ export default function Storefront() {
       toast({
         title: 'Redirigiendo a MercadoPago...',
         description: 'Serás redirigido para completar el pago de forma segura.',
-        duration: 3000,
+        duration: 1000,
       })
       setCreatedOrder(checkoutData)
       cart.clearCart()
@@ -1057,7 +1057,7 @@ Gracias!`)
                                 toast({
                                   title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
                                   description: product.name,
-                                  duration: 2000,
+                                  duration: 800,
                                 })
                               }}
                             >
@@ -2120,7 +2120,7 @@ Gracias!`)
                       toast({
                         title: wishlist.isInWishlist(selectedProduct.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
                         description: selectedProduct.name,
-                        duration: 2000,
+                        duration: 800,
                       })
                     }}
                   >

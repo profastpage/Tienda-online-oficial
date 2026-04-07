@@ -158,7 +158,7 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error)
 
       setUser(data, data.token)
-      toast({ title: 'Tienda creada exitosamente!', description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.`, duration: 3000 })
+      toast({ title: 'Tienda creada exitosamente!', description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.` })
       router.push('/admin')
     } catch (err: unknown) {
       toast({ title: 'Error al registrar', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' })

@@ -42,7 +42,7 @@ function AuthPageContent() {
       setUser(data, data.token)
       const targetUrl = redirectUrl || (data.role === 'admin' ? '/admin' : '/cliente')
       router.push(targetUrl)
-      toast({ title: `¡Bienvenido, ${data.name}!`, description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente', duration: 3000 })
+      toast({ title: `¡Bienvenido, ${data.name}!`, description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente' })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al iniciar sesión', variant: 'destructive' })
     } finally {
@@ -72,7 +72,7 @@ function AuthPageContent() {
       setUser(data, data.token)
       const targetUrl = data.role === 'admin' ? '/admin' : '/cliente'
       router.push(targetUrl)
-      toast({ title: `¡Cuenta creada!`, description: `Bienvenido a ${data.storeName}`, duration: 3000 })
+      toast({ title: `¡Cuenta creada!`, description: `Bienvenido a ${data.storeName}` })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al registrar', variant: 'destructive' })
     } finally {
