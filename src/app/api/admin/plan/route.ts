@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { checkPlanLimit, canUseFeature, getPlanConfig, canUpgradeTo } from '@/lib/plan-limits'
 
-const VALID_PLANS = ['free', 'pro', 'premium']
+const VALID_PLANS = ['basico', 'pro', 'premium']
 
 export async function GET(request: Request) {
   try {
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    const plan = store.plan || 'free'
+    const plan = store.plan || 'basico'
     const config = getPlanConfig(plan)
 
     // Check all limits in parallel
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     // Validate plan value
     if (!plan || !VALID_PLANS.includes(plan)) {
       return NextResponse.json(
-        { error: 'Plan inválido. Los planes disponibles son: free, pro, premium' },
+        { error: 'Plan inválido. Los planes disponibles son: basico, pro, premium' },
         { status: 400 }
       )
     }
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    const currentPlan = store.plan || 'free'
+    const currentPlan = store.plan || 'basico'
 
     // Check if the target plan is actually an upgrade
     if (!canUpgradeTo(currentPlan, plan)) {

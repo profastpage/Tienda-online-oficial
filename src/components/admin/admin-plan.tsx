@@ -72,8 +72,8 @@ interface PlanTier {
 
 const PLAN_TIERS: PlanTier[] = [
   {
-    id: 'free',
-    name: 'Gratis',
+    id: 'basico',
+    name: 'Básico',
     description: 'Para tiendas que recién empiezan',
     price: 'Gratis',
     limits: { products: '10', categories: '3', orders: '20/mes', users: '1' },
@@ -108,13 +108,13 @@ const FEATURE_LABELS: Record<string, { label: string; icon: React.ElementType }>
 }
 
 const PLAN_BADGE_STYLES: Record<string, string> = {
-  free: 'bg-neutral-100 text-neutral-700 border-neutral-200',
+  basico: 'bg-neutral-100 text-neutral-700 border-neutral-200',
   pro: 'bg-sky-100 text-sky-700 border-sky-200',
   premium: 'bg-amber-100 text-amber-700 border-amber-200',
 }
 
 const PLAN_BADGE_ICONS: Record<string, string> = {
-  free: '🚀',
+  basico: '🚀',
   pro: '⚡',
   premium: '👑',
 }
