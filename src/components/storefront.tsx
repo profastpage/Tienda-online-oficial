@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images } from 'lucide-react'
+import { Heart, Search, ShoppingBag, ShoppingCart, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images, Download, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -751,6 +751,27 @@ Gracias!`)
                 <Moon className="w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
                 <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
               </button>
+              {/* Install App - only show if PWA installable */}
+              {(window as any).__canInstallPwa && (
+                <button
+                  onClick={async () => {
+                    const prompt = (window as any).__deferredPrompt
+                    if (prompt) {
+                      prompt.prompt()
+                      const result = await prompt.userChoice
+                      if (result.outcome === 'accepted') {
+                        toast({ title: 'App instalada', description: 'La app se instaló correctamente', duration: 1000 })
+                      }
+                      (window as any).__deferredPrompt = null
+                      (window as any).__canInstallPwa = false
+                    }
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Instalar App</span>
+                </button>
+              )}
               <nav className="space-y-1">
                 {['Inicio', 'Catálogo', 'Novedades', 'Nosotros'].map((item) => (
                   <a
@@ -1725,6 +1746,43 @@ Gracias!`)
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-4 z-40 flex flex-col items-center gap-3">
+        {/* Test Notification Bell */}
+        <button
+          onClick={async () => {
+            if (!('Notification' in window)) {
+              toast({ title: 'Notificaciones no soportadas', variant: 'destructive', duration: 1000 })
+              return
+            }
+            if (Notification.permission === 'default') {
+              const perm = await Notification.requestPermission()
+              if (perm !== 'granted') return
+            }
+            if (Notification.permission === 'granted') {
+              // Send different test notifications randomly
+              const notifications = [
+                { title: '🛍️ Nueva oferta', body: '20% de descuento en toda la tienda. Solo por hoy.' },
+                { title: '📦 Tu pedido está en camino', body: 'El pedido #12345 fue enviado. Llega mañana.' },
+                { title: '⭐ Nuevo producto', body: 'Acabamos de agregar productos que te pueden interesar.' },
+                { title: '💰 Precio especial', body: 'Los productos en tu lista de deseos tienen descuento.' },
+                { title: '🎉 ¡Bienvenido!', body: 'Gracias por instalar nuestra app. Disfruta una experiencia mejor.' },
+                { title: '🚚 Envío gratis', body: 'Pedidos mayores a S/199 tienen envío gratis esta semana.' },
+              ]
+              const notif = notifications[Math.floor(Math.random() * notifications.length)]
+              new Notification(notif.title, {
+                body: notif.body,
+                icon: '/icon.svg',
+                badge: '/icon.svg',
+                tag: 'test-notification',
+              })
+              toast({ title: 'Notificación enviada', description: notif.title, duration: 1000 })
+            }
+          }}
+          className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-lg flex items-center justify-center transition-all hover:scale-105"
+          title="Probar notificación"
+        >
+          <Bell className="w-5 h-5" />
+        </button>
+
         {/* Back to Top Button */}
         {scrollY > 400 && (
           <motion.button
@@ -1903,81 +1961,55 @@ Gracias!`)
               <div className="flex-1 overflow-y-auto -mx-6 px-6 py-4">
                 <div className="space-y-4">
                   {wishlist.items.map((item) => (
-                    <div key={item.id} className="flex gap-4">
-                      <div
-                        className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
+                    <div key={item.id} className="flex gap-3">
+                      {/* Product image - clickable to view */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
                         onClick={() => {
                           const prod = products.find((p) => p.id === item.id)
-                          if (prod) {
-                            openProduct(prod)
-                            wishlist.closeWishlist()
-                          }
+                          if (prod) { openProduct(prod); wishlist.closeWishlist() }
                         }}
                       >
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm text-foreground truncate cursor-pointer hover:text-foreground/70 transition-colors"
-                          onClick={() => {
-                            const prod = products.find((p) => p.id === item.id)
-                            if (prod) {
-                              openProduct(prod)
-                              wishlist.closeWishlist()
-                            }
-                          }}
-                        >
-                          {item.name}
-                        </h4>
-                        <p className="text-sm font-bold text-foreground mt-1">S/ {item.price.toFixed(2)}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full text-xs h-8"
-                            onClick={() => {
-                              const prod = products.find((p) => p.id === item.id)
-                              if (prod) {
-                                openProduct(prod)
-                                wishlist.closeWishlist()
-                              }
-                            }}
-                          >
-                            <ShoppingBag className="w-3 h-3 mr-1" />
-                            Ver producto
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full text-xs h-8 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800"
-                            onClick={() => {
-                              const waMsg = encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${item.name}\n💰 S/ ${item.price.toFixed(2)}`)
-                              window.open(`https://wa.me/${storeWhatsApp}?text=${waMsg}`, '_blank')
-                            }}
-                          >
-                            <MessageCircle className="w-3 h-3 mr-1" />
-                            Pedir por WhatsApp
-                          </Button>
-                        </div>
+                        <h4 className="font-medium text-sm text-foreground truncate">{item.name}</h4>
+                        <p className="text-sm font-bold text-foreground mt-0.5">S/ {item.price.toFixed(2)}</p>
                       </div>
-                      <button
-                        className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0 mt-1"
-                        onClick={() => wishlist.removeItem(item.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {/* Action icons - minimal row */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 transition-colors"
+                          onClick={() => {
+                            cart.addItem({ id: item.id, name: item.name, price: item.price, image: item.image, size: '', color: '' })
+                            toast({ title: 'Agregado al carrito', description: item.name, duration: 800 })
+                          }}
+                          title="Agregar al carrito"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                        </button>
+                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-green-50 text-neutral-500 hover:text-green-600 transition-colors"
+                          onClick={() => {
+                            const waMsg = encodeURIComponent(`¡Hola! Me interesa:\n📦 ${item.name}\n💰 S/ ${item.price.toFixed(2)}`)
+                            window.open(`https://wa.me/${storeWhatsApp}?text=${waMsg}`, '_blank')
+                          }}
+                          title="Pedir por WhatsApp"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-red-50 text-neutral-500 hover:text-red-500 transition-colors"
+                          onClick={() => wishlist.removeItem(item.id)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <SheetFooter className="border-t pt-4">
-                <Button
-                  variant="outline"
-                  className="w-full h-12 rounded-xl font-semibold text-sm"
-                  onClick={() => {
-                    wishlist.clearWishlist()
-                  }}
-                >
-                  Limpiar lista
+              <SheetFooter className="border-t pt-3">
+                <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:text-red-500"
+                  onClick={() => wishlist.clearWishlist()}>
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Limpiar lista
                 </Button>
               </SheetFooter>
             </>

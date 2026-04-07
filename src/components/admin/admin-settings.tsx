@@ -13,6 +13,8 @@ import {
   QrCode,
   ChevronDown,
   ChevronUp,
+  Bell,
+  Send,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -532,6 +534,71 @@ export function AdminSettings() {
           </span>
         )}
       </div>
+
+      {/* ==================== PUSH NOTIFICATIONS SECTION ==================== */}
+      <Separator className="bg-neutral-200" />
+
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+            <Bell className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-neutral-900">Notificaciones Push</h2>
+              <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] font-semibold px-2 py-0 h-5 rounded-full">Premium</Badge>
+            </div>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Envía notificaciones a los clientes que instalen tu app
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="rounded-xl border-neutral-200">
+        <CardContent className="p-6 space-y-4">
+          <p className="text-sm text-neutral-600">
+            Las notificaciones push se envían a los usuarios que instalaron la app y permitieron recibir alertas. Puedes enviar notificaciones de ofertas, nuevos productos, y más.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { title: '🛍️ Nueva oferta', body: '20% de descuento en toda la tienda. Solo por hoy.' },
+              { title: '📦 Envío confirmado', body: 'Tu pedido fue enviado correctamente.' },
+              { title: '⭐ Nuevo producto', body: 'Revisa los nuevos productos que llegaron.' },
+              { title: '💰 Precio especial', body: 'Tus productos favoritos tienen descuento.' },
+              { title: '🎉 Promoción', body: 'Envío gratis en pedidos mayores a S/199.' },
+              { title: '🔔 Recordatorio', body: 'Tienes productos en tu carrito sin completar.' },
+            ].map((notif) => (
+              <button
+                key={notif.title}
+                onClick={async () => {
+                  if (!('Notification' in window)) return
+                  if (Notification.permission === 'default') {
+                    await Notification.requestPermission()
+                  }
+                  if (Notification.permission === 'granted') {
+                    new Notification(notif.title, {
+                      body: notif.body,
+                      icon: '/icon.svg',
+                      badge: '/icon.svg',
+                      tag: `admin-notif-${Date.now()}`,
+                    })
+                  }
+                }}
+                className="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 transition-all text-left group"
+              >
+                <span className="text-lg flex-shrink-0 mt-0.5">{notif.title.charAt(0)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-neutral-900 group-hover:text-neutral-700">{notif.title}</p>
+                  <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-2">{notif.body}</p>
+                </div>
+                <Send className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-700 flex-shrink-0 mt-1" />
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ==================== PAYMENT METHODS SECTION ==================== */}
       <Separator className="bg-neutral-200" />
