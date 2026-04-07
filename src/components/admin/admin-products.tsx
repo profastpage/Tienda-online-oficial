@@ -66,6 +66,7 @@ interface Product {
   price: number
   comparePrice: number | null
   image: string
+  images: string
   categoryId: string
   category: Category
   isFeatured: boolean
@@ -84,6 +85,7 @@ interface ProductFormData {
   price: string
   comparePrice: string
   image: string
+  additionalImages: string[]
   categoryId: string
   sizes: string
   colors: string
@@ -100,6 +102,7 @@ const emptyForm: ProductFormData = {
   price: '',
   comparePrice: '',
   image: '',
+  additionalImages: [],
   categoryId: '',
   sizes: '',
   colors: '',
@@ -130,6 +133,7 @@ export function AdminProducts() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState<ProductFormData>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [planLimit, setPlanLimit] = useState(2)
 
   const storeId = user?.storeId || ''
 
@@ -158,6 +162,25 @@ export function AdminProducts() {
     Promise.all([fetchProducts(), fetchCategories()]).finally(() => setLoading(false))
   }, [fetchProducts, fetchCategories])
 
+  // Fetch plan limit for images
+  useEffect(() => {
+    async function fetchPlanLimit() {
+      try {
+        const res = await fetch(`/api/admin/settings?storeId=${storeId}`)
+        if (res.ok) {
+          const storeData = await res.json()
+          const plan = storeData.plan || 'basico'
+          // Default limits: basico=1, pro=2, premium=4
+          const limits: Record<string, number> = { free: 1, basico: 1, pro: 2, premium: 4 }
+          setPlanLimit(limits[plan] || 1)
+        }
+      } catch {
+        // silent
+      }
+    }
+    if (storeId) fetchPlanLimit()
+  }, [storeId])
+
   const filtered = products.filter((p) =>
     !search || p.name.toLowerCase().includes(search.toLowerCase())
   )
@@ -169,6 +192,12 @@ export function AdminProducts() {
   }
 
   const openEdit = (product: Product) => {
+    let extraImages: string[] = []
+    try {
+      extraImages = JSON.parse(product.images || '[]') as string[]
+    } catch {
+      extraImages = []
+    }
     setEditingId(product.id)
     setForm({
       name: product.name,
@@ -177,6 +206,7 @@ export function AdminProducts() {
       price: product.price.toString(),
       comparePrice: product.comparePrice?.toString() || '',
       image: product.image,
+      additionalImages: extraImages,
       categoryId: product.categoryId,
       sizes: JSON.parse(product.sizes || '[]').join(', '),
       colors: JSON.parse(product.colors || '[]').map((c: { name: string; hex: string }) => `${c.name}:${c.hex}`).join(', '),
@@ -219,6 +249,7 @@ export function AdminProducts() {
         price: parseFloat(form.price),
         comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : null,
         image: form.image,
+        images: JSON.stringify(form.additionalImages.filter(Boolean)),
         categoryId: form.categoryId,
         sizes: sizesArr,
         colors: colorsArr,
@@ -341,17 +372,34 @@ export function AdminProducts() {
                       className="border-neutral-50 hover:bg-neutral-50/50"
                     >
                       <TableCell>
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-10 h-10 rounded-lg object-cover bg-neutral-100"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
-                            <ImageIcon className="w-4 h-4 text-neutral-300" />
-                          </div>
-                        )}
+                        <div className="relative">
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover bg-neutral-100"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
+                              <ImageIcon className="w-4 h-4 text-neutral-300" />
+                            </div>
+                          )}
+                          {(() => {
+                            try {
+                              const extraCount = (JSON.parse(product.images || '[]') as string[]).filter(Boolean).length
+                              if (extraCount > 0) {
+                                return (
+                                  <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                                    {extraCount + 1}
+                                  </span>
+                                )
+                              }
+                            } catch {
+                              // ignore
+                            }
+                            return null
+                          })()}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div>
@@ -536,7 +584,7 @@ export function AdminProducts() {
 
             {/* Image Upload */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-neutral-700">Imagen del producto</Label>
+              <Label className="text-sm font-medium text-neutral-700">Imagen principal</Label>
               <ImageUpload
                 value={form.image}
                 onChange={(url) => setForm({ ...form, image: url })}
@@ -547,6 +595,55 @@ export function AdminProducts() {
               {form.image && (
                 <p className="text-xs text-neutral-400 truncate max-w-xs">{form.image}</p>
               )}
+            </div>
+
+            {/* Additional Images Upload */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-neutral-700">Imágenes adicionales</Label>
+                <span className="text-xs text-muted-foreground">
+                  {form.additionalImages.filter(Boolean).length}/{planLimit - 1} máximo
+                </span>
+              </div>
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Tu plan permite hasta <strong>{planLimit} imágenes</strong> por producto (1 principal + {planLimit - 1} adicionales).
+              </p>
+              {Array.from({ length: Math.max(planLimit - 1, 0) }).map((_, idx) => {
+                const url = form.additionalImages[idx] || ''
+                return (
+                  <div key={idx} className="space-y-1">
+                    <span className="text-xs text-neutral-400">Imagen {idx + 2}</span>
+                    <div className="flex items-center gap-2">
+                      <ImageUpload
+                        value={url}
+                        onChange={(newUrl) => {
+                          const updated = [...form.additionalImages]
+                          updated[idx] = newUrl
+                          setForm({ ...form, additionalImages: updated })
+                        }}
+                        storeSlug={user?.storeSlug || 'store'}
+                        folder="products"
+                        className="flex-1"
+                      />
+                      {url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 text-neutral-400 hover:text-red-600 shrink-0"
+                          onClick={() => {
+                            const updated = [...form.additionalImages]
+                            updated[idx] = ''
+                            setForm({ ...form, additionalImages: updated })
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {/* Category */}

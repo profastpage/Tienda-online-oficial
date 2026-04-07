@@ -7,6 +7,7 @@ interface PlanLimits {
   categories: number    // 0 = unlimited
   ordersMonthly: number // 0 = unlimited
   users: number         // 0 = unlimited
+  imagesPerProduct: number // max images per product
 }
 
 interface PlanConfig {
@@ -25,10 +26,11 @@ export const PLANS: Record<string, PlanConfig> = {
     name: 'Básico',
     description: 'Para tiendas que recién empiezan',
     limits: {
-      products: 10,
+      products: 20,
       categories: 3,
       ordersMonthly: 20,
       users: 1,
+      imagesPerProduct: 1,
     },
     features: {
       mercadopago: false,
@@ -37,6 +39,9 @@ export const PLANS: Record<string, PlanConfig> = {
       inventory: false,
       bulk_import: false,
       priority_support: false,
+      whatsapp_orders: true,
+      favorites: true,
+      ai_assistant: false,
     },
     price: 0,
     priceLabel: 'Gratis',
@@ -50,6 +55,7 @@ export const PLANS: Record<string, PlanConfig> = {
       categories: 15,
       ordersMonthly: 200,
       users: 5,
+      imagesPerProduct: 2,
     },
     features: {
       mercadopago: true,
@@ -58,6 +64,9 @@ export const PLANS: Record<string, PlanConfig> = {
       inventory: true,
       bulk_import: false,
       priority_support: false,
+      whatsapp_orders: true,
+      favorites: true,
+      ai_assistant: false,
     },
     price: 49,
     priceLabel: 'S/ 49/mes',
@@ -67,10 +76,11 @@ export const PLANS: Record<string, PlanConfig> = {
     name: 'Premium',
     description: 'Para tiendas profesionales',
     limits: {
-      products: 0, // unlimited
+      products: 200,
       categories: 0,
       ordersMonthly: 0,
       users: 0,
+      imagesPerProduct: 4,
     },
     features: {
       mercadopago: true,
@@ -79,6 +89,9 @@ export const PLANS: Record<string, PlanConfig> = {
       inventory: true,
       bulk_import: true,
       priority_support: true,
+      whatsapp_orders: true,
+      favorites: true,
+      ai_assistant: true,
     },
     price: 99,
     priceLabel: 'S/ 99/mes',

@@ -68,6 +68,7 @@ model Product {
   price       Float
   comparePrice Float?
   image       String   @default("")
+  images      String   @default("[]")
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
   storeId     String

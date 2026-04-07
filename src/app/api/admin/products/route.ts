@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     const db = await getDb()
     const body = await request.json()
-    const { name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, sizes, colors } = body
+    const { name, slug, description, price, comparePrice, image, images, categoryId, isFeatured, isNew, discount, sizes, colors, inStock } = body
     if (!name || !slug || !price || !categoryId) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
@@ -47,12 +47,32 @@ export async function POST(request: Request) {
     // Check plan limits before creating product
     const store = await db.store.findUnique({ where: { id: storeId }, select: { plan: true } })
     const plan = store?.plan || 'free'
-    const limitCheck = await checkPlanLimit(db, storeId, 'products', plan)
-    if (!limitCheck.allowed) {
-      const config = getPlanConfig(plan)
+    const planConfig = getPlanConfig(plan)
+
+    // Check images per product limit
+    let parsedImages: string[] = []
+    try {
+      parsedImages = JSON.parse(images || '[]') as string[]
+    } catch {
+      parsedImages = []
+    }
+    const totalImages = (image ? 1 : 0) + parsedImages.filter(Boolean).length
+    if (totalImages > planConfig.limits.imagesPerProduct) {
       return NextResponse.json(
         {
-          error: `Has alcanzado el límite de productos de tu plan ${config.name} (${limitCheck.limit}). Actualiza a Pro o Premium para más productos.`,
+          error: `Tu plan ${planConfig.name} permite máximo ${planConfig.limits.imagesPerProduct} imagen(es) por producto. Tienes ${totalImages}. Actualiza tu plan para más imágenes.`,
+          currentPlan: plan,
+          limit: planConfig.limits.imagesPerProduct,
+        },
+        { status: 403 }
+      )
+    }
+
+    const limitCheck = await checkPlanLimit(db, storeId, 'products', plan)
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Has alcanzado el límite de productos de tu plan ${planConfig.name} (${limitCheck.limit}). Actualiza a Pro o Premium para más productos.`,
           currentPlan: plan,
           limit: limitCheck.limit,
           current: limitCheck.current,
@@ -65,8 +85,10 @@ export async function POST(request: Request) {
       data: {
         storeId, name, slug, description: description || '', price,
         comparePrice: comparePrice || null, image: image || '',
+        images: typeof images === 'string' ? images : JSON.stringify(parsedImages.filter(Boolean)),
         categoryId, isFeatured: isFeatured || false, isNew: isNew || false,
-        discount: discount || null, sizes: JSON.stringify(sizes || []), colors: JSON.stringify(colors || []),
+        discount: discount || null, inStock: inStock !== undefined ? inStock : true,
+        sizes: JSON.stringify(sizes || []), colors: JSON.stringify(colors || []),
       },
       include: { category: { select: { name: true } } },
     })
@@ -103,6 +125,7 @@ export async function PUT(request: Request) {
     if (data.inStock !== undefined) updateData.inStock = data.inStock
     if (data.sizes !== undefined) updateData.sizes = JSON.stringify(data.sizes)
     if (data.colors !== undefined) updateData.colors = JSON.stringify(data.colors)
+    if (data.images !== undefined) updateData.images = data.images
 
     const product = await db.product.update({ where: { id }, data: updateData, include: { category: { select: { name: true } } } })
     return NextResponse.json(product)

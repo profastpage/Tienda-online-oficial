@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle } from 'lucide-react'
+import { Heart, Search, ShoppingBag, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -28,12 +28,14 @@ interface Product {
   price: number
   comparePrice: number | null
   image: string
+  images?: string
   sizes: string
   colors: string
   discount: number | null
   isNew: boolean
   rating: number
   reviewCount: number
+  inStock?: boolean
   category: { name: string; slug: string }
 }
 
@@ -149,8 +151,19 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
           />
         ))}
       </div>
+      {/* Multi-image badge */}
+      {product.images && (() => {
+        try { return (JSON.parse(product.images) as string[]).length > 0 } catch { return false }
+      })() && (
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+          <Badge className="bg-black/60 backdrop-blur-sm hover:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+            <Images className="w-3 h-3 mr-1" />
+            {(() => { try { return (JSON.parse(product.images || '[]') as string[]).length + 1 } catch { return 1 } })()}
+          </Badge>
+        </div>
+      )}
       {/* Badges */}
-      <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+      <div className={`absolute flex flex-col gap-1.5 ${product.images && (() => { try { return (JSON.parse(product.images) as string[]).length > 0 } catch { return false } })() ? 'top-10' : 'top-3'} left-3`}>
         {product.discount && (
           <Badge className="bg-red-500 hover:bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
             -{product.discount}%
@@ -187,16 +200,29 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
       </Button>
       {/* Desktop Quick View Overlay */}
       <div className="hidden md:block absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-        <Button
-          size="sm"
-          className="w-full bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-xs font-semibold"
-          onClick={(e) => {
-            e.stopPropagation()
-            onClick?.()
-          }}
-        >
-          Ver Detalles
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="flex-1 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-xs font-semibold"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick?.()
+            }}
+          >
+            Ver Detalles
+          </Button>
+          <Button
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold h-8 w-8 p-0 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation()
+              const url = `https://wa.me/${typeof window !== 'undefined' ? '51933667414' : ''}?text=${encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${product.name}\n💰 S/ ${product.price.toFixed(2)}`)}`
+              window.open(url, '_blank')
+            }}
+          >
+            <MessageCircle className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -226,9 +252,35 @@ export default function Storefront() {
   const [currentHero, setCurrentHero] = useState(0)
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [selectedImageView, setSelectedImageView] = useState(0)
+  const [storeWhatsApp, setStoreWhatsApp] = useState('51933667414')
   const galleryRef = useRef<HTMLDivElement>(null)
   const productDetailTouchStart = useRef(0)
   const productDetailTouchEnd = useRef(0)
+  const productImages = useCallback((product: Product): string[] => {
+    try {
+      const extra = JSON.parse(product.images || '[]') as string[]
+      if (extra.length > 0) {
+        return [product.image, ...extra.filter(Boolean)]
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return [product.image]
+  }, [])
+
+  const totalProductImages = useCallback((product: Product): number => {
+    return productImages(product).length
+  }, [productImages])
+
+  const getWhatsAppProductUrl = useCallback((product: Product, size?: string, color?: string, quantity?: number) => {
+    let msg = `¡Hola! Me interesa el producto:\n📦 ${product.name}\n💰 S/ ${product.price.toFixed(2)}`
+    if (size) msg += `\n📏 Talla: ${size}`
+    if (color) msg += `\n🎨 Color: ${color}`
+    if (quantity && quantity > 1) msg += `\n🔢 Cantidad: ${quantity}`
+    const encoded = encodeURIComponent(msg)
+    return `https://wa.me/${storeWhatsApp}?text=${encoded}`
+  }, [storeWhatsApp])
+
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
 
@@ -1879,7 +1931,7 @@ Gracias!`)
                           {item.name}
                         </h4>
                         <p className="text-sm font-bold text-foreground mt-1">S/ {item.price.toFixed(2)}</p>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2 mt-2">
                           <Button
                             size="sm"
                             variant="outline"
@@ -1894,6 +1946,18 @@ Gracias!`)
                           >
                             <ShoppingBag className="w-3 h-3 mr-1" />
                             Ver producto
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full text-xs h-8 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800"
+                            onClick={() => {
+                              const waMsg = encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${item.name}\n💰 S/ ${item.price.toFixed(2)}`)
+                              window.open(`https://wa.me/${storeWhatsApp}?text=${waMsg}`, '_blank')
+                            }}
+                          >
+                            <MessageCircle className="w-3 h-3 mr-1" />
+                            Pedir por WhatsApp
                           </Button>
                         </div>
                       </div>
@@ -1949,103 +2013,93 @@ Gracias!`)
             </button>
 
             <div className="grid md:grid-cols-2">
-              {/* Instagram-style Photo Gallery */}
+              {/* Product Image Gallery */}
               <div className="bg-muted relative">
                 {/* Main Image with Navigation + Swipe Support */}
-                <div
-                  className="aspect-square relative overflow-hidden group"
-                  onTouchStart={(e) => { productDetailTouchStart.current = e.touches[0].clientX }}
-                  onTouchMove={(e) => { productDetailTouchEnd.current = e.touches[0].clientX }}
-                  onTouchEnd={() => {
-                    const diff = productDetailTouchStart.current - productDetailTouchEnd.current
-                    if (Math.abs(diff) > 50) {
-                      if (diff > 0 && selectedImageView < 3) {
-                        setSelectedImageView(selectedImageView + 1)
-                        scrollToGalleryImage(selectedImageView + 1)
-                      } else if (diff < 0 && selectedImageView > 0) {
-                        setSelectedImageView(selectedImageView - 1)
-                        scrollToGalleryImage(selectedImageView - 1)
-                      }
-                    }
-                  }}
-                >
-                  <img
-                    src={selectedProduct.image}
-                    alt={`${selectedProduct.name} - Vista ${selectedImageView + 1}`}
-                    className={`w-full h-full object-cover transition-all duration-500 ${
-                      selectedImageView === 0 ? 'object-cover' :
-                      selectedImageView === 1 ? 'object-cover scale-110' :
-                      selectedImageView === 2 ? 'object-center scale-125' :
-                      'object-top'
-                    }`}
-                    style={{
-                      objectFit: selectedImageView === 0 ? 'cover' :
-                                  selectedImageView === 1 ? 'cover' :
-                                  selectedImageView === 2 ? 'cover' : 'cover',
-                      objectPosition: selectedImageView === 0 ? 'center' :
-                                       selectedImageView === 1 ? 'center 30%' :
-                                       selectedImageView === 2 ? 'center 20%' :
-                                       'center 10%'
-                    }}
-                  />
-                  {/* View indicator */}
-                  <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full font-medium">
-                    {selectedImageView + 1} / 4
-                  </div>
-                  {/* Left Arrow - always visible on mobile, hover on desktop */}
-                  {selectedImageView > 0 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView - 1); scrollToGalleryImage(selectedImageView - 1) }}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all md:opacity-0 md:group-hover:opacity-100"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-foreground" />
-                    </button>
-                  )}
-                  {/* Right Arrow - always visible on mobile, hover on desktop */}
-                  {selectedImageView < 3 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView + 1); scrollToGalleryImage(selectedImageView + 1) }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all md:opacity-0 md:group-hover:opacity-100"
-                    >
-                      <ChevronRight className="w-5 h-5 text-foreground" />
-                    </button>
-                  )}
-                  {/* Gradient overlays for Instagram feel */}
-                  {selectedImageView > 0 && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                    </div>
-                  )}
-                </div>
-                {/* Thumbnail strip */}
-                <div className="flex gap-2 p-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide" ref={galleryRef}>
-                  {[0, 1, 2, 3].map((idx) => (
-                    <button
-                      key={idx}
-                      onClick={(e) => { e.stopPropagation(); scrollToGalleryImage(idx) }}
-                      className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden snap-start transition-all duration-200 ${
-                        selectedImageView === idx
-                          ? 'ring-2 ring-primary ring-offset-2 scale-105'
-                          : 'ring-1 ring-border hover:ring-ring opacity-70 hover:opacity-100'
-                      }`}
+                {(() => {
+                  const imgs = productImages(selectedProduct)
+                  const maxIdx = imgs.length - 1
+                  return (
+                    <div
+                      className="aspect-square relative overflow-hidden group"
+                      onTouchStart={(e) => { productDetailTouchStart.current = e.touches[0].clientX }}
+                      onTouchMove={(e) => { productDetailTouchEnd.current = e.touches[0].clientX }}
+                      onTouchEnd={() => {
+                        const diff = productDetailTouchStart.current - productDetailTouchEnd.current
+                        if (Math.abs(diff) > 50) {
+                          if (diff > 0 && selectedImageView < maxIdx) {
+                            setSelectedImageView(selectedImageView + 1)
+                            scrollToGalleryImage(selectedImageView + 1)
+                          } else if (diff < 0 && selectedImageView > 0) {
+                            setSelectedImageView(selectedImageView - 1)
+                            scrollToGalleryImage(selectedImageView - 1)
+                          }
+                        }
+                      }}
                     >
                       <img
-                        src={selectedProduct.image}
-                        alt={`Vista ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        style={{
-                          objectPosition: idx === 0 ? 'center' :
-                                           idx === 1 ? 'center 30%' :
-                                           idx === 2 ? 'center 20%' :
-                                           'center 10%'
-                        }}
+                        src={imgs[selectedImageView] || selectedProduct.image}
+                        alt={`${selectedProduct.name} - Imagen ${selectedImageView + 1}`}
+                        className="w-full h-full object-cover transition-all duration-500"
                       />
-                      {selectedImageView === idx && (
-                        <div className="absolute inset-0 bg-neutral-900/20" />
+                      {/* View indicator */}
+                      {imgs.length > 1 && (
+                        <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full font-medium">
+                          {selectedImageView + 1} / {imgs.length}
+                        </div>
                       )}
-                    </button>
-                  ))}
-                </div>
+                      {/* Left Arrow */}
+                      {selectedImageView > 0 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView - 1); scrollToGalleryImage(selectedImageView - 1) }}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all md:opacity-0 md:group-hover:opacity-100"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-foreground" />
+                        </button>
+                      )}
+                      {/* Right Arrow */}
+                      {selectedImageView < maxIdx && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedImageView(selectedImageView + 1); scrollToGalleryImage(selectedImageView + 1) }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-all md:opacity-0 md:group-hover:opacity-100"
+                        >
+                          <ChevronRight className="w-5 h-5 text-foreground" />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
+                {/* Thumbnail strip */}
+                {(() => {
+                  const imgs = productImages(selectedProduct)
+                  if (imgs.length > 1) {
+                    return (
+                      <div className="flex gap-2 p-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide" ref={galleryRef}>
+                        {imgs.map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => { e.stopPropagation(); scrollToGalleryImage(idx) }}
+                            className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden snap-start transition-all duration-200 ${
+                              selectedImageView === idx
+                                ? 'ring-2 ring-primary ring-offset-2 scale-105'
+                                : 'ring-1 ring-border hover:ring-ring opacity-70 hover:opacity-100'
+                            }`}
+                          >
+                            <img
+                              src={img}
+                              alt={`Imagen ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {selectedImageView === idx && (
+                              <div className="absolute inset-0 bg-neutral-900/20" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
               </div>
               <div className="p-6 md:p-8 flex flex-col">
                 <Badge variant="secondary" className="w-fit text-xs uppercase tracking-wider mb-2">
@@ -2164,31 +2218,53 @@ Gracias!`)
                   </div>
                 )}
 
-                {/* Add to cart */}
+                {/* Add to cart + WhatsApp */}
                 <div className="mt-auto pt-6">
-                  <Button
-                    className={`w-full h-12 rounded-xl font-semibold text-sm transition-all ${
-                      addedToCart
-                        ? 'bg-green-600 text-white'
-                        : 'bg-neutral-900 hover:bg-neutral-800 text-white'
-                    }`}
-                    onClick={() => handleAddToCart(selectedProduct)}
-                    disabled={!selectedSize && !addedToCart}
-                  >
-                    {addedToCart ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Agregado al carrito
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <ShoppingBag className="w-5 h-5" />
-                        Agregar al carrito · S/ {selectedProduct.price.toFixed(2)}
-                      </span>
+                  <div className="flex gap-2">
+                    <Button
+                      className={`flex-1 h-12 rounded-xl font-semibold text-sm transition-all ${
+                        addedToCart
+                          ? 'bg-green-600 text-white'
+                          : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                      }`}
+                      onClick={() => handleAddToCart(selectedProduct)}
+                      disabled={!selectedSize && !addedToCart}
+                    >
+                      {addedToCart ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Agregado
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <ShoppingBag className="w-5 h-5" />
+                          Agregar al carrito
+                        </span>
+                      )}
+                    </Button>
+                    {storeWhatsApp && (
+                      <Button
+                        className="h-12 w-12 rounded-xl bg-green-600 hover:bg-green-700 text-white shrink-0"
+                        size="icon"
+                        asChild
+                      >
+                        <a
+                          href={getWhatsAppProductUrl(
+                            selectedProduct,
+                            selectedSize || undefined,
+                            selectedColor || undefined
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                        </a>
+                      </Button>
                     )}
-                  </Button>
+                  </div>
                   {!selectedSize && !addedToCart && (
                     <p className="text-xs text-center text-muted-foreground/70 mt-2">
                       Selecciona una talla para continuar

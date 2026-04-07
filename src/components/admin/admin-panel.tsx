@@ -14,6 +14,7 @@ import {
   Store,
   ChevronRight,
   Crown,
+  Bot,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -27,6 +28,7 @@ import { AdminCategories } from './admin-categories'
 import { AdminOrders } from './admin-orders'
 import { AdminSettings } from './admin-settings'
 import { AdminPlan } from './admin-plan'
+import { AdminAi } from './admin-ai'
 
 interface NavItem {
   id: AdminSection
@@ -41,6 +43,7 @@ const navItems: NavItem[] = [
   { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
   { id: 'settings', label: 'Configuración', icon: Settings },
   { id: 'plan', label: 'Mi Plan', icon: Crown },
+  { id: 'ai', label: 'Asistente IA', icon: Bot },
 ]
 
 const sectionTitles: Record<AdminSection, string> = {
@@ -50,6 +53,7 @@ const sectionTitles: Record<AdminSection, string> = {
   orders: 'Pedidos',
   settings: 'Configuración',
   plan: 'Mi Plan',
+  ai: 'Asistente IA',
 }
 
 function SidebarNav({
@@ -175,6 +179,8 @@ export function AdminPanel() {
         return <AdminSettings />
       case 'plan':
         return <AdminPlan />
+      case 'ai':
+        return <AdminAi />
       default:
         return <AdminDashboard />
     }
