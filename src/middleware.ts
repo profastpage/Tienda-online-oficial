@@ -23,6 +23,9 @@ const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/logout',
+  '/api/auth/google',
+  '/api/auth/signin',
+  '/api/auth/callback',
   '/api/products',
   '/api/categories',
   '/api/testimonials',
@@ -80,6 +83,11 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
+    return NextResponse.next()
+  }
+
+  // Allow auth callback pages (Google OAuth)
+  if (pathname.startsWith('/auth/google-callback')) {
     return NextResponse.next()
   }
 

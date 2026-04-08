@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Bell,
   Send,
+  ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuthStore } from '@/stores/auth-store'
+import TwoFactorSettings from '@/components/two-factor-settings'
 
 interface StoreData {
   id: string
@@ -168,6 +170,9 @@ export function AdminSettings() {
   const [deletingPayment, setDeletingPayment] = useState<PaymentMethod | null>(null)
   const [deleteSaving, setDeleteSaving] = useState(false)
 
+  // 2FA state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+
   useEffect(() => {
     if (!storeId) return
     async function fetchStore() {
@@ -213,6 +218,23 @@ export function AdminSettings() {
   useEffect(() => {
     fetchPaymentMethods()
   }, [fetchPaymentMethods])
+
+  useEffect(() => {
+    if (!user) return
+    async function fetchUser2FA() {
+      try {
+        const { token } = useAuthStore.getState()
+        const res = await fetch(`/api/auth/me?userId=${user.id}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setTwoFactorEnabled(data.twoFactorEnabled || false)
+        }
+      } catch { /* silent */ }
+    }
+    fetchUser2FA()
+  }, [user])
 
   const handleSave = async () => {
     if (!storeId) return
@@ -933,6 +955,25 @@ export function AdminSettings() {
           )}
         </CardContent>
       </Card>
+
+      {/* ==================== TWO-FACTOR AUTHENTICATION SECTION ==================== */}
+      <Separator className="bg-neutral-200" />
+
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-neutral-900">Seguridad de la Cuenta</h2>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Autenticación en dos pasos (Google Authenticator)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <TwoFactorSettings twoFactorEnabled={twoFactorEnabled} onStatusChange={setTwoFactorEnabled} />
 
       {/* ==================== EDIT PAYMENT METHOD DIALOG ==================== */}
       <Dialog open={!!editingPayment} onOpenChange={(open) => !open && setEditingPayment(null)}>

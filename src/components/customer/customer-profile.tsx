@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/stores/auth-store'
+import TwoFactorSettings from '@/components/two-factor-settings'
 
 interface ProfileData {
   name: string
@@ -32,6 +33,24 @@ export function CustomerProfile() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    async function fetchUser2FA() {
+      try {
+        const { token } = useAuthStore.getState()
+        const res = await fetch(`/api/auth/me?userId=${user.id}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setTwoFactorEnabled(data.twoFactorEnabled || false)
+        }
+      } catch { /* silent */ }
+    }
+    fetchUser2FA()
+  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -274,6 +293,15 @@ export function CustomerProfile() {
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Two-Factor Authentication Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <TwoFactorSettings twoFactorEnabled={twoFactorEnabled} onStatusChange={setTwoFactorEnabled} />
       </motion.div>
     </div>
   )

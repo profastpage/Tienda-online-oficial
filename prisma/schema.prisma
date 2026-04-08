@@ -41,6 +41,8 @@ model StoreUser {
   orders            Order[]
   twoFactorSecret   String?
   twoFactorEnabled  Boolean  @default(false)
+  googleId          String?  @unique
+  avatar            String?  @default("")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
