@@ -666,7 +666,7 @@ export const seedStore = {
   description:
     'Tu tienda de moda urbana favorita. Ropa, accesorios y más para un estilo único.',
   isActive: true,
-  plan: 'pro',
+  plan: 'premium',
 }
 
 // Helper: filter seed products using the same logic as the API route

@@ -137,7 +137,7 @@ export function AdminProducts() {
   const [planLimit, setPlanLimit] = useState(2)
 
   const storeId = user?.storeId || ''
-  const isDemoStore = storeId === 'd1whgpglbzf8d42et5xp'
+  const isDemoStore = storeId === 'kmpw0h5ig4o518kg4zsm5huo3'
 
   const fetchProducts = useCallback(async () => {
     try {

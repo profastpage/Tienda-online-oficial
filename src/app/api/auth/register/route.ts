@@ -4,11 +4,11 @@ import { signToken, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
 
 // Default seed store for fallback when DB is empty
 const SEED_STORE = {
-  id: 'd1whgpglbzf8d42et5xp',
-  name: 'Urban Store',
-  slug: 'urban-store',
+  id: 'kmpw0h5ig4o518kg4zsm5huo3',
+  name: 'Urban Style',
+  slug: 'urban-style',
   whatsappNumber: '51999999999',
-  plan: 'basico',
+  plan: 'premium',
 }
 
 export async function POST(request: Request) {

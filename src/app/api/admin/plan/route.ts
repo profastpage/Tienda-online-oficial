@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { checkPlanLimit, canUseFeature, getPlanConfig, canUpgradeTo } from '@/lib/plan-limits'
 
-const VALID_PLANS = ['basico', 'pro', 'premium']
+const VALID_PLANS = ['basico', 'pro', 'premium', 'empresarial']
 
 export async function GET(request: Request) {
   try {

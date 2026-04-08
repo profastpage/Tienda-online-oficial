@@ -17,9 +17,9 @@ const SEED_USERS = [
     phone: '51999999999',
     address: '',
     role: 'admin' as const,
-    storeId: 'd1whgpglbzf8d42et5xp',
-    storeName: 'Urban Store',
-    storeSlug: 'urban-store',
+    storeId: 'kmpw0h5ig4o518kg4zsm5huo3',
+    storeName: 'Urban Style',
+    storeSlug: 'urban-style',
   },
   {
     id: 'seed-client-001',
@@ -29,9 +29,9 @@ const SEED_USERS = [
     phone: '51988888888',
     address: '',
     role: 'customer' as const,
-    storeId: 'd1whgpglbzf8d42et5xp',
-    storeName: 'Urban Store',
-    storeSlug: 'urban-store',
+    storeId: 'kmpw0h5ig4o518kg4zsm5huo3',
+    storeName: 'Urban Style',
+    storeSlug: 'urban-style',
   },
   // Básico Plan Store
   {

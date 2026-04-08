@@ -18,17 +18,18 @@ interface PlanConfig {
   features: Record<string, boolean>
   price: number
   priceLabel: string
+  setupFee: string | null
 }
 
 export const PLANS: Record<string, PlanConfig> = {
   basico: {
     id: 'basico',
     name: 'Básico',
-    description: 'Para tiendas que recién empiezan',
+    description: 'Ideal para emprendedores',
     limits: {
-      products: 20,
-      categories: 3,
-      ordersMonthly: 20,
+      products: 50,
+      categories: 5,
+      ordersMonthly: 50,
       users: 1,
       imagesPerProduct: 1,
     },
@@ -42,20 +43,22 @@ export const PLANS: Record<string, PlanConfig> = {
       whatsapp_orders: true,
       favorites: true,
       ai_assistant: false,
+      push_notifications: false,
     },
-    price: 0,
-    priceLabel: 'Gratis',
+    price: 49,
+    priceLabel: 'S/ 49/mes',
+    setupFee: 'S/ 200',
   },
   pro: {
     id: 'pro',
     name: 'Pro',
-    description: 'Para tiendas en crecimiento',
+    description: 'Negocios en crecimiento',
     limits: {
-      products: 100,
+      products: 200,
       categories: 15,
       ordersMonthly: 200,
-      users: 5,
-      imagesPerProduct: 2,
+      users: 3,
+      imagesPerProduct: 3,
     },
     features: {
       mercadopago: true,
@@ -67,20 +70,22 @@ export const PLANS: Record<string, PlanConfig> = {
       whatsapp_orders: true,
       favorites: true,
       ai_assistant: false,
+      push_notifications: true,
     },
-    price: 49,
-    priceLabel: 'S/ 49/mes',
+    price: 89,
+    priceLabel: 'S/ 89/mes',
+    setupFee: 'S/ 250',
   },
   premium: {
     id: 'premium',
     name: 'Premium',
-    description: 'Para tiendas profesionales',
+    description: 'La mejor inversión',
     limits: {
-      products: 200,
-      categories: 0,
-      ordersMonthly: 0,
-      users: 0,
-      imagesPerProduct: 4,
+      products: 0,  // unlimited
+      categories: 0, // unlimited
+      ordersMonthly: 0, // unlimited
+      users: 10,
+      imagesPerProduct: 8,
     },
     features: {
       mercadopago: true,
@@ -92,14 +97,43 @@ export const PLANS: Record<string, PlanConfig> = {
       whatsapp_orders: true,
       favorites: true,
       ai_assistant: true,
+      push_notifications: true,
     },
-    price: 99,
-    priceLabel: 'S/ 99/mes',
+    price: 129,
+    priceLabel: 'S/ 129/mes',
+    setupFee: 'S/ 300',
+  },
+  empresarial: {
+    id: 'empresarial',
+    name: 'Empresarial',
+    description: 'Solución a medida',
+    limits: {
+      products: 0,  // unlimited
+      categories: 0, // unlimited
+      ordersMonthly: 0, // unlimited
+      users: 0, // unlimited
+      imagesPerProduct: 20,
+    },
+    features: {
+      mercadopago: true,
+      analytics: true,
+      custom_domain: true,
+      inventory: true,
+      bulk_import: true,
+      priority_support: true,
+      whatsapp_orders: true,
+      favorites: true,
+      ai_assistant: true,
+      push_notifications: true,
+    },
+    price: 0, // custom pricing
+    priceLabel: 'Cotizar',
+    setupFee: null,
   },
 }
 
 // Ordered plan tiers for upgrade flow
-export const PLAN_ORDER = ['basico', 'pro', 'premium'] as const
+export const PLAN_ORDER = ['basico', 'pro', 'premium', 'empresarial'] as const
 
 // ─── Exported Functions ───────────────────────────────────────────────────────
 

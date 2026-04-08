@@ -16,6 +16,8 @@ import {
   CreditCard,
   Sparkles,
   AlertTriangle,
+  Building2,
+  Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -63,9 +65,11 @@ interface PlanTier {
   name: string
   description: string
   price: string
+  setupFee: string | null
   limits: { products: string; categories: string; orders: string; users: string }
-  features: { mercadopago: boolean; analytics: boolean; custom_domain: boolean; inventory: boolean; bulk_import: boolean; priority_support: boolean }
+  features: Record<string, boolean>
   popular?: boolean
+  recommended?: boolean
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -74,49 +78,143 @@ const PLAN_TIERS: PlanTier[] = [
   {
     id: 'basico',
     name: 'Básico',
-    description: 'Para tiendas que recién empiezan',
-    price: 'Gratis',
-    limits: { products: '10', categories: '3', orders: '20/mes', users: '1' },
-    features: { mercadopago: false, analytics: false, custom_domain: false, inventory: false, bulk_import: false, priority_support: false },
+    description: 'Ideal para emprendedores',
+    price: 'S/ 49/mes',
+    setupFee: 'Setup: S/ 200',
+    limits: { products: '50', categories: '5', orders: '50/mes', users: '1' },
+    features: {
+      catalogo: true,
+      carrito: true,
+      whatsapp: true,
+      tema: true,
+      ssl: true,
+      responsive: true,
+      mercadopago: false,
+      analytics: false,
+      custom_domain: false,
+      inventory: false,
+      bulk_import: false,
+      priority_support: false,
+      ai_assistant: false,
+      push_notifications: false,
+    },
   },
   {
     id: 'pro',
     name: 'Pro',
-    description: 'Para tiendas en crecimiento',
-    price: 'S/ 49/mes',
+    description: 'Negocios en crecimiento',
+    price: 'S/ 89/mes',
+    setupFee: 'Setup: S/ 250',
     popular: true,
-    limits: { products: '100', categories: '15', orders: '200/mes', users: '5' },
-    features: { mercadopago: true, analytics: false, custom_domain: false, inventory: true, bulk_import: false, priority_support: false },
+    limits: { products: '200', categories: '15', orders: '200/mes', users: '3' },
+    features: {
+      catalogo: true,
+      carrito: true,
+      whatsapp: true,
+      tema: true,
+      ssl: true,
+      responsive: true,
+      mercadopago: true,
+      analytics: false,
+      custom_domain: false,
+      inventory: true,
+      bulk_import: false,
+      priority_support: false,
+      ai_assistant: false,
+      push_notifications: true,
+    },
   },
   {
     id: 'premium',
     name: 'Premium',
-    description: 'Para tiendas profesionales',
-    price: 'S/ 99/mes',
+    description: 'La mejor inversión',
+    price: 'S/ 129/mes',
+    setupFee: 'Setup: S/ 300',
+    recommended: true,
+    limits: { products: '∞', categories: '∞', orders: '∞', users: '10' },
+    features: {
+      catalogo: true,
+      carrito: true,
+      whatsapp: true,
+      tema: true,
+      ssl: true,
+      responsive: true,
+      mercadopago: true,
+      analytics: true,
+      custom_domain: true,
+      inventory: true,
+      bulk_import: true,
+      priority_support: true,
+      ai_assistant: true,
+      push_notifications: true,
+    },
+  },
+  {
+    id: 'empresarial',
+    name: 'Empresarial',
+    description: 'Solución a medida',
+    price: 'Cotizar',
+    setupFee: null,
     limits: { products: '∞', categories: '∞', orders: '∞', users: '∞' },
-    features: { mercadopago: true, analytics: true, custom_domain: true, inventory: true, bulk_import: true, priority_support: true },
+    features: {
+      catalogo: true,
+      carrito: true,
+      whatsapp: true,
+      tema: true,
+      ssl: true,
+      responsive: true,
+      mercadopago: true,
+      analytics: true,
+      custom_domain: true,
+      inventory: true,
+      bulk_import: true,
+      priority_support: true,
+      ai_assistant: true,
+      push_notifications: true,
+      api_custom: true,
+      erp_crm: true,
+      white_label: true,
+      multi_sucursal: true,
+    },
   },
 ]
 
 const FEATURE_LABELS: Record<string, { label: string; icon: React.ElementType }> = {
+  catalogo: { label: 'Catálogo digital', icon: Package },
+  carrito: { label: 'Carrito de compras', icon: ShoppingCart },
+  whatsapp: { label: 'Pedidos por WhatsApp', icon: CreditCard },
+  tema: { label: 'Tema personalizable', icon: Sparkles },
+  ssl: { label: 'SSL gratuito', icon: Globe },
+  responsive: { label: 'Responsive móvil', icon: Zap },
   mercadopago: { label: 'MercadoPago', icon: CreditCard },
-  analytics: { label: 'Analíticas', icon: BarChart3 },
+  analytics: { label: 'Analíticas avanzadas', icon: BarChart3 },
   custom_domain: { label: 'Dominio personalizado', icon: Globe },
   inventory: { label: 'Control de inventario', icon: Package },
   bulk_import: { label: 'Importación masiva', icon: Zap },
   priority_support: { label: 'Soporte prioritario', icon: Sparkles },
+  ai_assistant: { label: 'Cotizador IA', icon: Sparkles },
+  push_notifications: { label: 'Notificaciones Push', icon: Zap },
+  api_custom: { label: 'API personalizada', icon: Globe },
+  erp_crm: { label: 'Integración ERP/CRM', icon: Building2 },
+  white_label: { label: 'White label', icon: Building2 },
+  multi_sucursal: { label: 'Multi-sucursal', icon: Building2 },
 }
+
+// Only show key features in the admin plan comparison
+const KEY_FEATURES = ['mercadopago', 'analytics', 'custom_domain', 'inventory', 'bulk_import', 'priority_support', 'ai_assistant', 'push_notifications']
 
 const PLAN_BADGE_STYLES: Record<string, string> = {
   basico: 'bg-neutral-100 text-neutral-700 border-neutral-200',
   pro: 'bg-sky-100 text-sky-700 border-sky-200',
   premium: 'bg-amber-100 text-amber-700 border-amber-200',
+  empresarial: 'bg-purple-100 text-purple-700 border-purple-200',
 }
 
 const PLAN_BADGE_ICONS: Record<string, string> = {
   basico: '🚀',
   pro: '⚡',
   premium: '👑',
+  empresarial: '🏢',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -128,14 +226,6 @@ function formatLimit(val: number): string {
 function getProgressValue(current: number, max: number): number {
   if (max === 0) return 0 // unlimited
   return Math.min((current / max) * 100, 100)
-}
-
-function getProgressColor(current: number, max: number): string {
-  if (max === 0) return 'bg-emerald-500'
-  const pct = (current / max) * 100
-  if (pct >= 90) return 'bg-red-500'
-  if (pct >= 70) return 'bg-amber-500'
-  return 'bg-emerald-500'
 }
 
 function getLimitTextColor(current: number, max: number): string {
@@ -209,7 +299,7 @@ export function AdminPlan() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl space-y-6">
+      <div className="max-w-5xl space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
@@ -217,7 +307,7 @@ export function AdminPlan() {
           ))}
         </div>
         <Skeleton className="h-64 w-full rounded-xl" />
-        <Skeleton className="h-80 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     )
   }
@@ -225,9 +315,24 @@ export function AdminPlan() {
   if (!planData) return null
 
   const currentPlan = planData.plan
+  const currentTier = PLAN_TIERS.find((t) => t.id === currentPlan)
+  const isDemoStore = storeId === 'kmpw0h5ig4o518kg4zsm5huo3'
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-5xl space-y-8">
+      {/* ─── Demo Store Banner ──────────────────────────────────────────────── */}
+      {isDemoStore && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
+          <Star className="w-5 h-5 text-amber-500 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">Tienda Demo — Plan Premium</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Esta es la tienda de demostración oficial de Tienda Online Oficial. Tiene acceso a todas las funcionalidades Premium habilitadas.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ─── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -248,6 +353,40 @@ export function AdminPlan() {
           Plan {planData.planName}
         </Badge>
       </div>
+
+      {/* ─── Current Plan Summary ─────────────────────────────────────────────── */}
+      {currentTier && (
+        <Card className="rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/50">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center text-2xl">
+                  {PLAN_BADGE_ICONS[currentPlan]}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-neutral-900">Plan {currentTier.name}</h3>
+                  <p className="text-sm text-neutral-500 mt-0.5">{currentTier.description}</p>
+                  {currentTier.price !== 'Cotizar' && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-lg font-bold text-amber-600">{currentTier.price}</span>
+                      {currentTier.setupFee && (
+                        <span className="text-xs text-neutral-400">{currentTier.setupFee}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-xs text-neutral-400">Estado</span>
+                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Activo
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {upgradeSuccess && (
         <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
@@ -366,7 +505,7 @@ export function AdminPlan() {
       <Card className="rounded-xl border-neutral-200">
         <CardContent className="p-6">
           <h3 className="text-sm font-semibold text-neutral-900 mb-4">Funcionalidades del plan</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Object.entries(planData.features).map(([key, enabled]) => {
               const info = FEATURE_LABELS[key]
               if (!info) return null
@@ -411,8 +550,11 @@ export function AdminPlan() {
 
       {/* ─── Plan Comparison Cards ───────────────────────────────────────────── */}
       <div>
-        <h3 className="text-sm font-semibold text-neutral-900 mb-4">Compara los planes</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-neutral-900">Compara los planes</h3>
+          <span className="text-xs text-neutral-400">Precios en soles peruanos (S/)</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {PLAN_TIERS.map((tier) => {
             const isCurrent = tier.id === currentPlan
             const isHigher = PLAN_TIERS.findIndex((t) => t.id === tier.id) > PLAN_TIERS.findIndex((t) => t.id === currentPlan)
@@ -423,9 +565,11 @@ export function AdminPlan() {
                 className={`rounded-xl overflow-hidden transition-all ${
                   isCurrent
                     ? 'border-2 border-amber-400 ring-2 ring-amber-100'
-                    : tier.popular
-                      ? 'border-2 border-sky-200'
-                      : 'border-neutral-200'
+                    : tier.recommended
+                      ? 'border-2 border-amber-200'
+                      : tier.popular
+                        ? 'border-2 border-sky-200'
+                        : 'border-neutral-200'
                 }`}
               >
                 {tier.popular && (
@@ -433,66 +577,82 @@ export function AdminPlan() {
                     <span className="text-[11px] font-bold uppercase tracking-wider">Más popular</span>
                   </div>
                 )}
+                {tier.recommended && (
+                  <div className="bg-amber-500 text-white text-center py-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Recomendado</span>
+                  </div>
+                )}
                 <CardContent className="p-5">
                   {/* Plan header */}
-                  <div className="text-center mb-5">
+                  <div className="text-center mb-4">
                     <div className="text-2xl mb-2">
                       {PLAN_BADGE_ICONS[tier.id]}
                     </div>
                     <h4 className="text-lg font-bold text-neutral-900">{tier.name}</h4>
                     <p className="text-xs text-neutral-500 mt-0.5">{tier.description}</p>
-                    <div className="mt-3">
-                      <span className="text-2xl font-bold text-neutral-900">{tier.price}</span>
+                    <div className="mt-2">
+                      <span className={`text-xl font-bold ${tier.price === 'Cotizar' ? 'text-purple-600' : 'text-neutral-900'}`}>
+                        {tier.price}
+                      </span>
                     </div>
+                    {tier.setupFee && (
+                      <p className="text-[10px] text-neutral-400 mt-1">{tier.setupFee}</p>
+                    )}
                   </div>
 
-                  <Separator className="bg-neutral-100 mb-5" />
+                  <Separator className="bg-neutral-100 mb-4" />
 
                   {/* Limits */}
-                  <div className="space-y-3 mb-5">
-                    <h5 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Límites</h5>
-                    <div className="space-y-2.5">
-                      {[
-                        { label: 'Productos', val: tier.limits.products },
-                        { label: 'Categorías', val: tier.limits.categories },
-                        { label: 'Pedidos', val: tier.limits.orders },
-                        { label: 'Usuarios', val: tier.limits.users },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between">
-                          <span className="text-sm text-neutral-600">{item.label}</span>
-                          <span className="text-sm font-semibold text-neutral-900">{item.val}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="space-y-2 mb-4">
+                    {[
+                      { label: 'Productos', val: tier.limits.products },
+                      { label: 'Categorías', val: tier.limits.categories },
+                      { label: 'Pedidos', val: tier.limits.orders },
+                      { label: 'Usuarios', val: tier.limits.users },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between">
+                        <span className="text-xs text-neutral-600">{item.label}</span>
+                        <span className="text-xs font-semibold text-neutral-900">{item.val}</span>
+                      </div>
+                    ))}
                   </div>
 
-                  <Separator className="bg-neutral-100 mb-5" />
+                  <Separator className="bg-neutral-100 mb-4" />
 
-                  {/* Features */}
-                  <div className="space-y-3 mb-5">
-                    <h5 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Funcionalidades</h5>
-                    <div className="space-y-2.5">
-                      {Object.entries(tier.features).map(([key, enabled]) => {
-                        const info = FEATURE_LABELS[key]
-                        if (!info) return null
-                        return (
-                          <div key={key} className="flex items-center gap-2.5">
-                            {enabled ? (
-                              <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                            ) : (
-                              <X className="w-4 h-4 text-neutral-300 flex-shrink-0" />
-                            )}
-                            <span className={`text-sm ${enabled ? 'text-neutral-700' : 'text-neutral-400'}`}>
-                              {info.label}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
+                  {/* Key Features */}
+                  <div className="space-y-2 mb-4">
+                    {KEY_FEATURES.map((key) => {
+                      const enabled = tier.features[key] === true
+                      const info = FEATURE_LABELS[key]
+                      if (!info) return null
+                      return (
+                        <div key={key} className="flex items-center gap-2">
+                          {enabled ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" />
+                          )}
+                          <span className={`text-xs ${enabled ? 'text-neutral-700' : 'text-neutral-400'}`}>
+                            {info.label}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
 
                   {/* Action button */}
-                  {isCurrent ? (
+                  {tier.id === 'empresarial' ? (
+                    <Button
+                      className="w-full h-10 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => {
+                        const msg = encodeURIComponent('Hola! Me interesa el plan Empresarial para Tienda Online Oficial.')
+                        window.open(`https://wa.me/51933667414?text=${msg}`, '_blank')
+                      }}
+                    >
+                      <Building2 className="w-4 h-4 mr-1.5" />
+                      Contactar Ventas
+                    </Button>
+                  ) : isCurrent ? (
                     <Button
                       className="w-full h-10 rounded-lg text-sm font-medium border-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
                       disabled
@@ -551,7 +711,7 @@ export function AdminPlan() {
                 </div>
                 <div className="text-center">
                   <span className="text-xs text-neutral-400 block mb-1">Nuevo</span>
-                  <Badge className={`text-xs font-semibold px-3 py-1 rounded-full border ${PLAN_BADGE_STYLES[upgradeTarget]}`}>
+                  <Badge className={`text-xs font-semibold px-3 py-1 rounded-full border ${PLAN_BADGE_STYLES[upgradeTarget] || 'bg-neutral-100 text-neutral-700 border-neutral-200'}`}>
                     {PLAN_BADGE_ICONS[upgradeTarget]} {PLAN_TIERS.find((t) => t.id === upgradeTarget)?.name}
                   </Badge>
                 </div>
@@ -565,45 +725,30 @@ export function AdminPlan() {
                 </p>
               </div>
 
-              {/* Quick summary of what they get */}
-              {upgradeTarget === 'pro' && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-neutral-700">Incluirás:</p>
-                  <ul className="space-y-1.5">
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Hasta 100 productos
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Hasta 15 categorías
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Hasta 200 pedidos/mes
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Integración con MercadoPago
-                    </li>
-                  </ul>
-                </div>
-              )}
-              {upgradeTarget === 'premium' && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-neutral-700">Incluirás:</p>
-                  <ul className="space-y-1.5">
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Productos, categorías, pedidos ilimitados
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Analíticas avanzadas
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Dominio personalizado
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-neutral-600">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Soporte prioritario
-                    </li>
-                  </ul>
-                </div>
-              )}
+              {/* Quick summary */}
+              {upgradeTarget && (() => {
+                const target = PLAN_TIERS.find((t) => t.id === upgradeTarget)
+                if (!target) return null
+                return (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-neutral-700">Incluirás:</p>
+                    <ul className="space-y-1.5">
+                      <li className="flex items-center gap-2 text-sm text-neutral-600">
+                        <Check className="w-3.5 h-3.5 text-emerald-500" /> {target.limits.products} productos
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-neutral-600">
+                        <Check className="w-3.5 h-3.5 text-emerald-500" /> {target.limits.categories} categorías
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-neutral-600">
+                        <Check className="w-3.5 h-3.5 text-emerald-500" /> {target.limits.orders} pedidos
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-neutral-600">
+                        <Check className="w-3.5 h-3.5 text-emerald-500" /> {target.price} por mes
+                      </li>
+                    </ul>
+                  </div>
+                )
+              })()}
             </div>
           )}
 
