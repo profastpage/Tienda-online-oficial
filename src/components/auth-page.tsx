@@ -91,7 +91,7 @@ function AuthPageContent() {
             </div>
             <span className="text-xl font-bold tracking-tight text-neutral-900">URBAN STYLE</span>
           </a>
-          <Button variant="ghost" onClick={() => router.push('/')}>
+          <Button variant="ghost" onClick={() => router.push('/demo')}>
             ← Volver a la tienda
           </Button>
         </div>

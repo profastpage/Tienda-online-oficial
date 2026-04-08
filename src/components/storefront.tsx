@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, ShoppingCart, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images, Download, Bell } from 'lucide-react'
+import { Heart, Search, ShoppingBag, ShoppingCart, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images, Download, Bell, Smartphone, Monitor } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -53,6 +53,15 @@ interface Testimonial {
   role: string
   content: string
   rating: number
+}
+
+const testimonialPhotos: Record<string, string> = {
+  'María García': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+  'Carlos López': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+  'Ana Torres': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+  'Luis Ramírez': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
+  'Sofía Martínez': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
+  'Diego Flores': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
 }
 
 // Animated counter component
@@ -253,6 +262,8 @@ export default function Storefront() {
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [selectedImageView, setSelectedImageView] = useState(0)
   const [storeWhatsApp, setStoreWhatsApp] = useState(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414')
+  const [canInstallPwa, setCanInstallPwa] = useState(false)
+  const [showInstallDialog, setShowInstallDialog] = useState(false)
   const galleryRef = useRef<HTMLDivElement>(null)
   const productDetailTouchStart = useRef(0)
   const productDetailTouchEnd = useRef(0)
@@ -302,6 +313,36 @@ export default function Storefront() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
   const [createdOrder, setCreatedOrder] = useState<{ id: string; orderNumber: string; status: string; total: number; items: any[] } | null>(null)
   const [mpCheckoutStatus, setMpCheckoutStatus] = useState<string | null>(null)
+
+  // PWA install listener
+  useEffect(() => {
+    const handleInstallAvailable = () => setCanInstallPwa(true)
+    const handleInstalled = () => setCanInstallPwa(false)
+    window.addEventListener('pwa-install-available', handleInstallAvailable)
+    window.addEventListener('pwa-installed', handleInstalled)
+    if ((window as any).__canInstallPwa) {
+      queueMicrotask(() => setCanInstallPwa(true))
+    }
+    return () => {
+      window.removeEventListener('pwa-install-available', handleInstallAvailable)
+      window.removeEventListener('pwa-installed', handleInstalled)
+    }
+  }, [])
+
+  const installPwa = async () => {
+    const prompt = (window as any).__deferredPrompt
+    if (prompt) {
+      prompt.prompt()
+      const { outcome } = await prompt.userChoice
+      if (outcome === 'accepted') {
+        setCanInstallPwa(false)
+        toast({ title: 'App instalada', description: 'La app se instaló correctamente', duration: 1000 })
+      }
+      ;(window as any).__deferredPrompt = null
+    } else {
+      setShowInstallDialog(true)
+    }
+  }
 
   // Scroll listener
   useEffect(() => {
@@ -751,27 +792,17 @@ Gracias!`)
                 <Moon className="w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
                 <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
               </button>
-              {/* Install App - only show if PWA installable */}
-              {(window as any).__canInstallPwa && (
-                <button
-                  onClick={async () => {
-                    const prompt = (window as any).__deferredPrompt
-                    if (prompt) {
-                      prompt.prompt()
-                      const result = await prompt.userChoice
-                      if (result.outcome === 'accepted') {
-                        toast({ title: 'App instalada', description: 'La app se instaló correctamente', duration: 1000 })
-                      }
-                      (window as any).__deferredPrompt = null
-                      (window as any).__canInstallPwa = false
-                    }
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Instalar App</span>
-                </button>
-              )}
+              {/* Install App - always show */}
+              <button
+                onClick={installPwa}
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Instalar App</span>
+                {canInstallPwa && (
+                  <Badge className="ml-auto bg-green-500 hover:bg-green-500 text-white text-[9px] px-1.5 py-0 rounded-full font-bold">NEW</Badge>
+                )}
+              </button>
               <nav className="space-y-1">
                 {['Inicio', 'Catálogo', 'Novedades', 'Nosotros'].map((item) => (
                   <a
@@ -1412,30 +1443,40 @@ Gracias!`)
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div className="p-8 md:p-12 lg:p-16">
                   <Badge className="mb-4 bg-white/10 text-white hover:bg-white/10 border-white/20 text-xs tracking-wider uppercase">
-                    Nueva Colección
+                    Nuestra Historia
                   </Badge>
                   <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                    Descubre las categorías de nuestra tienda
+                    Urban Style - Streetwear Peruano
                   </h2>
-                  <p className="mt-4 text-muted-foreground/70 text-lg">
-                    Encuentra todo lo que necesitas. Explora nuestras categorías y encuentra tu estilo perfecto.
+                  <p className="mt-4 text-neutral-300 text-lg leading-relaxed">
+                    Somos una marca peruana de streetwear que nace de la pasión por la cultura urbana y la moda sin fronteras. Cada prenda está diseñada con calidad premium, utilizando telas peruanas de primera y manufactura 100% local desde Lima.
                   </p>
+                  <div className="mt-6 space-y-2.5">
+                    {[
+                      '✨ Calidad premium en cada prenda',
+                      '🧵 Telas peruanas seleccionadas',
+                      '🎨 Diseños exclusivos y originales',
+                      '🚚 Envío a todo el Perú',
+                    ].map((point) => (
+                      <p key={point} className="text-neutral-400 text-sm">{point}</p>
+                    ))}
+                  </div>
                   <Button
                     size="lg"
-                    className="mt-6 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full px-8 h-12 font-semibold"
-                    onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="mt-8 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full px-8 h-12 font-semibold"
+                    onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    <LayoutGrid className="w-4 h-4 mr-1.5" />
-                    Ver Categorías
+                    Ver Catálogo
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </Button>
                 </div>
-                <div className="hidden md:block h-full min-h-[300px]">
+                <div className="hidden md:block h-full min-h-[400px]">
                   <img
                     src="/images/products/hoodie-gray.png"
-                    alt="Nuestra Colección"
-                    className="w-full h-full object-cover opacity-60"
+                    alt="Urban Style - Streetwear Peruano"
+                    className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-l from-transparent to-neutral-900/30 pointer-events-none hidden md:block" />
                 </div>
               </div>
             </motion.div>
@@ -1515,8 +1556,19 @@ Gracias!`)
                     &ldquo;{testimonial.content}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">
-                      {testimonial.name.charAt(0)}
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-muted">
+                      {testimonialPhotos[testimonial.name] ? (
+                        <img
+                          src={testimonialPhotos[testimonial.name]}
+                          alt={testimonial.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">${testimonial.name.charAt(0)}</div>` }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">
+                          {testimonial.name.charAt(0)}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold text-foreground text-sm">{testimonial.name}</p>
@@ -1638,7 +1690,7 @@ Gracias!`)
                 </div>
                 <span className="text-xl font-bold tracking-tight">URBAN STYLE</span>
               </div>
-              <p className="text-muted-foreground/70 text-sm leading-relaxed mb-4">
+              <p className="text-neutral-400 text-sm leading-relaxed mb-4">
                 Tu tienda de streetwear de confianza. Moda urbana premium con pedidos fáciles por WhatsApp.
               </p>
               <div className="flex gap-3">
@@ -1648,7 +1700,7 @@ Gracias!`)
                     href="#"
                     className="w-9 h-9 bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 rounded-full flex items-center justify-center transition-colors"
                   >
-                    <span className="text-xs text-muted-foreground/70 capitalize">{social[0]}</span>
+                    <span className="text-xs text-neutral-400 capitalize">{social[0]}</span>
                   </a>
                 ))}
               </div>
@@ -1656,11 +1708,11 @@ Gracias!`)
 
             {/* Links */}
             <div>
-              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-400">Tienda</h3>
+              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Tienda</h3>
               <ul className="space-y-2.5">
                 {['Polos', 'Hoodies', 'Pantalones', 'Zapatos', 'Novedades'].map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-sm text-muted-foreground/70 hover:text-white transition-colors">
+                    <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">
                       {link}
                     </a>
                   </li>
@@ -1669,11 +1721,11 @@ Gracias!`)
             </div>
 
             <div>
-              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-400">Ayuda</h3>
+              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Ayuda</h3>
               <ul className="space-y-2.5">
                 {['FAQ', 'Guía de tallas', 'Devoluciones', 'Contacto', 'Términos'].map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-sm text-muted-foreground/70 hover:text-white transition-colors">
+                    <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">
                       {link}
                     </a>
                   </li>
@@ -1682,8 +1734,8 @@ Gracias!`)
             </div>
 
             <div>
-              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-400">Contacto</h3>
-              <div className="space-y-3 text-sm text-muted-foreground/70">
+              <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Contacto</h3>
+              <div className="space-y-3 text-sm text-neutral-400">
                 <p className="flex items-center gap-2">
                   <span>📍</span> Lima, Perú
                 </p>
@@ -1699,7 +1751,7 @@ Gracias!`)
               </div>
               {/* Payment methods */}
               <div className="mt-4">
-                <h4 className="text-xs text-muted-foreground mb-2">Métodos de pago</h4>
+                <h4 className="text-xs text-neutral-500 mb-2">Métodos de pago</h4>
                 <div className="flex flex-wrap gap-2">
                   {paymentMethods.length > 0 ? (
                     paymentMethods.map((method) => {
@@ -1722,7 +1774,7 @@ Gracias!`)
                     })
                   ) : (
                     ['Efectivo', 'Yape', 'Plin', 'Transferencia'].map((method) => (
-                      <span key={method} className="text-[10px] bg-muted text-muted-foreground/70 px-2 py-1 rounded">
+                      <span key={method} className="text-[10px] bg-muted text-neutral-400 px-2 py-1 rounded">
                         {method}
                       </span>
                     ))
@@ -1734,15 +1786,67 @@ Gracias!`)
 
           <Separator className="my-8 bg-neutral-800" />
 
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>&copy; 2026 Urban Style. Todos los derechos reservados.</p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-400">
+            <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+              <p>&copy; 2026 Urban Style. Todos los derechos reservados.</p>
+              <span className="hidden sm:inline text-neutral-600">·</span>
+              <a href="https://tienda-online-oficial.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+                Creado y desarrollado por <span className="font-semibold text-white">Tienda Online</span>
+              </a>
+            </div>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-white transition-colors">Términos y condiciones</a>
-              <a href="#" className="hover:text-white transition-colors">Política de privacidad</a>
+              <a href="#" className="hover:text-amber-400 transition-colors">Términos y condiciones</a>
+              <a href="#" className="hover:text-amber-400 transition-colors">Política de privacidad</a>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Install App Instructions Dialog */}
+      <Dialog open={showInstallDialog} onOpenChange={setShowInstallDialog}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5" />
+              Instalar App
+            </DialogTitle>
+            <DialogDescription>Instala Urban Style en tu dispositivo para una experiencia más rápida</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/iPad|iPhone|iPod/.test(navigator.userAgent) ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl">
+                  <Smartphone className="w-6 h-6 text-amber-600 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-semibold">Desde Safari (iOS)</p>
+                    <p className="text-muted-foreground mt-1">Toca el botón <strong>Compartir</strong> (cuadrado con flecha ↑) → <strong>Agregar a pantalla de inicio</strong></p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
+                  <Monitor className="w-6 h-6 text-blue-600 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-semibold">Desde Chrome (Android)</p>
+                    <p className="text-muted-foreground mt-1">Toca los tres puntos <strong>⋮</strong> → <strong>Instalar aplicación</strong></p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
+                  <Monitor className="w-6 h-6 text-neutral-500 shrink-0" />
+                  <div className="text-sm text-foreground">
+                    <p className="font-semibold">Otra opción</p>
+                    <p className="text-muted-foreground mt-1">Toca el menú del navegador → <strong>Agregar a pantalla de inicio</strong></p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <Button onClick={() => setShowInstallDialog(false)} className="w-full mt-2">
+            Entendido
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-4 z-40 flex flex-col items-center gap-3">

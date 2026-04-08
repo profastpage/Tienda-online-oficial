@@ -417,6 +417,13 @@ const testimonials = [
   },
 ]
 
+const testimonialPhotos: Record<string, string> = {
+  'María García': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+  'Carlos Mendoza': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+  'Ana Lucía Torres': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
+  'Roberto Sánchez': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+}
+
 const faqItems = [
   {
     question: '¿Necesito conocimientos técnicos?',
@@ -615,6 +622,24 @@ export default function SaasLanding() {
             >
               Registrarse
             </button>
+            {canInstallPwa && (
+              <button
+                onClick={() => { installPwa(); setMobileMenuOpen(false) }}
+                className="flex items-center gap-2 w-full text-left px-4 py-3 text-green-600 hover:bg-green-50 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Instalar App
+              </button>
+            )}
+            <Separator className="my-3" />
+            <a
+              href="/demo"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 text-neutral-700 hover:bg-neutral-50 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Store className="w-4 h-4" />
+              Ver Demo
+            </a>
           </nav>
         </SheetContent>
       </Sheet>
@@ -1195,8 +1220,19 @@ export default function SaasLanding() {
                     </p>
                     <Separator className="my-4" />
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                        {testimonial.name.charAt(0)}
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                        {testimonialPhotos[testimonial.name] ? (
+                          <img
+                            src={testimonialPhotos[testimonial.name]}
+                            alt={testimonial.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">${testimonial.name.charAt(0)}</div>` }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                            {testimonial.name.charAt(0)}
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-neutral-900 text-sm truncate">{testimonial.name}</p>
@@ -1459,7 +1495,7 @@ export default function SaasLanding() {
                 </div>
                 <span className="text-white font-bold text-lg">Tienda Online</span>
               </div>
-              <p className="text-sm text-neutral-400 leading-relaxed mb-4">
+              <p className="text-sm text-neutral-300 leading-relaxed mb-4">
                 La plataforma #1 en Perú para crear tu tienda online profesional. Simple, rápida y poderosa.
               </p>
               <div className="flex items-center gap-3">
@@ -1512,7 +1548,13 @@ export default function SaasLanding() {
           {/* Bottom bar */}
           <Separator className="bg-white/10" />
           <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-500">
-            <p>&copy; {new Date().getFullYear()} Tienda Online Oficial. Todos los derechos reservados.</p>
+            <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+              <p>&copy; {new Date().getFullYear()} Tienda Online Oficial. Todos los derechos reservados.</p>
+              <span className="hidden sm:inline text-neutral-600">·</span>
+              <a href="https://tienda-online-oficial.vercel.app/" className="hover:text-white transition-colors">
+                Creado y desarrollado por <span className="font-semibold text-white">Tienda Online</span>
+              </a>
+            </div>
             <div className="flex items-center gap-4">
               <a href="#" className="hover:text-white transition-colors">Términos</a>
               <a href="#" className="hover:text-white transition-colors">Privacidad</a>
