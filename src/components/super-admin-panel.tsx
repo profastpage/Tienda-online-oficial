@@ -8,7 +8,7 @@ import {
   Mail, Phone, Calendar, Search, ChevronDown, ChevronUp,
   CheckCircle2, BarChart3, RefreshCw, UserPlus, Shield,
   Lock, Eye, Trash2, Ban, Power, Unlock, AlertTriangle,
-  X
+  X, ArrowRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -94,6 +94,7 @@ const statusColors: Record<string, string> = {
 
 // ═══ Login Gate ═══
 function SuperAdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -105,19 +106,47 @@ function SuperAdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
     setLoading(true)
 
     try {
+      // Strategy 1: Try the dedicated super-admin auth endpoint
       const res = await fetch('/api/super-admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      const data = await res.json()
 
-      if (!res.ok) {
-        setError(data.error || 'Error al autenticar')
+      if (res.ok) {
+        const data = await res.json()
+        onLogin(data.token)
         return
       }
 
-      onLogin(data.token)
+      const data = await res.json()
+
+      // Strategy 2: If 503 (env vars not configured), fall back to /api/auth/login
+      // which also detects super admin credentials and sets the proper cookies
+      if (res.status === 503) {
+        try {
+          const loginRes = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          })
+          const loginData = await loginRes.json()
+          if (loginRes.ok) {
+            // The /api/auth/login sets super-admin-token cookie automatically
+            // Pass the token from the response, or empty string to rely on cookies
+            onLogin(loginData.token || '')
+            return
+          }
+          setError(loginData.error || 'Error al autenticar')
+          return
+        } catch {
+          setError('Super admin no configurado. Verifica las variables de entorno.')
+          return
+        }
+      }
+
+      // Other errors from /api/super-admin/auth
+      setError(data.error || 'Error al autenticar')
     } catch {
       setError('Error de conexión')
     } finally {
@@ -192,6 +221,13 @@ function SuperAdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
         <p className="text-center text-xs text-neutral-400 mt-4">
           Acceso restringido al administrador del sistema
         </p>
+        <button
+          onClick={() => router.push('/login')}
+          className="flex items-center justify-center gap-1.5 mx-auto mt-3 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Volver al login principal
+        </button>
       </motion.div>
     </div>
   )
@@ -215,24 +251,11 @@ export default function SuperAdminPanel() {
     isActive?: boolean
   } | null>(null)
 
-  // Check for existing token on mount
+  // Check for existing auth on mount (rely on cookies first, no Bearer header)
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/super-admin', {
-          headers: { 'Authorization': `Bearer ${authToken || ''}` },
-        })
-        if (res.ok) {
-          const json = await res.json()
-          setData(json)
-          setIsAuthenticated(true)
-          return
-        }
-      } catch {
-        // Ignore
-      }
-      // Also check via cookie
-      try {
+        // First try without any Bearer header — rely on super-admin-token cookie
         const res = await fetch('/api/super-admin')
         if (res.ok) {
           const json = await res.json()
@@ -241,7 +264,7 @@ export default function SuperAdminPanel() {
           return
         }
       } catch {
-        // Ignore
+        // Ignore network errors
       }
       setIsAuthenticated(false)
       setLoading(false)
@@ -251,17 +274,33 @@ export default function SuperAdminPanel() {
 
   const handleLogin = useCallback(async (token: string) => {
     setAuthToken(token)
+    setLoading(true)
     try {
-      const res = await fetch('/api/super-admin', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      })
+      // If we have a token, try with Bearer header first
+      if (token) {
+        const res = await fetch('/api/super-admin', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const json = await res.json()
+          setData(json)
+          setIsAuthenticated(true)
+          return
+        }
+      }
+      // Fallback: try without Bearer header (rely on cookies set by login)
+      const res = await fetch('/api/super-admin')
       if (res.ok) {
         const json = await res.json()
         setData(json)
         setIsAuthenticated(true)
+        return
       }
+      // Both failed — stay on login form
+      setIsAuthenticated(false)
     } catch {
       console.error('Error fetching super admin data')
+      setIsAuthenticated(false)
     } finally {
       setLoading(false)
     }

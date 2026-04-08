@@ -114,7 +114,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Camiseta Urban Classic',
     slug: 'camiseta-urban-classic',
     description:
-      'Camiseta Urban Classic - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Camiseta de algodón pima 100% con estampado urbano exclusivo. Corte regular fit ideal para el día a día.',
     price: 79.9,
     comparePrice: 99.9,
     image: '/images/products/polera-oversize.png',
@@ -137,7 +137,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Camiseta Oversize Street',
     slug: 'camiseta-oversize-street',
     description:
-      'Camiseta Oversize Street - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Polo oversize de algodón premium con caída relajada. Perfecto para combinar con joggers o jeans.',
     price: 89.9,
     comparePrice: null,
     image: '/images/products/polera-black.png',
@@ -160,7 +160,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Camiseta Logo Premium',
     slug: 'camiseta-logo-premium',
     description:
-      'Camiseta Logo Premium - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Camiseta con logo bordado en el pecho. Algodón 24/1 de alta suavidad, no destiñe.',
     price: 69.9,
     comparePrice: 89.9,
     image: '/images/products/polera-white.png',
@@ -183,7 +183,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Camiseta Minimal Black',
     slug: 'camiseta-minimal-black',
     description:
-      'Camiseta Minimal Black - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Polo negro minimalista sin estampados. Algodón peinado con acabado mate, básico imperdible.',
     price: 59.9,
     comparePrice: null,
     image: '/images/products/polera-black.png',
@@ -206,7 +206,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Jogger Cargo Negro',
     slug: 'jogger-cargo-negro',
     description:
-      'Jogger Cargo Negro - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Jogger cargo con 6 bolsillos funcionales. Tela de gabardina stretch, cintura elástica con cordón.',
     price: 129.9,
     comparePrice: 159.9,
     image: '/images/products/cargo-black.png',
@@ -229,7 +229,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Jeans Slim Fit',
     slug: 'jeans-slim-fit',
     description:
-      'Jeans Slim Fit - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Jeans de mezclilla premium 12oz con stretch. Lavado dark blue, slim fit con acabado vintage.',
     price: 149.9,
     comparePrice: null,
     image: '/images/products/jean-dark.png',
@@ -252,7 +252,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Jogger Gris Urbano',
     slug: 'jogger-gris-urbano',
     description:
-      'Jogger Gris Urbano - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Jogger de fleece premium con puños y cintura elástica. Ideal para deporte o uso casual.',
     price: 109.9,
     comparePrice: null,
     image: '/images/products/jogger-black.png',
@@ -275,7 +275,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Air Runner Pro',
     slug: 'air-runner-pro',
     description:
-      'Air Runner Pro - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Zapatillas deportivas con suela de gel amortiguante. Upper de mesh transpirable, diseño moderno.',
     price: 249.9,
     comparePrice: 299.9,
     image: '/images/products/sneakers-white.png',
@@ -298,7 +298,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Street Style High',
     slug: 'street-style-high',
     description:
-      'Street Style High - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Zapatillas high-top de cuero sintético con suela gruesa. Estilo urbano con máxima comodidad.',
     price: 199.9,
     comparePrice: null,
     image: '/images/products/sneakers-white-v2.png',
@@ -321,7 +321,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Classic White Low',
     slug: 'classic-white-low',
     description:
-      'Classic White Low - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Zapatillas low-top blancas clásicas. Cuero sintético premium, suela vulcanizada anti-deslizante.',
     price: 179.9,
     comparePrice: 219.9,
     image: '/images/products/sneakers-white.png',
@@ -344,7 +344,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Gorra Snapback Urban',
     slug: 'gorra-snapback-urban',
     description:
-      'Gorra Snapback Urban - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Gorra snapback con visera plana y cierre ajustable. Tela de gabardina, logo bordado 3D.',
     price: 49.9,
     comparePrice: null,
     image: '/images/products/hoodie-gray.png',
@@ -367,7 +367,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Mochila Laptop Pro',
     slug: 'mochila-laptop-pro',
     description:
-      'Mochila Laptop Pro - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Mochila para laptop 15.6" con compartimento acolchado. Material resistente al agua, puerto USB lateral.',
     price: 139.9,
     comparePrice: 169.9,
     image: '/images/products/bomber-black.png',
@@ -390,7 +390,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Cadena Urban Gold',
     slug: 'cadena-urban-gold',
     description:
-      'Cadena Urban Gold - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Cadena de acero inoxidable bañada en oro 18k. Diseño cubano link, cierre de langosta.',
     price: 39.9,
     comparePrice: null,
     image: '/images/products/hoodie-red.png',
@@ -413,7 +413,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Bomber Jacket Negro',
     slug: 'bomber-jacket-negro',
     description:
-      'Bomber Jacket Negro - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Bomber de nylon con forro polar. Cierre YKK, bolsillos con cremallera, acabado premium.',
     price: 199.9,
     comparePrice: 249.9,
     image: '/images/products/bomber-black.png',
@@ -436,7 +436,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Windbreaker Deportivo',
     slug: 'windbreaker-deportivo',
     description:
-      'Windbreaker Deportivo - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Chaqueta windbreaker ligera e impermeable. Capucha plegable, ventilación trasera, reflectivos.',
     price: 159.9,
     comparePrice: null,
     image: '/images/products/denim-jacket.png',
@@ -459,7 +459,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Hoodie Oversize Grey',
     slug: 'hoodie-oversize-grey',
     description:
-      'Hoodie Oversize Grey - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Hoodie oversize de fleece 380gsm. Capucha amplia con cordones planos, bolsillo canguro.',
     price: 119.9,
     comparePrice: 149.9,
     image: '/images/products/hoodie-gray.png',
@@ -482,7 +482,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Hoodie Zip Street',
     slug: 'hoodie-zip-street',
     description:
-      'Hoodie Zip Street - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Buzo con cierre frontal completo. Fleece suave anti-pilling, mangas raglan para mejor movilidad.',
     price: 139.9,
     comparePrice: null,
     image: '/images/products/hoodie-red.png',
@@ -505,7 +505,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Sweater Beige Premium',
     slug: 'sweater-beige-premium',
     description:
-      'Sweater Beige Premium - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Suéter de lana merino premium. Punto jersey suave, cuello redondo, acabado profesional.',
     price: 109.9,
     comparePrice: 139.9,
     image: '/images/products/sweater-beige.png',
@@ -528,7 +528,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Sweater Cream Vintage',
     slug: 'sweater-cream-vintage',
     description:
-      'Sweater Cream Vintage - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Suéter crema con textura vintage. Algodón macramé, costuras reforzadas, corte relajado.',
     price: 99.9,
     comparePrice: null,
     image: '/images/products/sweater-cream.png',
@@ -551,7 +551,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Denim Jacket Vintage',
     slug: 'denim-jacket-vintage',
     description:
-      'Denim Jacket Vintage - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Chaqueta denim de mezclilla lavada. Estilo cropped, botones de metal, forro de satén.',
     price: 189.9,
     comparePrice: 229.9,
     image: '/images/products/denim-vintage.png',
@@ -574,7 +574,7 @@ export const seedProducts: SeedProduct[] = [
     name: 'Cargo Oliva Street',
     slug: 'cargo-oliva-street',
     description:
-      'Cargo Oliva Street - Calidad premium para tu estilo urbano. Diseño exclusivo y materiales de alta calidad.',
+      'Pantalón cargo oliva con bolsillos laterales. Tela ripstop resistente, ajuste regular, ideal para outdoor.',
     price: 134.9,
     comparePrice: null,
     image: '/images/products/cargo-olive.png',
