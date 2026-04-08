@@ -29,18 +29,20 @@ model Store {
 }
 
 model StoreUser {
-  id        String   @id @default(cuid())
-  email     String
-  password  String
-  name      String
-  phone     String   @default("")
-  address   String   @default("")
-  role      String   @default("customer")
-  storeId   String
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  orders    Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String
+  password          String
+  name              String
+  phone             String   @default("")
+  address           String   @default("")
+  role              String   @default("customer")
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders            Order[]
+  twoFactorSecret   String?
+  twoFactorEnabled  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([email, storeId])
   @@index([storeId, role])

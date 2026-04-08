@@ -139,6 +139,18 @@ export async function POST(request: Request) {
     if (email === superEmail) {
       const isValid = await comparePassword(password, superPasswordHash)
       if (isValid) {
+        // Check if super admin has 2FA enabled
+        const superAdmin2FASecret = process.env.SUPER_ADMIN_2FA_SECRET
+        if (superAdmin2FASecret) {
+          return NextResponse.json({
+            requires2FA: true,
+            email: superEmail,
+            role: 'super-admin',
+            storeId: '__super_admin__',
+            name: 'Super Administrador',
+          })
+        }
+
         const token = await signToken({
           userId: 'super-admin-001',
           email: superEmail,
@@ -185,6 +197,7 @@ export async function POST(request: Request) {
       address: string
       role: string
       storeId: string
+      twoFactorEnabled: boolean
       store: { name: string; slug: string }
     } | null = null
 
@@ -235,6 +248,7 @@ export async function POST(request: Request) {
           if (isValid) {
             matchedUser = {
               ...seedUser,
+              twoFactorEnabled: false,
               store: { name: seedUser.storeName, slug: seedUser.storeSlug },
             }
             break
@@ -245,6 +259,17 @@ export async function POST(request: Request) {
 
     if (!matchedUser) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
+    }
+
+    // Check if user has 2FA enabled
+    if (matchedUser.twoFactorEnabled) {
+      return NextResponse.json({
+        requires2FA: true,
+        email: matchedUser.email,
+        role: matchedUser.role,
+        storeId: matchedUser.storeId,
+        name: matchedUser.name,
+      })
     }
 
     // Generate JWT token
