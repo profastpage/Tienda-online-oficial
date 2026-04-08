@@ -54,7 +54,7 @@ export function middleware(request: NextRequest) {
 
   // ═══ Protect authenticated PAGE routes ═══
   // Redirect to login if no auth token present
-  if (pathname.startsWith('/admin') || pathname.startsWith('/cliente') || pathname.startsWith('/super-admin')) {
+  if (pathname.startsWith('/admin') || pathname.startsWith('/cliente')) {
     const cookieToken = request.cookies.get('auth-token')?.value
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
@@ -65,6 +65,11 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
+    return NextResponse.next()
+  }
+
+  // Super admin page has its own login gate in the component
+  if (pathname.startsWith('/super-admin')) {
     return NextResponse.next()
   }
 
@@ -101,10 +106,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect super-admin
-  if (pathname.startsWith('/api/super-admin')) {
+  // Protect super-admin API (except auth endpoint)
+  if (pathname.startsWith('/api/super-admin') && !pathname.startsWith('/api/super-admin/auth')) {
     const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    const cookieToken = request.cookies.get('super-admin-token')?.value
+    const token = authHeader?.replace('Bearer ', '') || cookieToken
     if (!token || token !== process.env.SUPER_ADMIN_SECRET) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }

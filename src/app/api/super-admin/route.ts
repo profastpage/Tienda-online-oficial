@@ -9,14 +9,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // Verify SUPER_ADMIN_SECRET from authorization header
+    // Verify SUPER_ADMIN_SECRET from authorization header or cookie
     const superSecret = process.env.SUPER_ADMIN_SECRET
     if (!superSecret) {
       return NextResponse.json({ error: 'Super admin access is not configured' }, { status: 503 })
     }
 
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== `Bearer ${superSecret}`) {
+    const authCookie = request.cookies.get('super-admin-token')?.value
+    const token = (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null) || authCookie
+    if (!token || token !== superSecret) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
@@ -90,5 +92,75 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('[super-admin] Error:', error)
     return NextResponse.json({ error: 'Error al obtener datos' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    // Rate limit protection
+    if (!checkRateLimit(request, 10, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
+    // Verify SUPER_ADMIN_SECRET
+    const superSecret = process.env.SUPER_ADMIN_SECRET
+    if (!superSecret) {
+      return NextResponse.json({ error: 'Super admin access is not configured' }, { status: 503 })
+    }
+
+    const authHeader = request.headers.get('authorization')
+    const authCookie = request.cookies.get('super-admin-token')?.value
+    const token = (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null) || authCookie
+    if (!token || token !== superSecret) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { action } = body
+
+    const db = await getDb()
+
+    if (action === 'toggle-store') {
+      const { storeId, isActive } = body
+      if (!storeId || typeof isActive !== 'boolean') {
+        return NextResponse.json({ error: 'storeId e isActive requeridos' }, { status: 400 })
+      }
+
+      const store = await db.store.update({
+        where: { id: storeId },
+        data: { isActive },
+        include: {
+          _count: { select: { users: true, products: true, orders: true, categories: true } },
+          users: {
+            select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true },
+          },
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: `Tienda ${isActive ? 'activada' : 'suspendida'} exitosamente`,
+        store,
+      })
+    }
+
+    if (action === 'delete-store') {
+      const { storeId } = body
+      if (!storeId) {
+        return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
+      }
+
+      await db.store.delete({ where: { id: storeId } })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Tienda eliminada exitosamente',
+      })
+    }
+
+    return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
+  } catch (error) {
+    console.error('[super-admin] PATCH error:', error)
+    return NextResponse.json({ error: 'Error al procesar la solicitud' }, { status: 500 })
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Heart, Search, ShoppingBag, ShoppingCart, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images, Download, Bell, Smartphone, Monitor } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Heart, Search, ShoppingBag, ShoppingCart, Menu, X, ChevronRight, ChevronUp, ChevronLeft, LogIn, LogOut, Minus, Plus, Trash2, Sun, Moon, Check, Loader2, Flame, Tag, LayoutGrid, CreditCard, ShieldCheck, Clock, AlertCircle, MessageCircle, Images, Download, Bell, Smartphone, Monitor, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -416,14 +416,23 @@ export default function Storefront() {
   // WhatsApp order message builder
   const getWhatsAppOrderUrl = useCallback(() => {
     if (cart.items.length > 0) {
-      const message = cart.items.map((item, i) =>
-        `${i + 1}. ${item.name} - Talla: ${item.size} - Color: ${item.color} - Qty: ${item.quantity} - S/ ${(item.price * item.quantity).toFixed(2)}`
-      ).join('\n')
-      const total = `Total: S/ ${cart.totalPrice().toFixed(2)}`
-      const fullMessage = encodeURIComponent(`Hola! Quiero hacer un pedido:\n\n${message}\n\n${total}\n\nGracias!`)
+      const items = cart.items.map((item, i) =>
+        `  ${i + 1}️⃣ *${item.name}*\n  📏 Talla: ${item.size} · 🎨 Color: ${item.color}\n  📦 Cantidad: ${item.quantity}\n  💰 S/ ${(item.price * item.quantity).toFixed(2)}`
+      ).join('\n\n')
+      const shipping = cart.totalPrice() > 199 ? '✅ Envío gratis' : '🚚 Envío: S/ 15.00'
+      const total = cart.totalPrice() > 199 ? cart.totalPrice() : cart.totalPrice() + 15
+      const fullMessage = encodeURIComponent(
+        `🛒 *PEDIDO - URBAN STYLE*\n` +
+        `━━━━━━━━━━━━━━━━━\n\n` +
+        `${items}\n\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `${shipping}\n` +
+        `💳 *TOTAL: S/ ${total.toFixed(2)}*\n\n` +
+        `¡Gracias por tu compra! 🙌`
+      )
       return `https://wa.me/${storeWhatsApp}?text=${fullMessage}`
     }
-    const defaultMsg = encodeURIComponent('Hola! Quiero información sobre sus productos. Gracias!')
+    const defaultMsg = encodeURIComponent('Hola! 👋 Quiero información sobre sus productos. Gracias!')
     return `https://wa.me/${storeWhatsApp}?text=${defaultMsg}`
   }, [cart.items, cart.totalPrice])
 
@@ -641,6 +650,18 @@ Estado: ${createdOrder.status}
 Gracias!`)
     window.open(`https://wa.me/${storeWhatsApp}?text=${message}`, '_blank')
   }
+
+  const [fabOpen, setFabOpen] = useState(false)
+  const [showAiChat, setShowAiChat] = useState(false)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('[data-fab-menu]')) setFabOpen(false)
+    }
+    if (fabOpen) document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [fabOpen])
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -1848,80 +1869,151 @@ Gracias!`)
         </DialogContent>
       </Dialog>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 right-4 z-40 flex flex-col items-center gap-3">
-        {/* Test Notification Bell */}
-        <button
-          onClick={async () => {
-            if (!('Notification' in window)) {
-              toast({ title: 'Notificaciones no soportadas', variant: 'destructive', duration: 1000 })
-              return
-            }
-            if (Notification.permission === 'default') {
-              const perm = await Notification.requestPermission()
-              if (perm !== 'granted') return
-            }
-            if (Notification.permission === 'granted') {
-              // Send different test notifications randomly
-              const notifications = [
-                { title: '🛍️ Nueva oferta', body: '20% de descuento en toda la tienda. Solo por hoy.' },
-                { title: '📦 Tu pedido está en camino', body: 'El pedido #12345 fue enviado. Llega mañana.' },
-                { title: '⭐ Nuevo producto', body: 'Acabamos de agregar productos que te pueden interesar.' },
-                { title: '💰 Precio especial', body: 'Los productos en tu lista de deseos tienen descuento.' },
-                { title: '🎉 ¡Bienvenido!', body: 'Gracias por instalar nuestra app. Disfruta una experiencia mejor.' },
-                { title: '🚚 Envío gratis', body: 'Pedidos mayores a S/199 tienen envío gratis esta semana.' },
-              ]
-              const notif = notifications[Math.floor(Math.random() * notifications.length)]
-              new Notification(notif.title, {
-                body: notif.body,
-                icon: '/icon.svg',
-                badge: '/icon.svg',
-                tag: 'test-notification',
-              })
-              toast({ title: 'Notificación enviada', description: notif.title, duration: 1000 })
-            }
-          }}
-          className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-lg flex items-center justify-center transition-all hover:scale-105"
-          title="Probar notificación"
-        >
-          <Bell className="w-5 h-5" />
-        </button>
+      {/* Unified FAB Menu */}
+      <div data-fab-menu className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+        {/* Expanded action buttons - fan out above */}
+        <AnimatePresence>
+          {fabOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col items-end gap-2.5"
+            >
+              {/* Notification Bell */}
+              <motion.button
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.05 }}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  if (!('Notification' in window)) {
+                    toast({ title: 'No soportado', variant: 'destructive', duration: 800 })
+                    return
+                  }
+                  if (Notification.permission === 'default') {
+                    const perm = await Notification.requestPermission()
+                    if (perm !== 'granted') return
+                  }
+                  if (Notification.permission === 'granted') {
+                    const notifications = [
+                      { title: '🛍️ Nueva oferta', body: '20% de descuento en toda la tienda. Solo por hoy.' },
+                      { title: '📦 Tu pedido está en camino', body: 'El pedido fue enviado. Llega mañana.' },
+                      { title: '⭐ Nuevo producto', body: 'Productos nuevos que te pueden interesar.' },
+                      { title: '💰 Precio especial', body: 'Tus favoritos tienen descuento ahora.' },
+                      { title: '🎉 ¡Bienvenido!', body: 'Gracias por instalar nuestra app.' },
+                      { title: '🚚 Envío gratis', body: 'Pedidos mayores a S/199 esta semana.' },
+                    ]
+                    const notif = notifications[Math.floor(Math.random() * notifications.length)]
+                    new Notification(notif.title, { body: notif.body, icon: '/icon.svg', badge: '/icon.svg', tag: 'test-notification' })
+                    toast({ title: 'Notificación enviada', description: notif.title, duration: 800 })
+                  }
+                }}
+                className="flex items-center gap-2.5 group"
+                title="Probar notificación"
+              >
+                <span className="hidden sm:block text-xs font-medium text-foreground/80 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-border/50 whitespace-nowrap">
+                  Notificaciones
+                </span>
+                <span className="sm:hidden text-[10px] font-medium text-foreground/80 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-border/50">
+                  🔔
+                </span>
+                <div className="w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                  <Bell className="w-4.5 h-4.5" />
+                </div>
+              </motion.button>
 
-        {/* Back to Top Button */}
+              {/* AI Chat */}
+              <motion.button
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                onClick={(e) => { e.stopPropagation(); setShowAiChat(true); setFabOpen(false) }}
+                className="flex items-center gap-2.5 group"
+                title="Chat con IA"
+              >
+                <span className="hidden sm:block text-xs font-medium text-foreground/80 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-border/50 whitespace-nowrap">
+                  Asistente IA
+                </span>
+                <span className="sm:hidden text-[10px] font-medium text-foreground/80 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-border/50">
+                  🤖
+                </span>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                  <Bot className="w-4.5 h-4.5" />
+                </div>
+              </motion.button>
+
+              {/* WhatsApp */}
+              <motion.a
+                href={getWhatsAppOrderUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-2.5 group"
+                title="Pedir por WhatsApp"
+              >
+                <span className="hidden sm:block text-xs font-medium text-foreground/80 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-border/50 whitespace-nowrap">
+                  WhatsApp
+                </span>
+                <span className="sm:hidden text-[10px] font-medium text-foreground/80 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-border/50">
+                  💬
+                </span>
+                <div className="w-10 h-10 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg flex items-center justify-center transition-all hover:scale-110 relative">
+                  <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  {cart.totalItems() > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-neutral-900 text-white text-[9px] font-bold flex items-center justify-center px-1">
+                      {cart.totalItems()}
+                    </span>
+                  )}
+                </div>
+              </motion.a>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Minimalist Back to Top - only arrow, no background */}
         {scrollY > 400 && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-12 h-12 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center shadow-lg transition-colors border border-primary-foreground/10"
+            className="absolute -top-10 right-2 w-8 h-8 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
             aria-label="Volver arriba"
           >
-            <ChevronUp className="w-5 h-5 text-primary-foreground" />
+            <ChevronUp className="w-5 h-5" />
           </motion.button>
         )}
 
-        {/* WhatsApp Floating Button */}
-        <motion.a
-          href={getWhatsAppOrderUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label="Contactar por WhatsApp"
+        {/* Main FAB Button */}
+        <motion.button
+          onClick={(e) => { e.stopPropagation(); setFabOpen(!fabOpen) }}
+          className="w-14 h-14 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white shadow-xl shadow-neutral-900/30 flex items-center justify-center transition-all hover:scale-105 relative"
+          whileTap={{ scale: 0.92 }}
+          aria-label="Menú de acciones"
         >
-          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-          </svg>
-          {cart.totalItems() > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-neutral-900 text-white text-[10px]">
+          <AnimatePresence mode="wait">
+            {fabOpen ? (
+              <motion.div key="close" initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} exit={{ rotate: 90, scale: 0 }} transition={{ duration: 0.15 }}>
+                <X className="w-6 h-6" />
+              </motion.div>
+            ) : (
+              <motion.div key="menu" initial={{ rotate: 90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} exit={{ rotate: -90, scale: 0 }} transition={{ duration: 0.15 }}>
+                <Menu className="w-6 h-6" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {!fabOpen && cart.totalItems() > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm">
               {cart.totalItems()}
-            </Badge>
+            </span>
           )}
-        </motion.a>
+        </motion.button>
       </div>
 
       {/* Shopping Cart Sheet */}
@@ -1951,7 +2043,7 @@ Gracias!`)
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto -mx-6 px-6 py-4">
+              <div className="flex-1 overflow-y-auto -mx-6 px-6 py-4 space-y-1">
                 <div className="space-y-4">
                   {cart.items.map((item) => (
                     <div key={`${item.id}-${item.size}`} className="flex gap-4">
@@ -1981,8 +2073,9 @@ Gracias!`)
                         </div>
                       </div>
                       <button
-                        className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0 mt-1"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
                         onClick={() => cart.removeItem(item.id, item.size)}
+                        title="Eliminar producto"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1990,7 +2083,7 @@ Gracias!`)
                   ))}
                 </div>
               </div>
-              <SheetFooter className="border-t pt-4 flex-col gap-3">
+              <SheetFooter className="border-t pt-4 px-1 flex-col gap-3">
                 <div className="w-full flex items-center justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="text-xl font-bold">S/ {cart.totalPrice().toFixed(2)}</span>
@@ -2005,6 +2098,19 @@ Gracias!`)
                   <ShoppingBag className="w-5 h-5 mr-2" />
                   Finalizar Compra · S/ {orderTotal.toFixed(2)}
                 </Button>
+                {/* WhatsApp Direct Order */}
+                <button
+                  onClick={() => {
+                    window.open(getWhatsAppOrderUrl(), '_blank')
+                    toast({ title: 'Pedido enviado por WhatsApp', duration: 800 })
+                  }}
+                  className="w-full h-11 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  Pedir por WhatsApp
+                </button>
                 <Button
                   className="w-full h-12 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
                   onClick={() => {
@@ -2736,7 +2842,7 @@ Gracias!`)
         </DialogContent>
       </Dialog>
 
-      <AiChat />
+      {showAiChat && <AiChat onClose={() => setShowAiChat(false)} />}
     </div>
   )
 }

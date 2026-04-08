@@ -2,6 +2,11 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { signToken, comparePassword, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
 
+// Bcrypt hash for demo123
+const DEMO_PASSWORD_HASH = '$2b$10$Os0Gf3rq3gWmtX4by93Xt.8OdNP8MhStHW41jWTTkbWvIItXXCnf2'
+// Bcrypt hash for cliente123
+const CLIENTE_PASSWORD_HASH = '$2b$10$Xa/6CkIZADH0l5Kr296XNOoAm6nqYbnPPWETD4Dsmk0dYFjSwZImS'
+
 // Seed users for fallback when DB is unavailable or empty
 const SEED_USERS = [
   {
@@ -27,6 +32,81 @@ const SEED_USERS = [
     storeId: 'd1whgpglbzf8d42et5xp',
     storeName: 'Urban Store',
     storeSlug: 'urban-store',
+  },
+  // Básico Plan Store
+  {
+    id: 'seed-admin-basico',
+    email: 'basico@demo.pe',
+    password: DEMO_PASSWORD_HASH,
+    name: 'Carlos Básico',
+    phone: '51999999991',
+    address: '',
+    role: 'admin' as const,
+    storeId: 'seed-store-basico',
+    storeName: 'Mi Tienda Básica',
+    storeSlug: 'mi-tienda-basica',
+  },
+  {
+    id: 'seed-cliente-basico',
+    email: 'basico@cliente.com',
+    password: CLIENTE_PASSWORD_HASH,
+    name: 'Cliente Básico',
+    phone: '',
+    address: '',
+    role: 'customer' as const,
+    storeId: 'seed-store-basico',
+    storeName: 'Mi Tienda Básica',
+    storeSlug: 'mi-tienda-basica',
+  },
+  // Pro Plan Store
+  {
+    id: 'seed-admin-pro',
+    email: 'pro@demo.pe',
+    password: DEMO_PASSWORD_HASH,
+    name: 'María Pro',
+    phone: '51999999992',
+    address: '',
+    role: 'admin' as const,
+    storeId: 'seed-store-pro',
+    storeName: 'TechStore Pro',
+    storeSlug: 'techstore-pro',
+  },
+  {
+    id: 'seed-cliente-pro',
+    email: 'pro@cliente.com',
+    password: CLIENTE_PASSWORD_HASH,
+    name: 'Cliente Pro',
+    phone: '',
+    address: '',
+    role: 'customer' as const,
+    storeId: 'seed-store-pro',
+    storeName: 'TechStore Pro',
+    storeSlug: 'techstore-pro',
+  },
+  // Premium Plan Store
+  {
+    id: 'seed-admin-premium',
+    email: 'premium@demo.pe',
+    password: DEMO_PASSWORD_HASH,
+    name: 'Ana Premium',
+    phone: '51999999993',
+    address: '',
+    role: 'admin' as const,
+    storeId: 'seed-store-premium',
+    storeName: 'Fashion Premium',
+    storeSlug: 'fashion-premium',
+  },
+  {
+    id: 'seed-cliente-premium',
+    email: 'premium@cliente.com',
+    password: CLIENTE_PASSWORD_HASH,
+    name: 'Cliente Premium',
+    phone: '',
+    address: '',
+    role: 'customer' as const,
+    storeId: 'seed-store-premium',
+    storeName: 'Fashion Premium',
+    storeSlug: 'fashion-premium',
   },
 ]
 
