@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
+import { verifyToken } from '@/lib/auth'
 import {
   seedStore,
   seedCategories,
@@ -151,14 +152,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // Require INIT_DB_SECRET from authorization header
-    const initSecret = process.env.INIT_DB_SECRET
-    if (!initSecret) {
-      return NextResponse.json({ error: 'Database initialization is not configured' }, { status: 503 })
+    // Require INIT_DB_SECRET from authorization header OR super-admin JWT
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+    // Method 1: Super Admin JWT token (auto-seed from dashboard)
+    let isSuperAdmin = false
+    if (token) {
+      try {
+        const payload = await verifyToken(token)
+        if (payload && payload.role === 'super-admin') {
+          isSuperAdmin = true
+        }
+      } catch {
+        // Not a valid JWT, check secret below
+      }
     }
 
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== `Bearer ${initSecret}`) {
+    // Method 2: INIT_DB_SECRET (manual seed)
+    const initSecret = process.env.INIT_DB_SECRET
+    if (!isSuperAdmin && (!initSecret || !token || token !== initSecret)) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 

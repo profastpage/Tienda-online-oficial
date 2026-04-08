@@ -7,7 +7,7 @@ import {
   ArrowLeft, Users, ShoppingBag, TrendingUp, LogOut, Store,
   Mail, Phone, Calendar, Search, ChevronDown, ChevronUp,
   CheckCircle2, BarChart3, RefreshCw, UserPlus, Shield,
-  Trash2, Ban, Power, X, ExternalLink
+  Trash2, Ban, Power, X, ExternalLink, AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -137,6 +137,32 @@ export default function SuperAdminPanel() {
       const json = await res.json()
       if (json.error) throw new Error(json.error)
       setData(json)
+
+      // Auto-seed if database is empty (no stores at all)
+      if (json.stats && json.stats.totalStores === 0 && !json._dbWarning) {
+        console.log('[super-admin] Database empty, running auto-seed...')
+        try {
+          const seedRes = await fetch('/api/init-db', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
+            body: JSON.stringify({ autoSeed: true }),
+          })
+          if (seedRes.ok) {
+            const seedData = await seedRes.json()
+            if (seedData.success) {
+              console.log('[super-admin] Auto-seed successful, refreshing data...')
+              // Refresh data after seeding
+              const refreshRes = await fetch('/api/super-admin', { headers })
+              if (refreshRes.ok) {
+                const refreshJson = await refreshRes.json()
+                setData(refreshJson)
+              }
+            }
+          }
+        } catch (seedErr) {
+          console.error('[super-admin] Auto-seed failed:', seedErr)
+        }
+      }
     } catch (err) {
       console.error('Error fetching super admin data:', err)
     } finally {
@@ -288,8 +314,25 @@ export default function SuperAdminPanel() {
     )
   }
 
+  // Check for database warning
+  const dbWarning = data && '_dbWarning' in data ? (data as any)._dbWarning : null
+
   return (
     <div className="min-h-screen bg-neutral-50">
+      {/* Database Warning Banner */}
+      {dbWarning && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+          <div className="mx-auto max-w-7xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800">Base de datos no configurada</p>
+              <p className="text-xs text-amber-700 mt-1">{dbWarning}</p>
+              <p className="text-xs text-amber-600 mt-1">Pasos: 1) Crear base de datos en Turso → 2) Configurar <code className="bg-amber-100 px-1 rounded">TURSO_URL</code> y <code className="bg-amber-100 px-1 rounded">DATABASE_AUTH_TOKEN</code> en Vercel → 3) Ejecutar <code className="bg-amber-100 px-1 rounded">/api/init-db</code> para sembrar datos</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 flex h-14 items-center justify-between">

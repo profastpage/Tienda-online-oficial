@@ -38,7 +38,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const db = await getDb()
+    let db
+    try {
+      db = await getDb()
+    } catch (dbError) {
+      console.error('[super-admin] Database connection failed:', dbError)
+      return NextResponse.json({
+        stats: { totalStores: 0, activeStores: 0, totalUsers: 0, totalProducts: 0, totalOrders: 0, totalLeads: 0, planDistribution: {} },
+        stores: [],
+        users: [],
+        leads: [],
+        recentActivity: [],
+        _dbWarning: 'No se pudo conectar a la base de datos. Verifica las variables de entorno TURSO_URL y DATABASE_AUTH_TOKEN en Vercel.',
+      })
+    }
 
     // Get all stores with user counts and product counts
     const stores = await db.store.findMany({
