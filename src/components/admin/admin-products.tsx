@@ -9,6 +9,7 @@ import {
   Trash2,
   ImageIcon,
   PackageOpen,
+  Lock,
 } from 'lucide-react'
 import { ImageUpload } from '@/components/image-upload'
 import { Button } from '@/components/ui/button'
@@ -136,6 +137,7 @@ export function AdminProducts() {
   const [planLimit, setPlanLimit] = useState(2)
 
   const storeId = user?.storeId || ''
+  const isDemoStore = storeId === 'd1whgpglbzf8d42et5xp'
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -328,13 +330,20 @@ export function AdminProducts() {
             className="pl-9 h-10 bg-white border-neutral-200 rounded-lg text-sm"
           />
         </div>
-        <Button
-          onClick={openCreate}
-          className="bg-neutral-900 hover:bg-neutral-800 text-white h-10 rounded-lg text-sm font-medium gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar Producto
-        </Button>
+        {isDemoStore ? (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+            <Lock className="w-4 h-4" />
+            <span>Demo — Productos de solo lectura</span>
+          </div>
+        ) : (
+          <Button
+            onClick={openCreate}
+            className="bg-neutral-900 hover:bg-neutral-800 text-white h-10 rounded-lg text-sm font-medium gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Agregar Producto
+          </Button>
+        )}
       </div>
 
       {/* Products table */}
@@ -440,24 +449,30 @@ export function AdminProducts() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-neutral-400 hover:text-neutral-900"
-                            onClick={() => openEdit(product)}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-neutral-400 hover:text-red-600"
-                            onClick={() => openDelete(product.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
+                        {isDemoStore ? (
+                          <div className="flex items-center justify-center w-full">
+                            <Lock className="w-3.5 h-3.5 text-amber-500" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-neutral-400 hover:text-neutral-900"
+                              onClick={() => openEdit(product)}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-neutral-400 hover:text-red-600"
+                              onClick={() => openDelete(product.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

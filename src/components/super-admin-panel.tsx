@@ -251,32 +251,46 @@ export default function SuperAdminPanel() {
     isActive?: boolean
   } | null>(null)
 
-  // Check for existing auth on mount (rely on cookies first, no Bearer header)
+  // Check for existing auth on mount with retry logic for cookie propagation
   useEffect(() => {
-    const checkAuth = async () => {
+    let cancelled = false
+    const checkAuth = async (attempt = 0) => {
+      if (cancelled) return
       try {
-        // First try without any Bearer header — rely on super-admin-token cookie
+        // Rely on super-admin-token cookie set by /api/auth/login
         const res = await fetch('/api/super-admin')
         if (res.ok) {
           const json = await res.json()
-          setData(json)
-          setIsAuthenticated(true)
+          if (!cancelled) {
+            setData(json)
+            setIsAuthenticated(true)
+            setLoading(false)
+          }
           return
         }
       } catch {
-        // Ignore network errors
+        // ignore network errors
       }
-      setIsAuthenticated(false)
-      setLoading(false)
+      // Retry up to 3 times with delay
+      if (attempt < 2) {
+        setTimeout(() => checkAuth(attempt + 1), 500)
+      } else {
+        if (!cancelled) {
+          setIsAuthenticated(false)
+          setLoading(false)
+        }
+      }
     }
-    checkAuth()
+    // Small initial delay to allow cookies to propagate from redirect
+    setTimeout(() => checkAuth(0), 200)
+    return () => { cancelled = true }
   }, [])
 
   const handleLogin = useCallback(async (token: string) => {
     setAuthToken(token)
     setLoading(true)
     try {
-      // If we have a token, try with Bearer header first
+      // If we have a token from /api/super-admin/auth, try with Bearer header first
       if (token) {
         const res = await fetch('/api/super-admin', {
           headers: { 'Authorization': `Bearer ${token}` },
@@ -285,19 +299,34 @@ export default function SuperAdminPanel() {
           const json = await res.json()
           setData(json)
           setIsAuthenticated(true)
+          setLoading(false)
           return
         }
       }
-      // Fallback: try without Bearer header (rely on cookies set by login)
-      const res = await fetch('/api/super-admin')
-      if (res.ok) {
-        const json = await res.json()
-        setData(json)
-        setIsAuthenticated(true)
-        return
+      // Fallback: retry without Bearer header (rely on cookies set by /api/auth/login)
+      // Allow a small delay for cookies to propagate
+      const tryCookieAuth = async (attempt = 0) => {
+        try {
+          const res = await fetch('/api/super-admin')
+          if (res.ok) {
+            const json = await res.json()
+            setData(json)
+            setIsAuthenticated(true)
+            return true
+          }
+        } catch {
+          // ignore
+        }
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 500))
+          return tryCookieAuth(attempt + 1)
+        }
+        return false
       }
-      // Both failed — stay on login form
-      setIsAuthenticated(false)
+      const success = await tryCookieAuth()
+      if (!success) {
+        setIsAuthenticated(false)
+      }
     } catch {
       console.error('Error fetching super admin data')
       setIsAuthenticated(false)

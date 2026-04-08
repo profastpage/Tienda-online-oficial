@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Crown,
   Bot,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -23,6 +24,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuthStore } from '@/stores/auth-store'
 import { ADMIN_SECTION_URLS, URL_TO_ADMIN_SECTION } from '@/lib/navigation'
+import { AdminGuidePopup } from '@/components/admin/admin-guide-popup'
+import { Card } from '@/components/ui/card'
 
 export type AdminSection = 'dashboard' | 'products' | 'categories' | 'orders' | 'settings' | 'plan' | 'ai'
 
@@ -148,11 +151,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
+  const [guideDismissed, setGuideDismissed] = useState(false)
 
   // Hydrate auth store once
   useEffect(() => {
     hydrate()
   }, [hydrate])
+
+  // Show guide popup for first-time users
+  useEffect(() => {
+    if (hydrated && user) {
+      const dismissed = localStorage.getItem('admin-guide-dismissed')
+      if (!dismissed) {
+        // Use requestAnimationFrame to avoid synchronous setState in effect
+        requestAnimationFrame(() => setShowGuide(true))
+      }
+    }
+  }, [hydrated, user])
 
   // Derive active section from URL (no Zustand view store needed)
   const activeSection = (URL_TO_ADMIN_SECTION[pathname] || 'dashboard') as AdminSection
@@ -259,6 +275,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
       </div>
+
+      {/* Guide welcome dialog */}
+      {showGuide && !guideDismissed && (
+        <div className="fixed inset-0 z-[99] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setGuideDismissed(true); setShowGuide(false); localStorage.setItem('admin-guide-dismissed', '1') }} />
+          <Card className="relative z-10 w-full max-w-sm shadow-2xl text-center p-6">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-neutral-900 flex items-center justify-center mb-4">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-neutral-900 mb-2">¿Necesitas ayuda?</h3>
+            <p className="text-sm text-neutral-500 mb-5">¿Deseas ver una mini guía de cómo usar el panel de administración?</p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => { setGuideDismissed(true); setShowGuide(false); localStorage.setItem('admin-guide-dismissed', '1') }} className="flex-1 text-sm">No, gracias</Button>
+              <Button onClick={() => setGuideDismissed(true)} className="flex-1 bg-neutral-900 hover:bg-neutral-800 text-white text-sm">Ver guía</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+      <AdminGuidePopup open={guideDismissed && showGuide} onClose={() => { setShowGuide(false); localStorage.setItem('admin-guide-dismissed', '1') }} />
     </div>
   )
 }
