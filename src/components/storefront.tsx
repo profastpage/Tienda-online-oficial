@@ -245,6 +245,134 @@ const heroImages = [
 
 const brands = ['KUNA', 'ÑAÑA', 'MISTURA', 'ALPACA', 'TUMI', 'INTI', 'WAYKI', 'CHAKRA']
 
+// ═══ Instagram-style Testimonial Carousel ═══
+function TestimonialCarousel({ testimonials }: { testimonials: Testimonial[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+  const isDragging = useRef(false)
+
+  const checkScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 2)
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 2)
+  }
+
+  useEffect(() => { checkScroll() }, [testimonials])
+
+  const scroll = (dir: 'left' | 'right') => {
+    const el = scrollRef.current
+    if (!el) return
+    const cardWidth = el.querySelector<HTMLElement>('[data-testimonial]')?.offsetWidth || 300
+    const gap = 16
+    el.scrollBy({ left: dir === 'left' ? -(cardWidth + gap) : (cardWidth + gap), behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.addEventListener('scroll', checkScroll, { passive: true })
+    window.addEventListener('resize', checkScroll)
+    return () => { el.removeEventListener('scroll', checkScroll); window.removeEventListener('resize', checkScroll) }
+  }, [])
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    isDragging.current = true
+  }
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return
+    touchEndX.current = e.touches[0].clientX
+  }
+  const handleTouchEnd = () => {
+    if (!isDragging.current) return
+    isDragging.current = false
+    const diff = touchStartX.current - touchEndX.current
+    if (Math.abs(diff) > 50) scroll(diff > 0 ? 'right' : 'left')
+  }
+
+  return (
+    <div className="relative group">
+      {/* Desktop navigation arrows */}
+      <button
+        onClick={() => scroll('left')}
+        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 w-10 h-10 rounded-full bg-background border border-border shadow-lg flex items-center justify-center transition-all duration-300 ${
+          canScrollLeft ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-label="Anterior"
+      >
+        <ChevronLeft className="w-5 h-5 text-foreground" />
+      </button>
+      <button
+        onClick={() => scroll('right')}
+        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 w-10 h-10 rounded-full bg-background border border-border shadow-lg flex items-center justify-center transition-all duration-300 ${
+          canScrollRight ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-label="Siguiente"
+      >
+        <ChevronRight className="w-5 h-5 text-foreground" />
+      </button>
+
+      {/* Scrollable container */}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {testimonials.map((testimonial) => (
+          <div
+            key={testimonial.id}
+            data-testimonial
+            className="snap-start shrink-0 w-[280px] sm:w-[300px] bg-muted/50 dark:bg-neutral-800/50 rounded-2xl p-5 border border-border hover:shadow-lg hover:border-border transition-all duration-300"
+          >
+            {/* Stars */}
+            <div className="flex items-center gap-0.5 mb-3">
+              {[...Array(5)].map((_, i) => (
+                <svg key={i} className={`w-3.5 h-3.5 ${i < testimonial.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/20 fill-muted-foreground/20'}`} viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            {/* Quote */}
+            <p className="text-foreground/80 text-sm leading-relaxed mb-4 line-clamp-4">
+              &ldquo;{testimonial.content}&rdquo;
+            </p>
+            {/* Author */}
+            <div className="flex items-center gap-3 mt-auto">
+              <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-muted">
+                {testimonialPhotos[testimonial.name] ? (
+                  <img src={testimonialPhotos[testimonial.name]} alt={testimonial.name} className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">${testimonial.name.charAt(0)}</div>` }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">{testimonial.name.charAt(0)}</div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{testimonial.name}</p>
+                <p className="text-muted-foreground/70 text-xs truncate">{testimonial.role}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Instagram-style dots indicator */}
+      <div className="flex justify-center gap-1.5 mt-5">
+        {testimonials.map((_, i) => (
+          <div key={i} className="w-1.5 h-1.5 rounded-full bg-foreground/15" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Storefront() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -1532,8 +1660,8 @@ Gracias!`)
           </div>
         </section>
 
-        {/* Testimonials */}
-        <section className="py-16 bg-background">
+        {/* Testimonials - Instagram Carousel Style */}
+        <section className="py-16 bg-background overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -1548,57 +1676,7 @@ Gracias!`)
                 Reseñas verificadas de compradores reales
               </p>
             </motion.div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <motion.div
-                  key={testimonial.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-muted rounded-2xl p-6 border border-border hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < testimonial.rating
-                            ? 'text-amber-400 fill-amber-400'
-                            : 'text-muted-foreground/30 fill-muted-foreground/30'
-                        }`}
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="text-foreground/70 text-sm leading-relaxed mb-4">
-                    &ldquo;{testimonial.content}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-muted">
-                      {testimonialPhotos[testimonial.name] ? (
-                        <img
-                          src={testimonialPhotos[testimonial.name]}
-                          alt={testimonial.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">${testimonial.name.charAt(0)}</div>` }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/50 flex items-center justify-center text-white font-bold text-sm">
-                          {testimonial.name.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground text-sm">{testimonial.name}</p>
-                      <p className="text-muted-foreground/70 text-xs">{testimonial.role}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <TestimonialCarousel testimonials={testimonials} />
           </div>
         </section>
 
@@ -1993,7 +2071,7 @@ Gracias!`)
         {/* Main FAB Button */}
         <motion.button
           onClick={(e) => { e.stopPropagation(); setFabOpen(!fabOpen) }}
-          className="w-14 h-14 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white shadow-xl shadow-neutral-900/30 flex items-center justify-center transition-all hover:scale-105 relative"
+          className="w-14 h-14 rounded-full bg-white dark:bg-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-200 text-neutral-900 shadow-xl shadow-neutral-900/20 dark:shadow-white/10 flex items-center justify-center transition-all hover:scale-105 relative"
           whileTap={{ scale: 0.92 }}
           aria-label="Menú de acciones"
         >
