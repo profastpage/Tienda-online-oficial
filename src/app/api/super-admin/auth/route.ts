@@ -16,7 +16,13 @@ export async function POST(request: Request) {
     }
 
     const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
-    const superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$HSt2fkyesYwooMV.9rHkZ.qe0Nrr9Xe2yEraiwN7Nh6kG9tUJhrYq'
+    // Get hash - validate it wasn't corrupted by env variable expansion
+    // (Next.js @next/env expands $VAR references, corrupting bcrypt hashes)
+    let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$HSt2fkyesYwooMV.9rHkZ.qe0Nrr9Xe2yEraiwN7Nh6kG9tUJhrYq'
+    const FALLBACK_HASH = '$2b$12$HSt2fkyesYwooMV.9rHkZ.qe0Nrr9Xe2yEraiwN7Nh6kG9tUJhrYq'
+    if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
+      superPasswordHash = FALLBACK_HASH
+    }
     const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
 
     // Verify email

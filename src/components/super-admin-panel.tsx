@@ -8,7 +8,7 @@ import {
   Mail, Phone, Calendar, Search, ChevronDown, ChevronUp,
   CheckCircle2, BarChart3, RefreshCw, UserPlus, Shield,
   Lock, Eye, Trash2, Ban, Power, Unlock, AlertTriangle,
-  X, ArrowRight
+  X, ArrowRight, ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -217,9 +217,6 @@ export default function SuperAdminPanel() {
   } | null>(null)
 
   // Check for existing auth on mount
-  // Strategy: 1) Check localStorage for saved super-admin token
-  //          2) Check localStorage auth-store for super-admin role
-  //          3) Try API with saved token
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -238,27 +235,6 @@ export default function SuperAdminPanel() {
             return
           }
         }
-
-        // Check 2: Check if auth-store has a super-admin user with JWT
-        const storedUser = localStorage.getItem('user')
-        const storedToken = localStorage.getItem('auth-token')
-        if (storedUser && storedToken) {
-          const user = JSON.parse(storedUser)
-          if (user.role === 'super-admin') {
-            // Try API with the JWT token
-            const res = await fetch('/api/super-admin', {
-              headers: { 'Authorization': `Bearer ${storedToken}` },
-            })
-            if (res.ok) {
-              const json = await res.json()
-              setAuthToken(storedToken)
-              setData(json)
-              setIsAuthenticated(true)
-              setLoading(false)
-              return
-            }
-          }
-        }
       } catch {
         // ignore
       }
@@ -271,8 +247,8 @@ export default function SuperAdminPanel() {
   const handleLogin = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
-      // Always login via /api/auth/login — this returns JWT and sets cookies
-      const loginRes = await fetch('/api/auth/login', {
+      // Use the dedicated super-admin auth endpoint (not the regular login)
+      const loginRes = await fetch('/api/super-admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -285,29 +261,24 @@ export default function SuperAdminPanel() {
         return loginData.error || 'Credenciales inválidas'
       }
 
-      // Verify it's a super-admin login
-      if (loginData.role !== 'super-admin') {
-        setIsAuthenticated(false)
-        setLoading(false)
-        return 'Esta cuenta no tiene acceso de super administrador'
+      // Save the secret token for future API calls
+      const secretToken = loginData.token
+      if (secretToken) {
+        localStorage.setItem('super-admin-secret', secretToken)
+        setAuthToken(secretToken)
       }
 
-      // Save the JWT token and secret for future use
-      const jwt = loginData.token
-      if (jwt) {
-        localStorage.setItem('super-admin-secret', jwt)
-        setAuthToken(jwt)
-      }
-
-      // Fetch dashboard data using the JWT
+      // Verify by fetching dashboard data
       const res = await fetch('/api/super-admin', {
-        headers: { 'Authorization': `Bearer ${jwt}` },
+        headers: { 'Authorization': `Bearer ${secretToken}` },
       })
       if (res.ok) {
         const json = await res.json()
         setData(json)
         setIsAuthenticated(true)
       } else {
+        // If verification fails, clear token
+        localStorage.removeItem('super-admin-secret')
         setIsAuthenticated(false)
       }
     } catch (err) {
@@ -357,6 +328,38 @@ export default function SuperAdminPanel() {
       setConfirmDialog(null)
     }
   }, [authToken, fetchData])
+
+  const handleManageStore = useCallback(async (storeId: string, storeName: string, storeSlug: string) => {
+    if (!authToken) return
+    setActionLoading(storeId)
+    try {
+      // Request a temporary admin JWT for this store
+      const res = await fetch('/api/super-admin', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ action: 'store-token', storeId }),
+      })
+      const json = await res.json()
+      if (json.error) {
+        console.error('Error getting store token:', json.error)
+        return
+      }
+      // Set the temporary admin credentials in auth store
+      const adminUser = json.user
+      const adminToken = json.token
+      localStorage.setItem('user', JSON.stringify(adminUser))
+      localStorage.setItem('auth-token', adminToken)
+      // Navigate to the store admin panel
+      router.push('/admin/dashboard')
+    } catch (err) {
+      console.error('Error managing store:', err)
+    } finally {
+      setActionLoading(null)
+    }
+  }, [authToken, router])
 
   const handleLogout = useCallback(async () => {
     try {
@@ -713,19 +716,38 @@ export default function SuperAdminPanel() {
                             <div className="flex flex-wrap gap-2">
                               <Button
                                 size="sm"
-                                variant={store.isActive ? 'outline' : 'default'}
-                                className="text-xs gap-1.5"
-                                onClick={() => setConfirmDialog({
-                                  type: 'toggle',
-                                  storeId: store.id,
-                                  storeName: store.name,
-                                  isActive: !store.isActive,
-                                })}
+                                className="text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleManageStore(store.id, store.name, store.slug)
+                                }}
                                 disabled={actionLoading === store.id}
                               >
                                 {actionLoading === store.id ? (
-                                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                ) : store.isActive ? (
+                                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <>
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                    Gestionar Tienda
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={store.isActive ? 'outline' : 'default'}
+                                className="text-xs gap-1.5"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setConfirmDialog({
+                                    type: 'toggle',
+                                    storeId: store.id,
+                                    storeName: store.name,
+                                    isActive: !store.isActive,
+                                  })
+                                }}
+                                disabled={actionLoading === store.id}
+                              >
+                                {store.isActive ? (
                                   <>
                                     <Ban className="w-3.5 h-3.5 text-red-500" />
                                     <span className="text-red-600">Suspender</span>
@@ -741,11 +763,14 @@ export default function SuperAdminPanel() {
                                 size="sm"
                                 variant="outline"
                                 className="text-xs gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                                onClick={() => setConfirmDialog({
-                                  type: 'delete',
-                                  storeId: store.id,
-                                  storeName: store.name,
-                                })}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setConfirmDialog({
+                                    type: 'delete',
+                                    storeId: store.id,
+                                    storeName: store.name,
+                                  })
+                                }}
                                 disabled={actionLoading === store.id}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

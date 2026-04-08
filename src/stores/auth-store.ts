@@ -6,7 +6,7 @@ interface User {
   name: string
   phone: string
   address: string
-  role: 'admin' | 'customer'
+  role: 'admin' | 'customer' | 'super-admin'
   storeId: string
   storeName: string
   storeSlug?: string

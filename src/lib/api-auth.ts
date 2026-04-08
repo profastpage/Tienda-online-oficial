@@ -19,6 +19,7 @@ export async function requireAuth(request: Request): Promise<
 
 /**
  * Require admin role.
+ * Also allows super-admin to access admin routes.
  */
 export async function requireAdmin(request: Request): Promise<
   | { user: JwtPayload; error: null }
@@ -27,7 +28,7 @@ export async function requireAdmin(request: Request): Promise<
   const result = await requireAuth(request)
   if (result.error) return result
 
-  if (result.user.role !== 'admin') {
+  if (result.user.role !== 'admin' && result.user.role !== 'super-admin') {
     return { user: null, error: NextResponse.json({ error: 'Acceso denegado. Se requiere rol de administrador.' }, { status: 403 }) }
   }
 
@@ -37,6 +38,7 @@ export async function requireAdmin(request: Request): Promise<
 /**
  * Verify that a resource belongs to the authenticated user's store.
  * Used before PUT/DELETE operations.
+ * Super admins bypass store ownership checks.
  */
 export async function verifyStoreOwnership(
   request: Request,
@@ -48,6 +50,11 @@ export async function verifyStoreOwnership(
 > {
   const admin = await requireAdmin(request)
   if (admin.error) return { authorized: false, error: admin.error }
+
+  // Super admins can access any store's resources
+  if (admin.user.role === 'super-admin') {
+    return { authorized: true, error: null }
+  }
 
   try {
     const db = await getDb()

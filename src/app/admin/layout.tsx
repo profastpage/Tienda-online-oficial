@@ -17,6 +17,7 @@ import {
   Crown,
   Bot,
   BookOpen,
+  Shield,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -147,7 +148,7 @@ function SidebarNav({
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, _hydrated: hydrated, logout, hydrate } = useAuthStore()
+  const { user, _hydrated: hydrated, logout, hydrate, setUser } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -199,6 +200,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     )
   }
+
+  // Detect super admin impersonation mode
+  const isSuperAdminMode = user.role === 'super-admin'
 
   const storeName = user.storeName || 'Mi Tienda'
   const userName = user.name || 'Admin'
@@ -257,9 +261,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {isSuperAdminMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
+                  onClick={() => {
+                    // Clear impersonation and go back to super admin
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('auth-token')
+                    setUser(null, null)
+                    router.push('/super-admin')
+                  }}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Volver a Super Admin</span>
+                </Button>
+              )}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 border border-neutral-200">
                 <Store className="w-3.5 h-3.5 text-neutral-400" />
                 <span className="text-xs font-medium text-neutral-600">{storeName}</span>
+                {isSuperAdminMode && (
+                  <span className="text-[9px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded">SUPER</span>
+                )}
               </div>
               <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center">
                 <span className="text-xs font-bold text-white">

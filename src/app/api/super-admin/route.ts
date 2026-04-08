@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken, signToken } from '@/lib/auth'
 
 const SUPER_SECRET = '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
 
@@ -165,6 +165,54 @@ export async function PATCH(request: Request) {
         success: true,
         message: 'Tienda eliminada exitosamente',
       })
+    }
+
+    if (action === 'store-token') {
+      const { storeId } = body
+      if (!storeId) {
+        return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
+      }
+
+      // Get store info
+      const store = await db.store.findUnique({ where: { id: storeId } })
+      if (!store) {
+        return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
+      }
+
+      // Generate a temporary admin JWT for this store
+      const tempToken = await signToken({
+        userId: 'super-admin-impersonate',
+        email: 'profastpage@gmail.com',
+        role: 'super-admin',
+        storeId: store.id,
+      })
+
+      const response = NextResponse.json({
+        success: true,
+        token: tempToken,
+        user: {
+          id: 'super-admin-impersonate',
+          email: 'profastpage@gmail.com',
+          name: 'Super Admin',
+          phone: '',
+          address: '',
+          role: 'super-admin',
+          storeId: store.id,
+          storeName: store.name,
+          storeSlug: store.slug,
+        },
+      })
+
+      // Set auth-token cookie so middleware allows access to /admin routes
+      response.cookies.set('auth-token', tempToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24, // 1 day (temporary token)
+        path: '/',
+      })
+
+      return response
     }
 
     return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
