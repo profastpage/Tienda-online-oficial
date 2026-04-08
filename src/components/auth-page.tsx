@@ -40,9 +40,15 @@ function AuthPageContent() {
       if (!res.ok) throw new Error(data.error)
 
       setUser(data, data.token)
-      const targetUrl = redirectUrl || (data.role === 'admin' ? '/admin' : '/cliente')
+      let targetUrl = redirectUrl || (data.role === 'admin' ? '/admin' : '/cliente')
+      if (data.role === 'super-admin') {
+        targetUrl = redirectUrl || '/super-admin'
+      }
       router.push(targetUrl)
-      toast({ title: `¡Bienvenido, ${data.name}!`, description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente' })
+      toast({
+        title: `¡Bienvenido, ${data.name}!`,
+        description: data.role === 'super-admin' ? 'Panel de Super Administrador' : data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente',
+      })
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al iniciar sesión', variant: 'destructive' })
     } finally {

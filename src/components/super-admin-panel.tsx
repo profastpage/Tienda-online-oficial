@@ -261,7 +261,7 @@ export default function SuperAdminPanel() {
         setIsAuthenticated(true)
       }
     } catch {
-      setError('Error al cargar datos')
+      console.error('Error fetching super admin data')
     } finally {
       setLoading(false)
     }
@@ -309,14 +309,17 @@ export default function SuperAdminPanel() {
   const handleLogout = useCallback(async () => {
     try {
       await fetch('/api/super-admin/auth', { method: 'DELETE' })
+      await fetch('/api/auth/logout', { method: 'POST' })
     } catch {
       // Ignore
     }
     document.cookie = 'super-admin-token=; path=/; max-age=0'
+    document.cookie = 'auth-token=; path=/; max-age=0'
     setIsAuthenticated(false)
     setAuthToken(null)
     setData(null)
-  }, [])
+    router.push('/login')
+  }, [router])
 
   const filteredStores = data?.stores.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

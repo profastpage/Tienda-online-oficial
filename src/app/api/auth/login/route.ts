@@ -127,6 +127,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 })
     }
 
+    // ── Super Admin check ──
+    const superEmail = process.env.SUPER_ADMIN_EMAIL
+    const superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH
+    if (superEmail && superPasswordHash && email === superEmail) {
+      const isValid = await comparePassword(password, superPasswordHash)
+      if (isValid) {
+        const token = await signToken({
+          userId: 'super-admin-001',
+          email: superEmail,
+          role: 'super-admin',
+          storeId: '__super_admin__',
+        })
+        const response = NextResponse.json({
+          id: 'super-admin-001',
+          email: superEmail,
+          name: 'Super Administrador',
+          phone: '',
+          address: '',
+          role: 'super-admin',
+          storeId: '__super_admin__',
+          storeName: 'Super Admin',
+          storeSlug: 'super-admin',
+          token,
+        })
+        response.cookies.set('auth-token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+          path: '/',
+        })
+        response.cookies.set('super-admin-token', process.env.SUPER_ADMIN_SECRET || '', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24,
+          path: '/',
+        })
+        return response
+      }
+      return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
+    }
+
     let matchedUser: {
       id: string
       email: string
