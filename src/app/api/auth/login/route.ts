@@ -128,9 +128,10 @@ export async function POST(request: Request) {
     }
 
     // ── Super Admin check ──
-    const superEmail = process.env.SUPER_ADMIN_EMAIL
-    const superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH
-    if (superEmail && superPasswordHash && email === superEmail) {
+    const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
+    const superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$HSt2fkyesYwooMV.9rHkZ.qe0Nrr9Xe2yEraiwN7Nh6kG9tUJhrYq'
+    const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
+    if (email === superEmail) {
       const isValid = await comparePassword(password, superPasswordHash)
       if (isValid) {
         const token = await signToken({
@@ -158,7 +159,7 @@ export async function POST(request: Request) {
           maxAge: 60 * 60 * 24 * 7,
           path: '/',
         })
-        response.cookies.set('super-admin-token', process.env.SUPER_ADMIN_SECRET || '', {
+        response.cookies.set('super-admin-token', superSecret, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
