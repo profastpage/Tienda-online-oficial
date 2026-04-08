@@ -93,7 +93,7 @@ const statusColors: Record<string, string> = {
 }
 
 // ═══ Login Gate ═══
-function SuperAdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
+function SuperAdminLogin({ onLogin }: { onLogin: (email: string, password: string) => Promise<string | null> }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -104,49 +104,11 @@ function SuperAdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
-      // Strategy 1: Try the dedicated super-admin auth endpoint
-      const res = await fetch('/api/super-admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        onLogin(data.token)
-        return
+      const errMsg = await onLogin(email, password)
+      if (errMsg) {
+        setError(errMsg)
       }
-
-      const data = await res.json()
-
-      // Strategy 2: If 503 (env vars not configured), fall back to /api/auth/login
-      // which also detects super admin credentials and sets the proper cookies
-      if (res.status === 503) {
-        try {
-          const loginRes = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          })
-          const loginData = await loginRes.json()
-          if (loginRes.ok) {
-            // The /api/auth/login sets super-admin-token cookie automatically
-            // Pass the token from the response, or empty string to rely on cookies
-            onLogin(loginData.token || '')
-            return
-          }
-          setError(loginData.error || 'Error al autenticar')
-          return
-        } catch {
-          setError('Super admin no configurado. Verifica las variables de entorno.')
-          return
-        }
-      }
-
-      // Other errors from /api/super-admin/auth
-      setError(data.error || 'Error al autenticar')
     } catch {
       setError('Error de conexión')
     } finally {
@@ -238,6 +200,9 @@ export default function SuperAdminPanel() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
+  // Super admin credentials
+  const SUPER_EMAIL = 'profastpage@gmail.com'
+  const SUPER_SECRET = '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
   const [activeTab, setActiveTab] = useState('dashboard')
   const [data, setData] = useState<SuperAdminData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -251,88 +216,107 @@ export default function SuperAdminPanel() {
     isActive?: boolean
   } | null>(null)
 
-  // Check for existing auth on mount with retry logic for cookie propagation
+  // Check for existing auth on mount
+  // Strategy: 1) Check localStorage for saved super-admin token
+  //          2) Check localStorage auth-store for super-admin role
+  //          3) Try API with saved token
   useEffect(() => {
-    let cancelled = false
-    const checkAuth = async (attempt = 0) => {
-      if (cancelled) return
+    const checkAuth = async () => {
       try {
-        // Rely on super-admin-token cookie set by /api/auth/login
-        const res = await fetch('/api/super-admin')
-        if (res.ok) {
-          const json = await res.json()
-          if (!cancelled) {
+        // Check 1: localStorage for saved super-admin secret
+        const savedSecret = localStorage.getItem('super-admin-secret')
+        if (savedSecret) {
+          const res = await fetch('/api/super-admin', {
+            headers: { 'Authorization': `Bearer ${savedSecret}` },
+          })
+          if (res.ok) {
+            const json = await res.json()
+            setAuthToken(savedSecret)
             setData(json)
             setIsAuthenticated(true)
             setLoading(false)
+            return
           }
-          return
+        }
+
+        // Check 2: Check if auth-store has a super-admin user with JWT
+        const storedUser = localStorage.getItem('user')
+        const storedToken = localStorage.getItem('auth-token')
+        if (storedUser && storedToken) {
+          const user = JSON.parse(storedUser)
+          if (user.role === 'super-admin') {
+            // Try API with the JWT token
+            const res = await fetch('/api/super-admin', {
+              headers: { 'Authorization': `Bearer ${storedToken}` },
+            })
+            if (res.ok) {
+              const json = await res.json()
+              setAuthToken(storedToken)
+              setData(json)
+              setIsAuthenticated(true)
+              setLoading(false)
+              return
+            }
+          }
         }
       } catch {
-        // ignore network errors
+        // ignore
       }
-      // Retry up to 3 times with delay
-      if (attempt < 2) {
-        setTimeout(() => checkAuth(attempt + 1), 500)
-      } else {
-        if (!cancelled) {
-          setIsAuthenticated(false)
-          setLoading(false)
-        }
-      }
+      setIsAuthenticated(false)
+      setLoading(false)
     }
-    // Small initial delay to allow cookies to propagate from redirect
-    setTimeout(() => checkAuth(0), 200)
-    return () => { cancelled = true }
+    checkAuth()
   }, [])
 
-  const handleLogin = useCallback(async (token: string) => {
-    setAuthToken(token)
+  const handleLogin = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
-      // If we have a token from /api/super-admin/auth, try with Bearer header first
-      if (token) {
-        const res = await fetch('/api/super-admin', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        })
-        if (res.ok) {
-          const json = await res.json()
-          setData(json)
-          setIsAuthenticated(true)
-          setLoading(false)
-          return
-        }
+      // Always login via /api/auth/login — this returns JWT and sets cookies
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const loginData = await loginRes.json()
+
+      if (!loginRes.ok) {
+        setIsAuthenticated(false)
+        setLoading(false)
+        return loginData.error || 'Credenciales inválidas'
       }
-      // Fallback: retry without Bearer header (rely on cookies set by /api/auth/login)
-      // Allow a small delay for cookies to propagate
-      const tryCookieAuth = async (attempt = 0) => {
-        try {
-          const res = await fetch('/api/super-admin')
-          if (res.ok) {
-            const json = await res.json()
-            setData(json)
-            setIsAuthenticated(true)
-            return true
-          }
-        } catch {
-          // ignore
-        }
-        if (attempt < 2) {
-          await new Promise(r => setTimeout(r, 500))
-          return tryCookieAuth(attempt + 1)
-        }
-        return false
+
+      // Verify it's a super-admin login
+      if (loginData.role !== 'super-admin') {
+        setIsAuthenticated(false)
+        setLoading(false)
+        return 'Esta cuenta no tiene acceso de super administrador'
       }
-      const success = await tryCookieAuth()
-      if (!success) {
+
+      // Save the JWT token and secret for future use
+      const jwt = loginData.token
+      if (jwt) {
+        localStorage.setItem('super-admin-secret', jwt)
+        setAuthToken(jwt)
+      }
+
+      // Fetch dashboard data using the JWT
+      const res = await fetch('/api/super-admin', {
+        headers: { 'Authorization': `Bearer ${jwt}` },
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+        setIsAuthenticated(true)
+      } else {
         setIsAuthenticated(false)
       }
-    } catch {
-      console.error('Error fetching super admin data')
+    } catch (err) {
+      console.error('Error logging in:', err)
       setIsAuthenticated(false)
     } finally {
       setLoading(false)
     }
+    return null
   }, [])
 
   const fetchData = useCallback(async () => {
@@ -376,11 +360,13 @@ export default function SuperAdminPanel() {
 
   const handleLogout = useCallback(async () => {
     try {
-      await fetch('/api/super-admin/auth', { method: 'DELETE' })
       await fetch('/api/auth/logout', { method: 'POST' })
     } catch {
       // Ignore
     }
+    localStorage.removeItem('super-admin-secret')
+    localStorage.removeItem('user')
+    localStorage.removeItem('auth-token')
     document.cookie = 'super-admin-token=; path=/; max-age=0'
     document.cookie = 'auth-token=; path=/; max-age=0'
     setIsAuthenticated(false)

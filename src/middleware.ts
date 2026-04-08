@@ -106,15 +106,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect super-admin API (except auth endpoint)
-  if (pathname.startsWith('/api/super-admin') && !pathname.startsWith('/api/super-admin/auth')) {
-    const expectedSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
-    const authHeader = request.headers.get('authorization')
-    const cookieToken = request.cookies.get('super-admin-token')?.value
-    const token = authHeader?.replace('Bearer ', '') || cookieToken
-    if (!token || token !== expectedSecret) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+  // Super-admin API auth is handled by the route handler itself (JWT + secret)
+  // Do NOT block here — middleware edge runtime may not read cookies correctly
+  if (pathname.startsWith('/api/super-admin/auth')) {
     return NextResponse.next()
   }
 

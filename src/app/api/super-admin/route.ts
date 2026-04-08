@@ -1,6 +1,29 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
+import { verifyToken } from '@/lib/auth'
+
+const SUPER_SECRET = '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
+
+async function verifySuperAdmin(request: Request): Promise<boolean> {
+  const authHeader = request.headers.get('authorization')
+  const authCookie = request.cookies.get('super-admin-token')?.value
+  const token = (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null) || authCookie
+  if (!token) return false
+
+  // Check 1: Direct secret match
+  if (token === (process.env.SUPER_ADMIN_SECRET || SUPER_SECRET)) return true
+
+  // Check 2: JWT token with super-admin role
+  try {
+    const payload = await verifyToken(token)
+    if (payload && payload.role === 'super-admin') return true
+  } catch {
+    // not a valid JWT, ignore
+  }
+
+  return false
+}
 
 export async function GET(request: Request) {
   try {
@@ -9,13 +32,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // Verify SUPER_ADMIN_SECRET from authorization header or cookie
-    const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
-
-    const authHeader = request.headers.get('authorization')
-    const authCookie = request.cookies.get('super-admin-token')?.value
-    const token = (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null) || authCookie
-    if (!token || token !== superSecret) {
+    // Verify super admin auth (secret OR JWT with super-admin role)
+    const isAuthorized = await verifySuperAdmin(request)
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
@@ -99,13 +118,9 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // Verify SUPER_ADMIN_SECRET
-    const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
-
-    const authHeader = request.headers.get('authorization')
-    const authCookie = request.cookies.get('super-admin-token')?.value
-    const token = (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null) || authCookie
-    if (!token || token !== superSecret) {
+    // Verify super admin auth (secret OR JWT with super-admin role)
+    const isAuthorized = await verifySuperAdmin(request)
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
