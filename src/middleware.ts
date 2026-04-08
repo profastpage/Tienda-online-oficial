@@ -68,8 +68,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Super admin page has its own login gate in the component
+  // Super admin page is now protected — requires auth-token from main login
   if (pathname.startsWith('/super-admin')) {
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const jwtToken = token || cookieToken
+
+    if (!jwtToken) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
     return NextResponse.next()
   }
 

@@ -267,10 +267,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   size="sm"
                   className="text-xs gap-1.5 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
                   onClick={() => {
-                    // Clear impersonation and go back to super admin
-                    localStorage.removeItem('user')
-                    localStorage.removeItem('auth-token')
-                    setUser(null, null)
+                    // Restore original super admin session from localStorage
+                    const originalUser = localStorage.getItem('super-admin-original-user')
+                    const originalToken = localStorage.getItem('super-admin-original-token')
+                    if (originalUser && originalToken) {
+                      const parsedUser = JSON.parse(originalUser)
+                      setUser(parsedUser, originalToken)
+                    }
                     router.push('/super-admin')
                   }}
                 >

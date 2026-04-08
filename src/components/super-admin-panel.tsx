@@ -7,8 +7,7 @@ import {
   ArrowLeft, Users, ShoppingBag, TrendingUp, LogOut, Store,
   Mail, Phone, Calendar, Search, ChevronDown, ChevronUp,
   CheckCircle2, BarChart3, RefreshCw, UserPlus, Shield,
-  Lock, Eye, Trash2, Ban, Power, Unlock, AlertTriangle,
-  X, ArrowRight, ExternalLink
+  Trash2, Ban, Power, X, ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useAuthStore } from '@/stores/auth-store'
 
 interface StoreData {
   id: string
@@ -92,117 +92,10 @@ const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
 }
 
-// ═══ Login Gate ═══
-function SuperAdminLogin({ onLogin }: { onLogin: (email: string, password: string) => Promise<string | null> }) {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const errMsg = await onLogin(email, password)
-      if (errMsg) {
-        setError(errMsg)
-      }
-    } catch {
-      setError('Error de conexión')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm"
-      >
-        <Card className="shadow-lg">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
-              <Shield className="w-6 h-6 text-red-600" />
-            </div>
-            <CardTitle className="text-xl font-bold text-neutral-900">Super Admin</CardTitle>
-            <p className="text-sm text-neutral-500 mt-1">Ingresa tus credenciales de administrador</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  {error}
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <Input
-                    type="email"
-                    placeholder="admin@tienda.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-9"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Contraseña</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-9"
-                    required
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Shield className="w-4 h-4 mr-2" />
-                    Acceder al Panel
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-        <p className="text-center text-xs text-neutral-400 mt-4">
-          Acceso restringido al administrador del sistema
-        </p>
-        <button
-          onClick={() => router.push('/login')}
-          className="flex items-center justify-center gap-1.5 mx-auto mt-3 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver al login principal
-        </button>
-      </motion.div>
-    </div>
-  )
-}
-
 // ═══ Main Panel ═══
 export default function SuperAdminPanel() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [authToken, setAuthToken] = useState<string | null>(null)
-  // Super admin credentials
-  const SUPER_EMAIL = 'profastpage@gmail.com'
-  const SUPER_SECRET = '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
+  const { user, _hydrated: hydrated, hydrate, token: jwtToken, setUser, logout } = useAuthStore()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [data, setData] = useState<SuperAdminData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -216,85 +109,31 @@ export default function SuperAdminPanel() {
     isActive?: boolean
   } | null>(null)
 
-  // Check for existing auth on mount
+  // Hydrate auth store on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check 1: localStorage for saved super-admin secret
-        const savedSecret = localStorage.getItem('super-admin-secret')
-        if (savedSecret) {
-          const res = await fetch('/api/super-admin', {
-            headers: { 'Authorization': `Bearer ${savedSecret}` },
-          })
-          if (res.ok) {
-            const json = await res.json()
-            setAuthToken(savedSecret)
-            setData(json)
-            setIsAuthenticated(true)
-            setLoading(false)
-            return
-          }
-        }
-      } catch {
-        // ignore
-      }
-      setIsAuthenticated(false)
-      setLoading(false)
+    hydrate()
+  }, [hydrate])
+
+  // Check auth and fetch data when hydrated
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user || user.role !== 'super-admin' || !jwtToken) {
+      router.push('/login')
+      return
     }
-    checkAuth()
-  }, [])
-
-  const handleLogin = useCallback(async (email: string, password: string) => {
-    setLoading(true)
-    try {
-      // Use the dedicated super-admin auth endpoint (not the regular login)
-      const loginRes = await fetch('/api/super-admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const loginData = await loginRes.json()
-
-      if (!loginRes.ok) {
-        setIsAuthenticated(false)
-        setLoading(false)
-        return loginData.error || 'Credenciales inválidas'
-      }
-
-      // Save the secret token for future API calls
-      const secretToken = loginData.token
-      if (secretToken) {
-        localStorage.setItem('super-admin-secret', secretToken)
-        setAuthToken(secretToken)
-      }
-
-      // Verify by fetching dashboard data
-      const res = await fetch('/api/super-admin', {
-        headers: { 'Authorization': `Bearer ${secretToken}` },
-      })
-      if (res.ok) {
-        const json = await res.json()
-        setData(json)
-        setIsAuthenticated(true)
-      } else {
-        // If verification fails, clear token
-        localStorage.removeItem('super-admin-secret')
-        setIsAuthenticated(false)
-      }
-    } catch (err) {
-      console.error('Error logging in:', err)
-      setIsAuthenticated(false)
-    } finally {
-      setLoading(false)
-    }
-    return null
-  }, [])
+    fetchData()
+  }, [hydrated, user, jwtToken])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const headers: HeadersInit = authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+      const headers: HeadersInit = jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {}
       const res = await fetch('/api/super-admin', { headers })
+      if (!res.ok) {
+        // Auth failed — redirect to login
+        router.push('/login')
+        return
+      }
       const json = await res.json()
       if (json.error) throw new Error(json.error)
       setData(json)
@@ -303,14 +142,14 @@ export default function SuperAdminPanel() {
     } finally {
       setLoading(false)
     }
-  }, [authToken])
+  }, [jwtToken, router])
 
   const handleStoreAction = useCallback(async (action: 'toggle-store' | 'delete-store', storeId: string, isActive?: boolean) => {
     setActionLoading(storeId)
     try {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
-        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
+        ...(jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {}),
       }
       const res = await fetch('/api/super-admin', {
         method: 'PATCH',
@@ -327,18 +166,23 @@ export default function SuperAdminPanel() {
       setActionLoading(null)
       setConfirmDialog(null)
     }
-  }, [authToken, fetchData])
+  }, [jwtToken, fetchData])
 
   const handleManageStore = useCallback(async (storeId: string, storeName: string, storeSlug: string) => {
-    if (!authToken) return
+    if (!jwtToken) return
     setActionLoading(storeId)
     try {
+      // Save original super admin session before impersonating
+      if (user) {
+        localStorage.setItem('super-admin-original-user', JSON.stringify(user))
+        localStorage.setItem('super-admin-original-token', jwtToken)
+      }
       // Request a temporary admin JWT for this store
       const res = await fetch('/api/super-admin', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${jwtToken}`,
         },
         body: JSON.stringify({ action: 'store-token', storeId }),
       })
@@ -350,33 +194,26 @@ export default function SuperAdminPanel() {
       // Set the temporary admin credentials in auth store
       const adminUser = json.user
       const adminToken = json.token
-      localStorage.setItem('user', JSON.stringify(adminUser))
-      localStorage.setItem('auth-token', adminToken)
-      // Navigate to the store admin panel
+      // Update the auth store with store impersonation data
+      setUser(adminUser, adminToken)
+      // Navigate to the store admin panel with super admin master control
       router.push('/admin/dashboard')
     } catch (err) {
       console.error('Error managing store:', err)
     } finally {
       setActionLoading(null)
     }
-  }, [authToken, router])
+  }, [jwtToken, router, setUser, user])
 
   const handleLogout = useCallback(async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-    } catch {
-      // Ignore
-    }
+    // Clear impersonation data
+    localStorage.removeItem('super-admin-original-user')
+    localStorage.removeItem('super-admin-original-token')
     localStorage.removeItem('super-admin-secret')
-    localStorage.removeItem('user')
-    localStorage.removeItem('auth-token')
-    document.cookie = 'super-admin-token=; path=/; max-age=0'
-    document.cookie = 'auth-token=; path=/; max-age=0'
-    setIsAuthenticated(false)
-    setAuthToken(null)
+    await logout()
     setData(null)
     router.push('/login')
-  }, [router])
+  }, [logout, router])
 
   const filteredStores = data?.stores.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -412,9 +249,31 @@ export default function SuperAdminPanel() {
     { id: 'leads', label: 'Leads', icon: Mail },
   ]
 
-  // ═══ Show Login Gate ═══
-  if (!isAuthenticated && !loading) {
-    return <SuperAdminLogin onLogin={handleLogin} />
+  // ═══ Auth check: redirect to login if not super admin ═══
+  if (!hydrated || (!user && hydrated)) {
+    if (hydrated && !user) {
+      router.push('/login')
+    }
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-neutral-500">Cargando panel...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (user && user.role !== 'super-admin') {
+    router.push('/login')
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-neutral-500">Redirigiendo...</p>
+        </div>
+      </div>
+    )
   }
 
   // ═══ Loading State ═══
