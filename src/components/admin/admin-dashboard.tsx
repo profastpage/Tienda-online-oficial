@@ -228,7 +228,7 @@ export function AdminDashboard() {
   const hasChartData = stats?.dailySales?.some((d) => d.total > 0)
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Quick alerts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {stats && stats.pendingOrders > 0 && (

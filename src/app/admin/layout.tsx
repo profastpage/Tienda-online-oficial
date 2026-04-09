@@ -209,7 +209,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const userName = user.name || 'Admin'
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex">
+    <div className="min-h-screen bg-neutral-100 flex overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-[260px] lg:fixed lg:inset-y-0 bg-white border-r border-neutral-200 z-30">
         <SidebarNav
@@ -242,7 +242,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </Sheet>
 
       {/* Main content */}
-      <div className="flex-1 lg:pl-[260px]">
+      <div className="flex-1 min-w-0 lg:pl-[260px] overflow-x-hidden">
         {/* Top header */}
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-200">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
@@ -299,7 +299,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content — only this part swaps on navigation */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>

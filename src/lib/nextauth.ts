@@ -1,9 +1,30 @@
 import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 
-const clientId = process.env.GOOGLE_CLIENT_ID || ''
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
-const hasCredentials = clientId && clientSecret && !clientId.startsWith('your-')
+/**
+ * Robust env var reader that supports both underscore and dash variants.
+ * Vercel UI sometimes auto-replaces underscores with dashes in env var names.
+ */
+function getEnvVar(underscoreName: string, dashName: string): string {
+  // Try exact underscore name first (standard)
+  if (process.env[underscoreName]) return process.env[underscoreName]!
+  // Try dash variant (Vercel sometimes uses this)
+  if (process.env[dashName]) return process.env[dashName]!
+  // Scan all env vars as last resort (handles any casing/separator issues)
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value && key.replace(/[-_]/g, '').toLowerCase() === underscoreName.replace(/_/g, '').toLowerCase()) {
+      return value
+    }
+  }
+  return ''
+}
+
+const clientId = getEnvVar('GOOGLE_CLIENT_ID', 'GOOGLE-CLIENT-ID')
+const clientSecret = getEnvVar('GOOGLE_CLIENT_SECRET', 'GOOGLE-CLIENT-SECRET')
+const hasCredentials = Boolean(clientId && clientSecret && !clientId.startsWith('your-'))
+
+console.log(`[nextauth] Google OAuth credentials: ${hasCredentials ? 'FOUND' : 'MISSING'}`)
+console.log(`[nextauth] Client ID prefix: ${clientId ? clientId.substring(0, 15) + '...' : '(empty)'}`)
 
 export const authOptions: NextAuthOptions = {
   providers: hasCredentials

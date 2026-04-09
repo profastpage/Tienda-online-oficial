@@ -311,7 +311,7 @@ export function AdminOrders() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {/* Filter tabs - scrollable on mobile */}
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 flex-nowrap md:flex-wrap min-w-max">

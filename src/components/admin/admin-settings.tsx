@@ -382,7 +382,7 @@ export function AdminSettings() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-2xl">
+      <div className="w-full max-w-2xl space-y-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
         <Skeleton className="h-12 w-32" />
@@ -391,7 +391,7 @@ export function AdminSettings() {
   }
 
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="w-full max-w-2xl space-y-8">
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-neutral-900">Configuración de la Tienda</h2>
