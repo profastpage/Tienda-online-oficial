@@ -346,170 +346,328 @@ export function AdminProducts() {
         )}
       </div>
 
-      {/* Products table */}
-      <Card className="rounded-xl border-neutral-200">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-neutral-100 hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider w-16">
-                    Imagen
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                    Nombre
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">
-                    Categoría
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
-                    Precio
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center hidden sm:table-cell">
-                    Estado
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
-                    Acciones
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length > 0 ? (
-                  filtered.map((product) => (
-                    <TableRow
-                      key={product.id}
-                      className="border-neutral-50 hover:bg-neutral-50/50"
-                    >
-                      <TableCell>
-                        <div className="relative">
+      {/* Mobile Card Layout */}
+      <div className="md:hidden">
+        {filtered.length > 0 ? (
+          <div className="space-y-3">
+            {filtered.map((product, index) => {
+              let extraImageCount = 0
+              try {
+                extraImageCount = (JSON.parse(product.images || '[]') as string[]).filter(Boolean).length
+              } catch {
+                // ignore
+              }
+              return (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.04 }}
+                >
+                  <Card className="rounded-xl border-neutral-200 overflow-hidden">
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        {/* Product image */}
+                        <div className="relative flex-shrink-0">
                           {product.image ? (
                             <img
                               src={product.image}
                               alt={product.name}
-                              className="w-10 h-10 rounded-lg object-cover bg-neutral-100"
+                              className="w-20 h-20 rounded-xl object-cover bg-neutral-100"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
-                              <ImageIcon className="w-4 h-4 text-neutral-300" />
+                            <div className="w-20 h-20 rounded-xl bg-neutral-100 flex items-center justify-center">
+                              <ImageIcon className="w-6 h-6 text-neutral-300" />
                             </div>
                           )}
-                          {(() => {
-                            try {
-                              const extraCount = (JSON.parse(product.images || '[]') as string[]).filter(Boolean).length
-                              if (extraCount > 0) {
-                                return (
-                                  <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                                    {extraCount + 1}
-                                  </span>
-                                )
-                              }
-                            } catch {
-                              // ignore
-                            }
-                            return null
-                          })()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm font-medium text-neutral-900 line-clamp-1">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-neutral-400 md:hidden">
-                            {getCategoryName(product.categoryId)}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="text-sm text-neutral-600">
-                          {getCategoryName(product.categoryId)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div>
-                          <span className="text-sm font-semibold text-neutral-900">
-                            S/ {product.price.toFixed(2)}
-                          </span>
-                          {product.comparePrice && (
-                            <p className="text-xs text-neutral-400 line-through">
-                              S/ {product.comparePrice.toFixed(2)}
-                            </p>
+                          {extraImageCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] font-bold w-4.5 h-4.5 min-w-[18px] rounded-full flex items-center justify-center">
+                              {extraImageCount + 1}
+                            </span>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center hidden sm:table-cell">
-                        {product.inStock ? (
-                          <Badge className="bg-green-100 text-green-800 border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
-                            En stock
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-red-100 text-red-800 border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
-                            Agotado
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
+
+                        {/* Product details */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-neutral-900 line-clamp-1">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              {getCategoryName(product.categoryId)}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-neutral-900">
+                                S/ {product.price.toFixed(2)}
+                              </span>
+                              {product.comparePrice && (
+                                <span className="text-[11px] text-neutral-400 line-through">
+                                  S/ {product.comparePrice.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                            {product.inStock ? (
+                              <Badge className="bg-green-100 text-green-800 border-0 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                                En stock
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-100 text-red-800 border-0 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                                Agotado
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions row */}
+                      <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-neutral-100">
                         {isDemoStore ? (
-                          <div className="flex items-center justify-center w-full">
-                            <Lock className="w-3.5 h-3.5 text-amber-500" />
+                          <div className="flex items-center gap-1.5 text-amber-500">
+                            <Lock className="w-3.5 h-3.5" />
+                            <span className="text-[11px] font-medium">Solo lectura</span>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-end gap-1">
+                          <>
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-neutral-400 hover:text-neutral-900"
+                              size="sm"
+                              className="h-8 px-3 text-neutral-500 hover:text-neutral-900 text-xs gap-1.5 rounded-lg"
                               onClick={() => openEdit(product)}
                             >
                               <Pencil className="w-3.5 h-3.5" />
+                              Editar
                             </Button>
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-neutral-400 hover:text-red-600"
+                              size="sm"
+                              className="h-8 px-3 text-neutral-500 hover:text-red-600 text-xs gap-1.5 rounded-lg"
                               onClick={() => openDelete(product.id)}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
+                              Eliminar
                             </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-40 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <PackageOpen className="w-10 h-10 text-neutral-300" />
-                        <p className="text-neutral-400 text-sm">
-                          {search ? 'No se encontraron productos' : 'No hay productos aún'}
-                        </p>
-                        {!search && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2 rounded-lg text-xs"
-                            onClick={openCreate}
-                          >
-                            Crear primer producto
-                          </Button>
+                          </>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )
+            })}
           </div>
-          {filtered.length > 0 && (
-            <div className="px-5 py-3 border-t border-neutral-100">
-              <p className="text-xs text-neutral-400">
-                {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
-              </p>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="rounded-xl border-neutral-200">
+              <CardContent className="py-12 px-6">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center">
+                    <PackageOpen className="w-7 h-7 text-neutral-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-neutral-600">
+                      {search ? 'No se encontraron productos' : 'No hay productos aún'}
+                    </p>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      {search ? 'Intenta con otra búsqueda' : 'Agrega tu primer producto para comenzar'}
+                    </p>
+                  </div>
+                  {!search && !isDemoStore && (
+                    <Button
+                      onClick={openCreate}
+                      className="mt-1 bg-neutral-900 hover:bg-neutral-800 text-white h-9 rounded-lg text-sm font-medium gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Agregar Producto
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="mt-3 px-1">
+            <p className="text-xs text-neutral-400">
+              {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className="hidden md:block">
+        <Card className="rounded-xl border-neutral-200">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-neutral-100 hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider w-16">
+                      Imagen
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                      Nombre
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">
+                      Categoría
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
+                      Precio
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center hidden sm:table-cell">
+                      Estado
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">
+                      Acciones
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.length > 0 ? (
+                    filtered.map((product) => (
+                      <TableRow
+                        key={product.id}
+                        className="border-neutral-50 hover:bg-neutral-50/50"
+                      >
+                        <TableCell>
+                          <div className="relative">
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-10 h-10 rounded-lg object-cover bg-neutral-100"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
+                                <ImageIcon className="w-4 h-4 text-neutral-300" />
+                              </div>
+                            )}
+                            {(() => {
+                              try {
+                                const extraCount = (JSON.parse(product.images || '[]') as string[]).filter(Boolean).length
+                                if (extraCount > 0) {
+                                  return (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                                      {extraCount + 1}
+                                    </span>
+                                  )
+                                }
+                              } catch {
+                                // ignore
+                              }
+                              return null
+                            })()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm font-medium text-neutral-900 line-clamp-1">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-neutral-400 md:hidden">
+                              {getCategoryName(product.categoryId)}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <span className="text-sm text-neutral-600">
+                            {getCategoryName(product.categoryId)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div>
+                            <span className="text-sm font-semibold text-neutral-900">
+                              S/ {product.price.toFixed(2)}
+                            </span>
+                            {product.comparePrice && (
+                              <p className="text-xs text-neutral-400 line-through">
+                                S/ {product.comparePrice.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center hidden sm:table-cell">
+                          {product.inStock ? (
+                            <Badge className="bg-green-100 text-green-800 border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                              En stock
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-800 border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                              Agotado
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isDemoStore ? (
+                            <div className="flex items-center justify-center w-full">
+                              <Lock className="w-3.5 h-3.5 text-amber-500" />
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-neutral-400 hover:text-neutral-900"
+                                onClick={() => openEdit(product)}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-neutral-400 hover:text-red-600"
+                                onClick={() => openDelete(product.id)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-40 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <PackageOpen className="w-10 h-10 text-neutral-300" />
+                          <p className="text-neutral-400 text-sm">
+                            {search ? 'No se encontraron productos' : 'No hay productos aún'}
+                          </p>
+                          {!search && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 rounded-lg text-xs"
+                              onClick={openCreate}
+                            >
+                              Crear primer producto
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {filtered.length > 0 && (
+              <div className="px-5 py-3 border-t border-neutral-100">
+                <p className="text-xs text-neutral-400">
+                  {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>

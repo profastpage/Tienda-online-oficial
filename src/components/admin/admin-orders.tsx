@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Eye,
   ShoppingCart,
@@ -311,8 +312,9 @@ export function AdminOrders() {
 
   return (
     <div className="space-y-4">
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-2">
+      {/* Filter tabs - scrollable on mobile */}
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 flex-nowrap md:flex-wrap min-w-max">
         {statusFilters.map((filter) => (
           <Button
             key={filter.value}
@@ -333,6 +335,7 @@ export function AdminOrders() {
             )}
           </Button>
         ))}
+        </div>
       </div>
 
       {/* Search bar & sort toggle */}
@@ -409,8 +412,139 @@ export function AdminOrders() {
         </Card>
       </div>
 
-      {/* Orders table */}
-      <Card className="rounded-xl border-neutral-200">
+      {/* Mobile order cards */}
+      <div className="md:hidden space-y-3">
+        <AnimatePresence mode="popLayout">
+          {orders.length > 0 ? (
+            orders.map((order, index) => (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, delay: index * 0.03 }}
+                className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
+              >
+                {/* Top row: order number + date */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-4 h-4 text-neutral-400" />
+                    <span className="text-sm font-bold text-neutral-900">#{order.orderNumber.slice(-6)}</span>
+                  </div>
+                  <span className="text-xs text-neutral-400">{formatDate(order.createdAt)}</span>
+                </div>
+
+                {/* Status badge - prominent */}
+                <div className="mb-3">
+                  <Select
+                    value={order.status}
+                    onValueChange={(val) => handleChangeStatus(order.id, val)}
+                  >
+                    <SelectTrigger
+                      className={`w-full h-9 text-xs font-semibold border-0 rounded-lg px-3 justify-start ${
+                        statusBadge[order.status] || 'bg-neutral-100 text-neutral-600'
+                      } ${updatingStatus === order.id ? 'opacity-50' : ''}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((s) => (
+                        <SelectItem key={s} value={s} className="text-xs">
+                          {statusLabel[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Customer name */}
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+                  <span className="text-sm text-neutral-700 truncate">{order.customerName}</span>
+                </div>
+
+                {/* Payment method badge + Total row */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    {order.mercadoPagoPayment ? (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          mpStatusBadge[order.mercadoPagoPayment.status] || 'bg-neutral-100 text-neutral-600'
+                        }`}
+                      >
+                        💳 MP
+                      </span>
+                    ) : order.paymentMethod ? (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          paymentMethodBadge[order.paymentMethod.type.toLowerCase()] || 'bg-neutral-100 text-neutral-600'
+                        }`}
+                      >
+                        <span>{paymentMethodIcon[order.paymentMethod.type.toLowerCase()] || '💳'}</span>
+                        {order.paymentMethod.name}
+                      </span>
+                    ) : null}
+                    <span className="text-xs text-neutral-400 flex items-center gap-1">
+                      <Package className="w-3 h-3" />
+                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <span className="text-base font-bold text-neutral-900">S/ {order.total.toFixed(2)}</span>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 pt-3 border-t border-neutral-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-9 rounded-lg border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-xs font-medium gap-1.5"
+                    onClick={() => {
+                      setViewOrder(order)
+                      setEditNotes(order.notes)
+                      setIsEditingNotes(false)
+                    }}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Ver detalle
+                  </Button>
+                  {(order.status === 'pending' || order.status === 'cancelled') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 rounded-lg border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 text-xs font-medium gap-1.5"
+                      onClick={() => setDeleteOrder(order)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-2 py-16"
+            >
+              <ShoppingCart className="w-10 h-10 text-neutral-300" />
+              <p className="text-neutral-400 text-sm">
+                {activeFilter === 'all' || debouncedSearch
+                  ? 'No se encontraron pedidos'
+                  : `No hay pedidos ${statusLabel[activeFilter]?.toLowerCase()}s`}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {orders.length > 0 && (
+          <p className="text-xs text-neutral-400 text-center pt-2">
+            {orders.length} pedido{orders.length !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+
+      {/* Desktop orders table */}
+      <Card className="hidden md:block rounded-xl border-neutral-200">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>

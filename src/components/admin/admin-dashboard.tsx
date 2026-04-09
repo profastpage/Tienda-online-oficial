@@ -429,7 +429,8 @@ export function AdminDashboard() {
                 Últimos 10 pagos y métodos de pago utilizados
               </p>
             </div>
-            <div className="mt-4 overflow-x-auto">
+            {/* Desktop table */}
+            <div className="mt-4 overflow-x-auto hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow className="border-neutral-100 hover:bg-transparent">
@@ -494,6 +495,54 @@ export function AdminDashboard() {
                 </TableBody>
               </Table>
             </div>
+            {/* Mobile card view */}
+            <div className="mt-4 md:hidden px-5 pb-5 space-y-3">
+              {stats.recentPayments.map((payment, i) => {
+                const pmType = payment.paymentMethod?.type?.toLowerCase() || ''
+                const pmName = payment.paymentMethod?.name || 'No especificado'
+                const emoji = paymentMethodEmoji[pmType] || '💳'
+                const badgeClass = paymentMethodBadge[pmType] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'
+                return (
+                  <motion.div
+                    key={`mobile-${payment.orderNumber}-${i}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                        #{payment.orderNumber.slice(-6)}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border-0 ${
+                          statusBadge[payment.status] || 'bg-neutral-100 text-neutral-600'
+                        }`}
+                      >
+                        {statusLabel[payment.status] || payment.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border-0 ${badgeClass}`}
+                        >
+                          {emoji} {pmName}
+                        </Badge>
+                        <span className="text-xs text-neutral-400">
+                          {formatDate(payment.createdAt)}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        S/ {payment.total.toFixed(2)}
+                      </span>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -507,7 +556,8 @@ export function AdminDashboard() {
               Últimos 5 pedidos de tu tienda
             </p>
           </div>
-          <div className="mt-4 overflow-x-auto">
+          {/* Desktop table */}
+          <div className="mt-4 overflow-x-auto hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="border-neutral-100 hover:bg-transparent">
@@ -577,6 +627,58 @@ export function AdminDashboard() {
                 )}
               </TableBody>
             </Table>
+          </div>
+          {/* Mobile card view */}
+          <div className="mt-4 md:hidden px-5 pb-5 space-y-3">
+            {stats?.recentOrders && stats.recentOrders.length > 0 ? (
+              stats.recentOrders.map((order, i) => (
+                <motion.div
+                  key={`mobile-${order.id}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      #{order.orderNumber.slice(-6)}
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border-0 ${
+                        statusBadge[order.status] || 'bg-neutral-100 text-neutral-600'
+                      }`}
+                    >
+                      {statusLabel[order.status] || order.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      {order.customerName}
+                    </span>
+                    <span className="text-xs text-neutral-400">
+                      {formatDate(order.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-neutral-400">
+                      {order.items?.length || 0} items
+                    </span>
+                    <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                      S/ {order.total.toFixed(2)}
+                    </span>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-neutral-400">
+                <ShoppingCart className="w-10 h-10 mb-2 opacity-30" />
+                <p className="text-sm">No hay pedidos aún</p>
+                <p className="text-xs mt-1 text-neutral-300">
+                  Los pedidos aparecerán aquí automáticamente
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
