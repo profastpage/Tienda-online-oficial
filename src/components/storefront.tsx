@@ -793,9 +793,9 @@ Gracias!`)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
+      {/* Header - Fixed at top */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrollY > 50
             ? 'bg-background/95 backdrop-blur-md shadow-sm border-b'
             : 'bg-background border-b border-transparent'
@@ -968,7 +968,7 @@ Gracias!`)
         )}
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 pt-[104px] md:pt-[112px]">
         {/* MercadoPago Checkout Status Banner */}
         {mpCheckoutStatus && (
           <motion.div
@@ -1427,6 +1427,7 @@ Gracias!`)
                     >
                       <div
                         className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-border h-full flex flex-col"
+                        onClick={() => openProduct(product)}
                       >
                         {/* Swipeable Product Image - Instagram Style */}
                         <SwipeableProductImage

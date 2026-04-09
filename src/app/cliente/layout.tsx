@@ -12,6 +12,7 @@ import {
   X,
   Store,
   ChevronRight,
+  ShoppingBag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -229,7 +230,7 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
         {/* Top header */}
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-200">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -238,7 +239,14 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
               >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
-              <div>
+              {/* Mobile store brand icon */}
+              <Link href="/" className="lg:hidden flex items-center gap-1.5">
+                <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
+                  <ShoppingBag className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-bold text-neutral-900 max-w-[80px] truncate">{storeName}</span>
+              </Link>
+              <div className="hidden lg:block">
                 <h1 className="text-lg font-bold text-neutral-900">
                   {sectionTitles[activeSection]}
                 </h1>

@@ -180,13 +180,14 @@ export function CustomerProfile() {
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
               <div className="relative flex-shrink-0 group">
-                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-neutral-400 group-hover:shadow-md">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-neutral-400 group-hover:shadow-md flex-shrink-0">
                   {profile.avatar ? (
                     <img
                       key={profile.avatar}
                       src={profile.avatar}
                       alt="Avatar"
-                      className="w-full h-full object-cover animate-in fade-in duration-300"
+                      className="w-full h-full object-cover !aspect-square animate-in fade-in duration-300"
+                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none'
                       }}

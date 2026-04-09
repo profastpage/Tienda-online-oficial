@@ -335,13 +335,14 @@ export default function SuperAdminPanel() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-200 shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 flex h-14 items-center justify-between">
           <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Inicio</span>
           </button>
           <div className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-red-500 sm:hidden" />
             <Badge className="bg-red-500 text-white text-[10px] font-bold">SUPER ADMIN</Badge>
             <span className="text-sm font-bold text-neutral-900 hidden sm:inline">Panel de Administración</span>
           </div>
@@ -358,7 +359,7 @@ export default function SuperAdminPanel() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-4 sm:py-6">
+      <main className="mx-auto max-w-7xl px-4 py-4 sm:py-6 pt-[70px]">
         {/* Stats Cards - Mobile-first grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
           <StatCard icon={<Store className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />} value={data?.stats.totalStores || 0} label="Tiendas" />
