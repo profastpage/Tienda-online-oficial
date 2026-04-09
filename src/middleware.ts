@@ -26,6 +26,7 @@ const PUBLIC_PATHS = [
   '/api/auth/google',
   '/api/auth/signin',
   '/api/auth/callback',
+  '/api/auth/error',
   '/api/products',
   '/api/categories',
   '/api/testimonials',

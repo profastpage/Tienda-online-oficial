@@ -1,32 +1,45 @@
 import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 
+const clientId = process.env.GOOGLE_CLIENT_ID || ''
+const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
+const hasCredentials = clientId && clientSecret && !clientId.startsWith('your-')
+
 export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      authorization: {
-        params: {
-          prompt: 'select_account',
-          access_type: 'offline',
-        },
-      },
-    }),
-  ],
+  providers: hasCredentials
+    ? [
+        GoogleProvider({
+          clientId,
+          clientSecret,
+          authorization: {
+            params: {
+              prompt: 'select_account',
+              access_type: 'offline',
+            },
+          },
+        }),
+      ]
+    : [],
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/login',
+    error: '/auth/error',
   },
   callbacks: {
     async signIn({ account, profile }) {
-      // Allow all sign-ins, we handle user creation in our custom callback
+      if (!hasCredentials) {
+        console.error('[nextauth] Google OAuth credentials not configured')
+        return false
+      }
       return true
     },
     async redirect({ url, baseUrl }) {
-      // After Google sign-in, redirect to our custom callback handler
-      // This allows us to create/link users with our existing JWT system
-      if (url.includes('/api/auth')) {
+      // If the URL is our custom callback page, let it pass through
+      if (url.includes('/auth/google-callback')) {
+        return url
+      }
+      // For NextAuth's internal callback URLs, redirect to our handler
+      if (url.includes('/api/auth/callback')) {
         return `${baseUrl}/auth/google-callback`
       }
       return url.startsWith(baseUrl) ? url : baseUrl
@@ -51,6 +64,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 5 * 60, // 5 minutes - just enough for the callback
+    maxAge: 30 * 60, // 30 minutes - enough for the full OAuth flow
   },
 }
