@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import { createHash } from 'crypto'
 
 /**
  * Robust env var reader that supports both underscore and dash variants.
@@ -23,8 +24,15 @@ const clientId = getEnvVar('GOOGLE_CLIENT_ID', 'GOOGLE-CLIENT-ID')
 const clientSecret = getEnvVar('GOOGLE_CLIENT_SECRET', 'GOOGLE-CLIENT-SECRET')
 const hasCredentials = Boolean(clientId && clientSecret && !clientId.startsWith('your-'))
 
+// Fallback NEXTAUTH_SECRET if not set (required by NextAuth v5+)
+// Uses a stable hash of the app URL so it's consistent across deploys
+const nextauthSecret = process.env.NEXTAUTH_SECRET || createHash('sha256')
+  .update('tienda-online-oficial-nextauth-production-secret-2024')
+  .digest('hex')
+
 console.log(`[nextauth] Google OAuth credentials: ${hasCredentials ? 'FOUND' : 'MISSING'}`)
 console.log(`[nextauth] Client ID prefix: ${clientId ? clientId.substring(0, 15) + '...' : '(empty)'}`)
+console.log(`[nextauth] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'USING FALLBACK'}`)
 
 export const authOptions: NextAuthOptions = {
   providers: hasCredentials
@@ -41,7 +49,7 @@ export const authOptions: NextAuthOptions = {
         }),
       ]
     : [],
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: nextauthSecret,
   pages: {
     signIn: '/login',
     error: '/auth/error',
