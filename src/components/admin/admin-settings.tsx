@@ -502,9 +502,9 @@ export function AdminSettings() {
       </div>
 
       <Card className="rounded-xl border-neutral-200">
-        <CardContent className="p-6 space-y-5">
-          {/* Avatar with hover overlay */}
-          <div className="flex items-center gap-5">
+        <CardContent className="p-4 sm:p-6 space-y-5">
+          {/* Avatar with hover overlay - stacks on mobile, horizontal on sm+ */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
             <div className="relative flex-shrink-0 group">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-neutral-400 group-hover:shadow-md flex-shrink-0">
                 {profileForm.avatar ? (
@@ -595,15 +595,18 @@ export function AdminSettings() {
             </div>
           </div>
 
-          <div className="max-w-[200px]">
+          <div className="w-full">
             <p className="text-xs font-medium text-neutral-500 mb-2">Cambiar foto de perfil</p>
-            <ImageUpload
-              value={profileForm.avatar}
-              onChange={(url) => setProfileForm({ ...profileForm, avatar: url })}
-              storeSlug={user?.storeSlug || 'store'}
-              folder="avatars"
-              className="[&>div]:!aspect-auto [&>div]:!h-[40px] [&>div>img]:!object-cover [&>div>img]:!rounded-lg"
-            />
+            <div className="w-full max-w-xs sm:max-w-sm">
+              <ImageUpload
+                value={profileForm.avatar}
+                onChange={(url) => setProfileForm({ ...profileForm, avatar: url })}
+                storeSlug={user?.storeSlug || 'store'}
+                folder="avatars"
+                aspectRatio="aspect-square"
+                label="Sube tu foto de perfil"
+              />
+            </div>
           </div>
 
           <Separator className="bg-neutral-100" />
@@ -618,7 +621,7 @@ export function AdminSettings() {
               value={profileForm.name}
               onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
               placeholder="Tu nombre"
-              className="h-10 rounded-lg text-sm border-neutral-200"
+              className="h-10 rounded-lg text-sm border-neutral-200 w-full"
             />
           </div>
 
@@ -628,7 +631,7 @@ export function AdminSettings() {
             <Input
               value={user?.email || ''}
               disabled
-              className="h-10 rounded-lg text-sm border-neutral-200 bg-neutral-50 text-neutral-500 cursor-not-allowed"
+              className="h-10 rounded-lg text-sm border-neutral-200 bg-neutral-50 text-neutral-500 cursor-not-allowed w-full"
             />
             <p className="text-xs text-neutral-400">El correo no puede ser modificado.</p>
           </div>
@@ -643,16 +646,16 @@ export function AdminSettings() {
               value={profileForm.phone}
               onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
               placeholder="+51 999 888 777"
-              className="h-10 rounded-lg text-sm border-neutral-200"
+              className="h-10 rounded-lg text-sm border-neutral-200 w-full"
             />
           </div>
 
-          {/* Save profile button */}
-          <div className="flex items-center gap-3 pt-2">
+          {/* Save profile button - full width on mobile */}
+          <div className="flex items-center gap-3 pt-2 w-full">
             <Button
               onClick={handleSaveProfile}
               disabled={profileSaving}
-              className={`h-10 rounded-lg text-sm font-medium gap-2 ${
+              className={`h-10 rounded-lg text-sm font-medium gap-2 w-full sm:w-auto ${
                 profileSaved
                   ? 'bg-green-600 hover:bg-green-600 text-white'
                   : 'bg-neutral-900 hover:bg-neutral-800 text-white'
@@ -698,7 +701,7 @@ export function AdminSettings() {
 
       {/* Logo preview */}
       <Card className="rounded-xl border-neutral-200">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-5">
             {form.logo ? (
               <img
@@ -727,7 +730,7 @@ export function AdminSettings() {
 
       {/* Settings form */}
       <Card className="rounded-xl border-neutral-200">
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-4 sm:p-6 space-y-6">
           {/* Store name */}
           <div className="space-y-2">
             <Label htmlFor="store-name" className="text-sm font-medium text-neutral-700">
@@ -738,7 +741,7 @@ export function AdminSettings() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Mi Tienda"
-              className="h-10 rounded-lg text-sm border-neutral-200"
+              className="h-10 rounded-lg text-sm border-neutral-200 w-full"
             />
           </div>
 
@@ -755,7 +758,7 @@ export function AdminSettings() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Describe tu tienda..."
               rows={4}
-              className="rounded-lg text-sm border-neutral-200 resize-none"
+              className="rounded-lg text-sm border-neutral-200 resize-none w-full"
             />
             <p className="text-xs text-neutral-400">
               Aparecerá en la página principal de tu tienda
@@ -774,7 +777,7 @@ export function AdminSettings() {
               value={form.whatsappNumber}
               onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
               placeholder="+51 999 888 777"
-              className="h-10 rounded-lg text-sm border-neutral-200"
+              className="h-10 rounded-lg text-sm border-neutral-200 w-full"
             />
             <p className="text-xs text-neutral-400">
               Incluye el código de país para pedidos por WhatsApp
@@ -793,7 +796,7 @@ export function AdminSettings() {
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               placeholder="Av. Principal 123, Lima"
-              className="h-10 rounded-lg text-sm border-neutral-200"
+              className="h-10 rounded-lg text-sm border-neutral-200 w-full"
             />
           </div>
 
@@ -836,12 +839,12 @@ export function AdminSettings() {
         </CardContent>
       </Card>
 
-      {/* Save button */}
-      <div className="flex items-center gap-3">
+      {/* Save button - full width on mobile */}
+      <div className="flex items-center gap-3 w-full">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className={`h-10 rounded-lg text-sm font-medium gap-2 ${
+          className={`h-10 rounded-lg text-sm font-medium gap-2 w-full sm:w-auto ${
             saved
               ? 'bg-green-600 hover:bg-green-600 text-white'
               : 'bg-neutral-900 hover:bg-neutral-800 text-white'
@@ -892,7 +895,7 @@ export function AdminSettings() {
       </div>
 
       <Card className="rounded-xl border-neutral-200">
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-4 sm:p-6 space-y-4">
           <p className="text-sm text-neutral-600">
             Las notificaciones push se envían a los usuarios que instalaron la app y permitieron recibir alertas. Puedes enviar notificaciones de ofertas, nuevos productos, y más.
           </p>
@@ -956,7 +959,7 @@ export function AdminSettings() {
 
       {/* Payment Methods List */}
       <Card className="rounded-xl border-neutral-200">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           {pmLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-16 w-full" />
@@ -978,14 +981,14 @@ export function AdminSettings() {
               {sortedPaymentMethods.map((pm) => (
                 <div
                   key={pm.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                  className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-xl border transition-colors ${
                     pm.isActive
                       ? 'bg-white border-neutral-200'
                       : 'bg-neutral-50 border-neutral-100 opacity-60'
                   }`}
                 >
-                  {/* Icon & Badge */}
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {/* Icon, Badge & Info */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 w-full">
                     <span className="text-xl flex-shrink-0">
                       {getPaymentTypeIcon(pm.type)}
                     </span>
@@ -1001,7 +1004,7 @@ export function AdminSettings() {
                           {getPaymentTypeLabel(pm.type)}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                         {pm.accountNumber && (
                           <span className="text-xs text-neutral-500 truncate">
                             {pm.type === 'transferencia' ? 'Cta: ' : 'Nº: '}
@@ -1022,47 +1025,50 @@ export function AdminSettings() {
                     </div>
                   </div>
 
-                  {/* QR Code Thumbnail */}
-                  {pm.qrCode && (
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center overflow-hidden">
-                        <img
-                          src={pm.qrCode}
-                          alt="QR"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none'
-                          }}
-                        />
+                  {/* Actions row: QR, toggle, edit/delete */}
+                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:flex-shrink-0 mt-1 sm:mt-0">
+                    {/* QR Code Thumbnail */}
+                    {pm.qrCode && (
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center overflow-hidden">
+                          <img
+                            src={pm.qrCode}
+                            alt="QR"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                        </div>
                       </div>
+                    )}
+
+                    {/* Toggle */}
+                    <Switch
+                      checked={pm.isActive}
+                      onCheckedChange={() => handleTogglePayment(pm)}
+                      className="flex-shrink-0 ml-auto"
+                    />
+
+                    {/* Edit/Delete */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"
+                        onClick={() => openEditDialog(pm)}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-neutral-400 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => setDeletingPayment(pm)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
-                  )}
-
-                  {/* Toggle */}
-                  <Switch
-                    checked={pm.isActive}
-                    onCheckedChange={() => handleTogglePayment(pm)}
-                    className="flex-shrink-0"
-                  />
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"
-                      onClick={() => openEditDialog(pm)}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-neutral-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => setDeletingPayment(pm)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
                   </div>
                 </div>
               ))}

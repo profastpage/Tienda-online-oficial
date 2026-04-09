@@ -143,7 +143,7 @@ export function CustomerProfile() {
           <Skeleton className="h-4 w-64" />
         </div>
         <Card className="rounded-xl border-neutral-200">
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="p-4 sm:p-6 space-y-5">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="h-4 w-24" />
@@ -177,7 +177,8 @@ export function CustomerProfile() {
         transition={{ duration: 0.3, delay: 0.05 }}
       >
         <Card className="rounded-xl border-neutral-200 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
+            {/* Avatar + info: stacks on mobile, horizontal on sm+ */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
               <div className="relative flex-shrink-0 group">
                 <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-neutral-400 group-hover:shadow-md flex-shrink-0">
@@ -254,19 +255,22 @@ export function CustomerProfile() {
                 <h3 className="text-lg font-bold text-neutral-900">
                   {profile.name || 'Sin nombre'}
                 </h3>
-                <p className="text-sm text-neutral-400">{profile.email}</p>
+                <p className="text-sm text-neutral-400 break-words">{profile.email}</p>
                 <p className="text-xs text-neutral-300 mt-1 capitalize">Cliente</p>
               </div>
             </div>
-            <div className="mt-4">
+
+            {/* Avatar upload area: full width, compact square for avatars */}
+            <div className="mt-4 w-full">
               <p className="text-xs font-medium text-neutral-500 mb-2">Cambiar foto de perfil</p>
-              <div className="w-full max-w-[200px] h-[40px]">
+              <div className="w-full max-w-xs sm:max-w-sm">
                 <ImageUpload
                   value={profile.avatar}
                   onChange={(url) => setProfile({ ...profile, avatar: url })}
                   storeSlug={user?.storeSlug || 'store'}
                   folder="avatars"
-                  className="h-full [&>div]:!aspect-auto [&>div]:!h-full [&>div>img]:!object-cover [&>div>img]:!rounded-lg [&_.group]:!rounded-lg"
+                  aspectRatio="aspect-square"
+                  label="Sube tu foto de perfil"
                 />
               </div>
             </div>
@@ -300,7 +304,7 @@ export function CustomerProfile() {
                 <Input
                   id="name"
                   placeholder="Tu nombre completo"
-                  className="h-10 rounded-xl border-neutral-200 bg-white text-sm"
+                  className="h-10 rounded-xl border-neutral-200 bg-white text-sm w-full"
                   value={profile.name}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                 />
@@ -317,7 +321,7 @@ export function CustomerProfile() {
                   type="email"
                   value={profile.email}
                   disabled
-                  className="h-10 rounded-xl border-neutral-200 bg-neutral-50 text-sm text-neutral-500 cursor-not-allowed"
+                  className="h-10 rounded-xl border-neutral-200 bg-neutral-50 text-sm text-neutral-500 cursor-not-allowed w-full"
                 />
                 <p className="text-xs text-neutral-400">El correo no puede ser modificado.</p>
               </div>
@@ -333,7 +337,7 @@ export function CustomerProfile() {
                 <Input
                   id="phone"
                   placeholder="+51 999 888 777"
-                  className="h-10 rounded-xl border-neutral-200 bg-white text-sm"
+                  className="h-10 rounded-xl border-neutral-200 bg-white text-sm w-full"
                   value={profile.phone}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                 />
@@ -348,18 +352,18 @@ export function CustomerProfile() {
                 <Textarea
                   id="address"
                   placeholder="Av. Principal 123, Lima, Perú"
-                  className="rounded-xl border-neutral-200 bg-white text-sm min-h-[80px] resize-none"
+                  className="rounded-xl border-neutral-200 bg-white text-sm min-h-[80px] resize-none w-full"
                   value={profile.address}
                   onChange={(e) => setProfile({ ...profile, address: e.target.value })}
                 />
               </div>
 
-              {/* Save button */}
+              {/* Save button: full width on mobile */}
               <div className="pt-2">
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl h-10 px-6 text-sm font-semibold"
+                  className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl h-10 px-6 text-sm font-semibold w-full sm:w-auto"
                 >
                   {saving ? (
                     <>

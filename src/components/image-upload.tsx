@@ -11,6 +11,10 @@ interface ImageUploadProps {
   storeSlug?: string
   className?: string
   maxSizeMB?: number
+  /** Aspect ratio class for the upload area. Default: 'aspect-video' (16:9). Use 'aspect-square' for avatars. */
+  aspectRatio?: string
+  /** Label shown inside the upload area */
+  label?: string
 }
 
 export function ImageUpload({
@@ -20,6 +24,8 @@ export function ImageUpload({
   storeSlug = 'store',
   className = '',
   maxSizeMB = 5,
+  aspectRatio = 'aspect-video',
+  label,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -132,6 +138,8 @@ export function ImageUpload({
     setUploadInfo(null)
   }
 
+  const displayLabel = label || 'Haz clic para subir o arrastra una imagen'
+
   return (
     <div className={className}>
       <input
@@ -144,7 +152,7 @@ export function ImageUpload({
 
       {value ? (
         <div className="relative group rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50">
-          <div className="aspect-video w-full">
+          <div className={`${aspectRatio} w-full`}>
             <img
               src={value}
               alt="Imagen subida"
@@ -160,13 +168,13 @@ export function ImageUpload({
             </div>
           )}
 
-          {/* Overlay on hover */}
+          {/* Overlay on hover (desktop) */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              className="rounded-lg text-xs gap-1.5"
+              className="rounded-lg text-xs gap-1.5 h-9 px-3"
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="w-3.5 h-3.5" />
@@ -176,13 +184,14 @@ export function ImageUpload({
               type="button"
               variant="secondary"
               size="sm"
-              className="rounded-lg text-xs gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="rounded-lg text-xs gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 h-9 px-3"
               onClick={handleRemove}
             >
               <X className="w-3.5 h-3.5" />
               Quitar
             </Button>
           </div>
+          {/* Mobile remove button (always visible on small screens) */}
           <Button
             type="button"
             variant="secondary"
@@ -202,7 +211,7 @@ export function ImageUpload({
           className={`
             relative flex flex-col items-center justify-center gap-3
             rounded-lg border-2 border-dashed cursor-pointer transition-all
-            aspect-video w-full
+            ${aspectRatio} w-full min-h-[100px]
             ${
               dragging
                 ? 'border-neutral-900 bg-neutral-50'
@@ -216,12 +225,12 @@ export function ImageUpload({
               <div className="relative">
                 <Loader2 className="w-8 h-8 text-neutral-400 animate-spin" />
               </div>
-              <div className="text-center">
+              <div className="text-center px-4">
                 <p className="text-sm font-medium text-neutral-700">
                   Optimizando y subiendo...
                 </p>
                 {progress > 0 && (
-                  <div className="mt-2 w-48 mx-auto">
+                  <div className="mt-2 w-full max-w-[200px] mx-auto">
                     <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-neutral-900 rounded-full transition-all duration-300"
@@ -231,24 +240,23 @@ export function ImageUpload({
                   </div>
                 )}
                 <p className="text-[10px] text-neutral-400 mt-1.5">
-                  Cloudinary optimiza automáticamente: WebP + compresión inteligente
+                  Cloudinary optimiza automáticamente
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100">
-                <ImageIcon className="w-6 h-6 text-neutral-400" />
+              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-neutral-100 flex-shrink-0">
+                <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-400" />
               </div>
-              <div className="text-center px-4">
-                <p className="text-sm font-medium text-neutral-700">
-                  <span className="text-neutral-900">Haz clic para subir</span>{' '}
-                  o arrastra una imagen
+              <div className="text-center px-3 sm:px-4">
+                <p className="text-xs sm:text-sm font-medium text-neutral-700 break-words">
+                  <span className="text-neutral-900">{displayLabel}</span>
                 </p>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-[11px] sm:text-xs text-neutral-400 mt-1">
                   JPG, PNG, WebP o GIF (máx. {maxSizeMB}MB)
                 </p>
-                <p className="text-[10px] text-green-600 mt-1 font-medium">
+                <p className="text-[10px] text-green-600 mt-1 font-medium hidden sm:block">
                   Se optimiza automáticamente con Cloudinary
                 </p>
               </div>
@@ -260,7 +268,7 @@ export function ImageUpload({
       {error && (
         <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
           <X className="w-3 h-3 flex-shrink-0" />
-          {error}
+          <span className="break-words">{error}</span>
         </p>
       )}
     </div>
