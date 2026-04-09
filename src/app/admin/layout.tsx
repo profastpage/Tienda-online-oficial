@@ -27,6 +27,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { ADMIN_SECTION_URLS, URL_TO_ADMIN_SECTION } from '@/lib/navigation'
 import { AdminGuidePopup } from '@/components/admin/admin-guide-popup'
 import { Card } from '@/components/ui/card'
+import { UpdateNotifier } from '@/components/update-notifier'
 
 export type AdminSection = 'dashboard' | 'products' | 'categories' | 'orders' | 'settings' | 'plan' | 'ai'
 
@@ -321,6 +322,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       )}
       <AdminGuidePopup open={guideDismissed && showGuide} onClose={() => { setShowGuide(false); localStorage.setItem('admin-guide-dismissed', '1') }} />
+      <UpdateNotifier />
     </div>
   )
 }
