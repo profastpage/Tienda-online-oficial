@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
-import { ShoppingBag, Loader2 } from 'lucide-react'
+import { ShoppingBag, Loader2, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useToast } from '@/hooks/use-toast'
 import { SessionProvider, useSession } from 'next-auth/react'
@@ -16,12 +16,16 @@ function GoogleCallbackContent() {
   const { toast } = useToast()
   const { data: session, status } = useSession()
   const hasProcessed = useRef(false)
-  const [debugInfo, setDebugInfo] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const maxRetries = 3
 
   const processLogin = useCallback(async (sessionData: NonNullable<typeof session>) => {
     if (!sessionData?.user?.email) {
-      toast({ title: 'Error', description: 'No se recibió email de Google', variant: 'destructive' })
-      router.push('/login')
+      const msg = 'No se recibió email de Google'
+      setError(msg)
+      toast({ title: 'Error', description: msg, variant: 'destructive' })
+      setTimeout(() => router.push('/login'), 3000)
       return
     }
 
@@ -69,65 +73,87 @@ function GoogleCallbackContent() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error desconocido'
       console.error('[GoogleCallback] processLogin error:', message)
+      setError(message)
       toast({
         title: 'Error al iniciar sesión',
         description: message,
         variant: 'destructive',
         duration: 6000,
       })
-      router.push('/login')
+      setTimeout(() => router.push('/login'), 4000)
     }
   }, [searchParams, router, setUser, toast])
 
   useEffect(() => {
     if (hasProcessed.current) return
 
-    // Debug logging
-    setDebugInfo(`status: ${status}`)
-
-    // Wait for session to load (give it more time)
+    // Wait for session to load
     if (status === 'loading') return
 
-    hasProcessed.current = true
-    setDebugInfo(prev => `${prev} -> resolved: ${status}`)
+    // If unauthenticated and haven't retried yet, retry session fetch
+    if (status === 'unauthenticated' && retryCount < maxRetries) {
+      const retryDelay = 1000 * (retryCount + 1) // 1s, 2s, 3s
+      console.log(`[GoogleCallback] No session yet, retry ${retryCount + 1}/${maxRetries} in ${retryDelay}ms`)
+      const timer = setTimeout(() => setRetryCount(prev => prev + 1), retryDelay)
+      return () => clearTimeout(timer)
+    }
 
+    // After all retries exhausted
     if (status === 'unauthenticated' || !session?.user) {
-      const error = searchParams.get('error')
+      hasProcessed.current = true
+      const errorParam = searchParams.get('error')
       let msg = 'No se pudo completar la autenticación con Google'
 
-      if (error === 'AccessDenied') msg = 'Acceso denegado por Google'
-      else if (error === 'Configuration') msg = 'Error de configuración del servidor. Verifica Google OAuth.'
-      else if (error === 'OAuthCallback') msg = 'Error en la respuesta de Google'
-      else if (!error) msg = 'La sesión de Google expiró o fue cancelada. Intenta de nuevo.'
+      if (errorParam === 'AccessDenied') msg = 'Acceso denegado por Google'
+      else if (errorParam === 'Configuration') msg = 'Error de configuración del servidor. Las credenciales de Google no están disponibles.'
+      else if (errorParam === 'OAuthCallback') msg = 'Error en la respuesta de Google. Intenta de nuevo.'
+      else if (errorParam === 'OAuthSignin') msg = 'Error al iniciar la conexión con Google.'
+      else if (!errorParam) msg = 'La sesión de Google expiró o fue cancelada. Intenta de nuevo.'
 
-      console.warn('[GoogleCallback] Not authenticated:', { status, error, hasSession: !!session?.user })
+      console.warn('[GoogleCallback] Not authenticated after retries:', { status, error: errorParam, retryCount })
+      setError(msg)
       toast({ title: 'Error de autenticación', description: msg, variant: 'destructive', duration: 5000 })
-      router.push('/login')
+      setTimeout(() => router.push('/login'), 4000)
       return
     }
 
     // Authenticated - process the login
-    setDebugInfo(prev => `${prev} -> processing login for ${session.user?.email}`)
+    hasProcessed.current = true
+    console.log('[GoogleCallback] Session found for:', session.user?.email)
     processLogin(session!)
-  }, [status, session, searchParams, router, setUser, toast, processLogin])
+  }, [status, session, searchParams, router, setUser, toast, processLogin, retryCount])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50">
       <div className="text-center space-y-4">
         <div className="mx-auto w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center">
-          <ShoppingBag className="w-8 h-8 text-neutral-400" />
+          {error ? (
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          ) : (
+            <ShoppingBag className="w-8 h-8 text-neutral-400" />
+          )}
         </div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-2"
         >
-          <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-900" />
-          <p className="text-sm font-medium text-neutral-700">Autenticando con Google...</p>
-          <p className="text-xs text-neutral-400">Un momento por favor</p>
-          {/* Debug info - hidden in production */}
-          {debugInfo && process.env.NODE_ENV !== 'production' && (
-            <p className="text-[10px] text-neutral-300 font-mono">{debugInfo}</p>
+          {error ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin mx-auto text-red-400" />
+              <p className="text-sm font-medium text-red-600">Error</p>
+              <p className="text-xs text-red-500 max-w-xs mx-auto">{error}</p>
+              <p className="text-xs text-neutral-400">Redirigiendo al inicio de sesión...</p>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-900" />
+              <p className="text-sm font-medium text-neutral-700">Autenticando con Google...</p>
+              <p className="text-xs text-neutral-400">Un momento por favor</p>
+              {retryCount > 0 && (
+                <p className="text-xs text-amber-500">Reintentando... ({retryCount}/{maxRetries})</p>
+              )}
+            </>
           )}
         </motion.div>
       </div>
