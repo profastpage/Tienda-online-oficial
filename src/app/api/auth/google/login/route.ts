@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { email, name, picture, googleId, action, storeName } = await request.json()
 
     if (!email || !googleId) {
-      return NextResponse.json({ error: 'Datos de Google incompletos' }, { status: 400 })
+      return NextResponse.json({ error: 'Datos de Google incompletos (email o ID faltante)' }, { status: 400 })
     }
 
     const db = await getDb()
@@ -240,10 +240,26 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error) {
-    console.error('[google/login] Error:', error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[google/login] Error:', message, error)
+
+    // Return specific error messages for common issues
+    if (message.includes('Unique constraint') || message.includes('unique')) {
+      return NextResponse.json(
+        { error: 'Ya existe una cuenta con este email. Intenta iniciar sesión.' },
+        { status: 409 }
+      )
+    }
+    if (message.includes('Database') || message.includes('db') || message.includes('connect')) {
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos. Intenta de nuevo en unos segundos.' },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json(
-      { error: 'Error al autenticar con Google' },
+      { error: `Error al autenticar con Google: ${message}` },
       { status: 500 }
     )
   }

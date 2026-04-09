@@ -24,8 +24,12 @@ const clientId = getEnvVar('GOOGLE_CLIENT_ID', 'GOOGLE-CLIENT-ID')
 const clientSecret = getEnvVar('GOOGLE_CLIENT_SECRET', 'GOOGLE-CLIENT-SECRET')
 const hasCredentials = Boolean(clientId && clientSecret && !clientId.startsWith('your-'))
 
-// Fallback NEXTAUTH_SECRET if not set (required by NextAuth v5+)
-// Uses a stable hash of the app URL so it's consistent across deploys
+// Infer NEXTAUTH_URL from Vercel environment or use explicit value
+const nextauthUrl = process.env.NEXTAUTH_URL
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+
+// Fallback NEXTAUTH_SECRET if not set (required by NextAuth v4+)
+// Uses a stable hash so it's consistent across deploys
 const nextauthSecret = process.env.NEXTAUTH_SECRET || createHash('sha256')
   .update('tienda-online-oficial-nextauth-production-secret-2024')
   .digest('hex')
@@ -33,6 +37,7 @@ const nextauthSecret = process.env.NEXTAUTH_SECRET || createHash('sha256')
 console.log(`[nextauth] Google OAuth credentials: ${hasCredentials ? 'FOUND' : 'MISSING'}`)
 console.log(`[nextauth] Client ID prefix: ${clientId ? clientId.substring(0, 15) + '...' : '(empty)'}`)
 console.log(`[nextauth] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'USING FALLBACK'}`)
+console.log(`[nextauth] NEXTAUTH_URL: ${nextauthUrl || process.env.NEXTAUTH_URL || 'auto'}`)
 
 export const authOptions: NextAuthOptions = {
   providers: hasCredentials
@@ -50,6 +55,7 @@ export const authOptions: NextAuthOptions = {
       ]
     : [],
   secret: nextauthSecret,
+  ...(nextauthUrl ? { url: nextauthUrl } : {}),
   pages: {
     signIn: '/login',
     error: '/auth/error',
@@ -60,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         console.error('[nextauth] Google OAuth credentials not configured')
         return false
       }
+      // Allow all Google sign-ins
       return true
     },
     async redirect({ url, baseUrl }) {
@@ -68,8 +75,10 @@ export const authOptions: NextAuthOptions = {
         return url
       }
       // For NextAuth's internal callback URLs, redirect to our handler
-      if (url.includes('/api/auth/callback')) {
-        return `${baseUrl}/auth/google-callback`
+      if (url.includes('/api/auth/callback/google')) {
+        // Preserve the original callbackUrl search params
+        const callbackUrl = `${baseUrl}/auth/google-callback?action=login`
+        return callbackUrl
       }
       return url.startsWith(baseUrl) ? url : baseUrl
     },
@@ -87,6 +96,7 @@ export const authOptions: NextAuthOptions = {
       // Pass custom data to the session
       if (session.user && token) {
         (session.user as Record<string, unknown>).googleId = token.googleId
+        (session.user as Record<string, unknown>).image = token.picture
       }
       return session
     },
@@ -94,5 +104,34 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 30 * 60, // 30 minutes - enough for the full OAuth flow
+  },
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
 }
