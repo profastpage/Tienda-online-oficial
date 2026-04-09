@@ -31,6 +31,7 @@ const PUBLIC_PATHS = [
   '/api/auth/csrf',
   '/api/auth/signout',
   '/api/auth/check',
+  '/api/auth-status',
   '/api/products',
   '/api/categories',
   '/api/testimonials',
