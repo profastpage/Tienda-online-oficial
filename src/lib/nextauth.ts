@@ -7,11 +7,8 @@ import { createHash } from 'crypto'
  * Vercel UI sometimes auto-replaces underscores with dashes in env var names.
  */
 function getEnvVar(underscoreName: string, dashName: string): string {
-  // Try exact underscore name first (standard)
   if (process.env[underscoreName]) return process.env[underscoreName]!
-  // Try dash variant (Vercel sometimes uses this)
   if (process.env[dashName]) return process.env[dashName]!
-  // Scan all env vars as last resort (handles any casing/separator issues)
   for (const [key, value] of Object.entries(process.env)) {
     if (value && key.replace(/[-_]/g, '').toLowerCase() === underscoreName.replace(/_/g, '').toLowerCase()) {
       return value
@@ -24,20 +21,36 @@ const clientId = getEnvVar('GOOGLE_CLIENT_ID', 'GOOGLE-CLIENT-ID')
 const clientSecret = getEnvVar('GOOGLE_CLIENT_SECRET', 'GOOGLE-CLIENT-SECRET')
 const hasCredentials = Boolean(clientId && clientSecret && !clientId.startsWith('your-'))
 
-// Infer NEXTAUTH_URL from Vercel environment or use explicit value
-const nextauthUrl = process.env.NEXTAUTH_URL
-  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+// NEXTAUTH_URL: CRITICAL for production OAuth redirects
+// Must be set explicitly for Vercel deployments
+const VERCEL_URL = process.env.VERCEL_URL || ''
+const explicitUrl = process.env.NEXTAUTH_URL || ''
 
-// Fallback NEXTAUTH_SECRET if not set (required by NextAuth v4+)
-// Uses a stable hash so it's consistent across deploys
+// Build the NEXTAUTH_URL - this is required for Google OAuth to work
+let nextauthUrl: string | undefined
+
+if (explicitUrl) {
+  nextauthUrl = explicitUrl
+} else if (VERCEL_URL) {
+  // Vercel provides this without protocol
+  nextauthUrl = `https://${VERCEL_URL}`
+}
+// In production, always require a URL
+if (!nextauthUrl && process.env.NODE_ENV === 'production') {
+  // Fallback to known domain
+  nextauthUrl = 'https://tienda-online-oficial.vercel.app'
+  console.warn('[nextauth] NEXTAUTH_URL not set, using fallback:', nextauthUrl)
+}
+
+// Stable NEXTAUTH_SECRET - required for JWT signing
 const nextauthSecret = process.env.NEXTAUTH_SECRET || createHash('sha256')
   .update('tienda-online-oficial-nextauth-production-secret-2024')
   .digest('hex')
 
 console.log(`[nextauth] Google OAuth credentials: ${hasCredentials ? 'FOUND' : 'MISSING'}`)
-console.log(`[nextauth] Client ID prefix: ${clientId ? clientId.substring(0, 15) + '...' : '(empty)'}`)
-console.log(`[nextauth] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'USING FALLBACK'}`)
-console.log(`[nextauth] NEXTAUTH_URL: ${nextauthUrl || process.env.NEXTAUTH_URL || 'auto'}`)
+console.log(`[nextauth] Client ID: ${clientId ? clientId.substring(0, 10) + '...' : '(empty)'}`)
+console.log(`[nextauth] NEXTAUTH_URL: ${nextauthUrl || 'auto'}`)
+console.log(`[nextauth] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'FALLBACK'}`)
 
 export const authOptions: NextAuthOptions = {
   providers: hasCredentials
@@ -66,24 +79,20 @@ export const authOptions: NextAuthOptions = {
         console.error('[nextauth] Google OAuth credentials not configured')
         return false
       }
-      // Allow all Google sign-ins
       return true
     },
     async redirect({ url, baseUrl }) {
-      // If the URL is our custom callback page, let it pass through
+      // Pass through our custom callback URLs
       if (url.includes('/auth/google-callback')) {
         return url
       }
-      // For NextAuth's internal callback URLs, redirect to our handler
+      // After Google callback, redirect to our handler
       if (url.includes('/api/auth/callback/google')) {
-        // Preserve the original callbackUrl search params
-        const callbackUrl = `${baseUrl}/auth/google-callback?action=login`
-        return callbackUrl
+        return `${baseUrl}/auth/google-callback?action=login`
       }
       return url.startsWith(baseUrl) ? url : baseUrl
     },
     async jwt({ token, account, profile }) {
-      // Store Google profile info in the JWT token
       if (account && profile) {
         token.googleId = account.providerAccountId
         token.email = profile.email
@@ -93,45 +102,16 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      // Pass custom data to the session
       if (session.user && token) {
         (session.user as Record<string, unknown>).googleId = token.googleId
-        (session.user as Record<string, unknown>).image = token.picture
+        ;(session.user as Record<string, unknown>).image = token.picture
       }
       return session
     },
   },
   session: {
-    strategy: 'jwt',
-    maxAge: 30 * 60, // 30 minutes - enough for the full OAuth flow
+    strategy: 'jwt' as const,
+    maxAge: 30 * 60, // 30 minutes
   },
-  cookies: {
-    sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    callbackUrl: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    csrfToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
+  // Do NOT override cookies - let NextAuth v4 handle production cookies automatically
 }

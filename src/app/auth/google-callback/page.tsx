@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { ShoppingBag, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useToast } from '@/hooks/use-toast'
-import { SessionProvider, useSession, signIn } from 'next-auth/react'
+import { SessionProvider, useSession } from 'next-auth/react'
 import { Suspense } from 'react'
 
 function GoogleCallbackContent() {
@@ -15,107 +15,101 @@ function GoogleCallbackContent() {
   const { setUser } = useAuthStore()
   const { toast } = useToast()
   const { data: session, status } = useSession()
-  const [processing, setProcessing] = useState(false)
   const hasProcessed = useRef(false)
+  const [debugInfo, setDebugInfo] = useState('')
 
-  useEffect(() => {
-    // Prevent double execution
-    if (hasProcessed.current) return
-
-    if (status === 'loading') return
-
-    // If not authenticated after Google redirect, show helpful error
-    if (status === 'unauthenticated' || !session?.user) {
-      hasProcessed.current = true
-      const errorParam = searchParams.get('error')
-      let errorMsg = 'No se pudo autenticar con Google'
-      if (errorParam === 'OAuthAccountNotLinked') {
-        errorMsg = 'Esta cuenta de Google ya está vinculada a otra cuenta'
-      } else if (errorParam === 'AccessDenied') {
-        errorMsg = 'Acceso denegado. Intenta de nuevo.'
-      } else if (errorParam === 'Configuration') {
-        errorMsg = 'Error de configuración. Contacta al soporte.'
-      }
-      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+  const processLogin = useCallback(async (sessionData: NonNullable<typeof session>) => {
+    if (!sessionData?.user?.email) {
+      toast({ title: 'Error', description: 'No se recibió email de Google', variant: 'destructive' })
       router.push('/login')
       return
     }
 
-    if (status === 'authenticated' && session.user && !processing && !hasProcessed.current) {
-      hasProcessed.current = true
-      setProcessing(true)
+    const action = searchParams.get('action') || 'login'
+    const storeName = searchParams.get('storeName') || ''
 
-      // Process the Google sign-in
-      const action = searchParams.get('action') || 'login'
-      const storeName = searchParams.get('storeName') || ''
+    try {
+      const res = await fetch('/api/auth/google/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: sessionData.user.email,
+          name: sessionData.user.name || '',
+          picture: (sessionData.user as Record<string, unknown>).image as string || '',
+          googleId: (sessionData.user as Record<string, unknown>).googleId as string || sessionData.user.email,
+          action,
+          storeName,
+        }),
+      })
 
-      async function processGoogleLogin() {
-        try {
-          const res = await fetch('/api/auth/google/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: session.user.email,
-              name: session.user.name,
-              picture: (session.user as Record<string, unknown>).image as string || '',
-              googleId: (session.user as Record<string, unknown>).googleId as string || session.user.email || '',
-              action,
-              storeName,
-            }),
-          })
+      const data = await res.json()
 
-          const data = await res.json()
-
-          if (!res.ok) {
-            // Surface the actual error from the API
-            throw new Error(data.error || 'Error al autenticar con Google')
-          }
-
-          setUser(data, data.token)
-
-          // Determine redirect target
-          let targetUrl = data.role === 'admin' ? '/admin' : '/cliente'
-          if (data.isNewUser && data.role === 'admin') {
-            toast({
-              title: 'Tienda creada exitosamente!',
-              description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.`,
-            })
-          } else if (data.isNewUser) {
-            toast({
-              title: 'Cuenta creada!',
-              description: `Bienvenido a ${data.storeName}`,
-            })
-          } else if (data.linked) {
-            toast({
-              title: 'Cuenta vinculada',
-              description: 'Tu cuenta de Google ha sido vinculada exitosamente',
-            })
-          } else {
-            toast({
-              title: `Bienvenido, ${data.name}!`,
-              description: data.role === 'admin' ? 'Panel de administración' : 'Tu panel de cliente',
-            })
-          }
-
-          router.push(targetUrl)
-        } catch (err: unknown) {
-          console.error('[GoogleCallback] Error:', err)
-          const message = err instanceof Error ? err.message : 'Error al autenticar con Google'
-          toast({
-            title: 'Error',
-            description: message,
-            variant: 'destructive',
-            duration: 5000,
-          })
-          // Sign out of NextAuth session to clean up
-          try { await signIn('google', { callbackUrl: '/login', redirect: false }) } catch {}
-          router.push('/login')
-        }
+      if (!res.ok) {
+        throw new Error(data.error || 'Error del servidor')
       }
 
-      processGoogleLogin()
+      // Set user in auth store AND localStorage
+      setUser(data, data.token)
+
+      // Redirect based on role
+      const targetUrl = data.role === 'admin' ? '/admin' : '/cliente'
+
+      if (data.isNewUser && data.role === 'admin') {
+        toast({ title: 'Tienda creada!', description: `Bienvenido a ${data.storeName}` })
+      } else if (data.isNewUser) {
+        toast({ title: 'Cuenta creada!', description: `Bienvenido a ${data.storeName}` })
+      } else if (data.linked) {
+        toast({ title: 'Cuenta vinculada', description: 'Tu Google se vinculó correctamente' })
+      } else {
+        toast({ title: `Bienvenido, ${data.name}!` })
+      }
+
+      // Use window.location for a full page navigation to ensure cookies are set
+      window.location.href = targetUrl
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error desconocido'
+      console.error('[GoogleCallback] processLogin error:', message)
+      toast({
+        title: 'Error al iniciar sesión',
+        description: message,
+        variant: 'destructive',
+        duration: 6000,
+      })
+      router.push('/login')
     }
-  }, [session, status, searchParams, router, setUser, toast, processing])
+  }, [searchParams, router, setUser, toast])
+
+  useEffect(() => {
+    if (hasProcessed.current) return
+
+    // Debug logging
+    setDebugInfo(`status: ${status}`)
+
+    // Wait for session to load (give it more time)
+    if (status === 'loading') return
+
+    hasProcessed.current = true
+    setDebugInfo(prev => `${prev} -> resolved: ${status}`)
+
+    if (status === 'unauthenticated' || !session?.user) {
+      const error = searchParams.get('error')
+      let msg = 'No se pudo completar la autenticación con Google'
+
+      if (error === 'AccessDenied') msg = 'Acceso denegado por Google'
+      else if (error === 'Configuration') msg = 'Error de configuración del servidor. Verifica Google OAuth.'
+      else if (error === 'OAuthCallback') msg = 'Error en la respuesta de Google'
+      else if (!error) msg = 'La sesión de Google expiró o fue cancelada. Intenta de nuevo.'
+
+      console.warn('[GoogleCallback] Not authenticated:', { status, error, hasSession: !!session?.user })
+      toast({ title: 'Error de autenticación', description: msg, variant: 'destructive', duration: 5000 })
+      router.push('/login')
+      return
+    }
+
+    // Authenticated - process the login
+    setDebugInfo(prev => `${prev} -> processing login for ${session.user?.email}`)
+    processLogin(session!)
+  }, [status, session, searchParams, router, setUser, toast, processLogin])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50">
@@ -131,6 +125,10 @@ function GoogleCallbackContent() {
           <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-900" />
           <p className="text-sm font-medium text-neutral-700">Autenticando con Google...</p>
           <p className="text-xs text-neutral-400">Un momento por favor</p>
+          {/* Debug info - hidden in production */}
+          {debugInfo && process.env.NODE_ENV !== 'production' && (
+            <p className="text-[10px] text-neutral-300 font-mono">{debugInfo}</p>
+          )}
         </motion.div>
       </div>
     </div>

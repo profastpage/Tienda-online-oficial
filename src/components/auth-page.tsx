@@ -335,7 +335,10 @@ function AuthPageContent() {
                   {/* Google Sign In */}
                   <button
                     type="button"
-                    onClick={() => signIn('google', { callbackUrl: '/auth/google-callback?action=login' })}
+                    onClick={() => {
+                      const baseUrl = window.location.origin
+                      signIn('google', { callbackUrl: `${baseUrl}/auth/google-callback?action=login` })
+                    }}
                     className="w-full flex items-center justify-center gap-3 h-11 px-4 bg-white border border-neutral-300 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all font-medium text-sm text-neutral-700"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -400,7 +403,11 @@ function AuthPageContent() {
                   {/* Google Sign Up */}
                   <button
                     type="button"
-                    onClick={() => signIn('google', { callbackUrl: `/auth/google-callback?action=${regRole === 'admin' ? 'register-admin' : 'register'}` })}
+                    onClick={() => {
+                      const baseUrl = window.location.origin
+                      const action = regRole === 'admin' ? 'register-admin' : 'register'
+                      signIn('google', { callbackUrl: `${baseUrl}/auth/google-callback?action=${action}` })
+                    }}
                     className="w-full flex items-center justify-center gap-3 h-11 px-4 bg-white border border-neutral-300 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all font-medium text-sm text-neutral-700"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
