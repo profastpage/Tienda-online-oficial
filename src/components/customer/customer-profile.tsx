@@ -178,14 +178,15 @@ export function CustomerProfile() {
       >
         <Card className="rounded-xl border-neutral-200 shadow-sm">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-shrink-0">
-                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+              <div className="relative flex-shrink-0 group">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-neutral-400 group-hover:shadow-md">
                   {profile.avatar ? (
                     <img
+                      key={profile.avatar}
                       src={profile.avatar}
                       alt="Avatar"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover animate-in fade-in duration-300"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none'
                       }}
@@ -197,6 +198,30 @@ export function CustomerProfile() {
                       </span>
                     </div>
                   )}
+                  {/* Hover camera overlay */}
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/jpeg,image/png,image/webp,image/gif'
+                      input.onchange = async (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0]
+                        if (!file) return
+                        const formData = new FormData()
+                        formData.append('file', file)
+                        formData.append('folder', 'avatars')
+                        formData.append('storeSlug', user?.storeSlug || 'store')
+                        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                        if (res.ok) {
+                          const data = await res.json()
+                          setProfile({ ...profile, avatar: data.url })
+                        }
+                      }
+                      input.click()
+                    }}
+                  >
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -224,7 +249,7 @@ export function CustomerProfile() {
                   <Camera className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-center sm:text-left">
                 <h3 className="text-lg font-bold text-neutral-900">
                   {profile.name || 'Sin nombre'}
                 </h3>

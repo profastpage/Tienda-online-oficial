@@ -44,6 +44,7 @@ interface UserData {
   name: string
   phone: string
   role: string
+  avatar: string
   createdAt: string
   store: { id: string; name: string; slug: string; plan: string; isActive: boolean }
 }
@@ -534,7 +535,7 @@ export default function SuperAdminPanel() {
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex items-start sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 overflow-hidden">
                               {store.logo ? (
                                 <img src={store.logo} alt={store.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover" />
                               ) : (
@@ -580,8 +581,12 @@ export default function SuperAdminPanel() {
                               {store.users.map((user) => (
                                 <div key={user.id} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-neutral-100">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                      {user.name.charAt(0)}
+                                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                      {user.avatar ? (
+                                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <span className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">{user.name.charAt(0)}</span>
+                                      )}
                                     </div>
                                     <div className="min-w-0">
                                       <p className="text-sm font-medium text-neutral-900 truncate">{user.name}</p>
@@ -722,8 +727,12 @@ export default function SuperAdminPanel() {
                           <tr key={user.id} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                  {user.name.charAt(0)}
+                                <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                  {user.avatar ? (
+                                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">{user.name.charAt(0)}</span>
+                                  )}
                                 </div>
                                 <span className="font-medium text-neutral-900">{user.name}</span>
                               </div>
@@ -766,8 +775,12 @@ export default function SuperAdminPanel() {
                   <Card key={user.id}>
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2.5 mb-2">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                          {user.name.charAt(0)}
+                        <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold shrink-0">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">{user.name.charAt(0)}</span>
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">

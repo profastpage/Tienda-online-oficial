@@ -19,6 +19,8 @@ import {
   Camera,
   User,
   Phone,
+  Link,
+  Image,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -188,6 +190,9 @@ export function AdminSettings() {
   })
   const { toast } = useToast()
   const { setUser } = useAuthStore()
+
+  // Store logo toggle state
+  const [showLogoUrlInput, setShowLogoUrlInput] = useState(false)
 
   useEffect(() => {
     if (!storeId) return
@@ -498,15 +503,16 @@ export function AdminSettings() {
 
       <Card className="rounded-xl border-neutral-200">
         <CardContent className="p-6 space-y-5">
-          {/* Avatar */}
+          {/* Avatar with hover overlay */}
           <div className="flex items-center gap-5">
-            <div className="relative flex-shrink-0">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100">
+            <div className="relative flex-shrink-0 group">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-neutral-400 group-hover:shadow-md">
                 {profileForm.avatar ? (
                   <img
+                    key={profileForm.avatar}
                     src={profileForm.avatar}
                     alt="Avatar"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover animate-in fade-in duration-300"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none'
                     }}
@@ -518,6 +524,30 @@ export function AdminSettings() {
                     </span>
                   </div>
                 )}
+                {/* Hover camera overlay */}
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+                  onClick={() => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.accept = 'image/jpeg,image/png,image/webp,image/gif'
+                    input.onchange = async (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0]
+                      if (!file) return
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      formData.append('folder', 'avatars')
+                      formData.append('storeSlug', user?.storeSlug || 'store')
+                      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                      if (res.ok) {
+                        const data = await res.json()
+                        setProfileForm({ ...profileForm, avatar: data.url })
+                      }
+                    }
+                    input.click()
+                  }}
+                >
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
               </div>
               <button
                 type="button"
@@ -546,15 +576,26 @@ export function AdminSettings() {
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-neutral-900">
-                {profileForm.name || 'Sin nombre'}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-neutral-900">
+                  {profileForm.name || 'Sin nombre'}
+                </h3>
+                {/* Online status indicator (cosmetic) */}
+                <span className="relative flex h-2.5 w-2.5" title="Activo ahora">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                </span>
+              </div>
               <p className="text-sm text-neutral-400">{user?.email}</p>
-              <p className="text-xs text-neutral-300 mt-1 capitalize">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-neutral-300 capitalize">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
+                <span className="text-[10px] text-green-600 font-medium">Activo ahora</span>
+              </div>
             </div>
           </div>
 
           <div className="max-w-[200px]">
+            <p className="text-xs font-medium text-neutral-500 mb-2">Cambiar foto de perfil</p>
             <ImageUpload
               value={profileForm.avatar}
               onChange={(url) => setProfileForm({ ...profileForm, avatar: url })}
@@ -757,21 +798,39 @@ export function AdminSettings() {
 
           <Separator className="bg-neutral-100" />
 
-          {/* Logo URL */}
+          {/* Logo Upload */}
           <div className="space-y-2">
             <Label htmlFor="store-logo" className="text-sm font-medium text-neutral-700">
-              URL del Logo
+              Logo de la Tienda
             </Label>
-            <Input
-              id="store-logo"
+            <ImageUpload
               value={form.logo}
-              onChange={(e) => setForm({ ...form, logo: e.target.value })}
-              placeholder="https://ejemplo.com/logo.png"
-              className="h-10 rounded-lg text-sm border-neutral-200"
+              onChange={(url) => setForm({ ...form, logo: url })}
+              storeSlug={user?.storeSlug || 'store'}
+              folder="store-logos"
             />
             <p className="text-xs text-neutral-400">
-              Imagen cuadrada recomendada (PNG, JPG)
+              Imagen cuadrada recomendada (PNG, JPG). Máximo 5MB.
             </p>
+            <button
+              type="button"
+              onClick={() => setShowLogoUrlInput(!showLogoUrlInput)}
+              className="text-xs text-neutral-500 hover:text-neutral-700 transition-colors flex items-center gap-1 mt-1"
+            >
+              <Link className="w-3 h-3" />
+              {showLogoUrlInput ? 'Ocultar entrada manual' : 'O ingresa URL manualmente'}
+            </button>
+            {showLogoUrlInput && (
+              <div className="mt-2">
+                <Input
+                  id="store-logo-url"
+                  value={form.logo}
+                  onChange={(e) => setForm({ ...form, logo: e.target.value })}
+                  placeholder="https://ejemplo.com/logo.png"
+                  className="h-10 rounded-lg text-sm border-neutral-200"
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

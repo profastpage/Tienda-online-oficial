@@ -97,6 +97,7 @@ interface Order {
   items: OrderItem[]
   paymentMethod: PaymentMethodInfo | null
   mercadoPagoPayment: MercadoPagoPaymentInfo | null
+  user?: { id: string; name: string; avatar: string } | null
 }
 
 type StatusFilter = 'all' | 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled'
@@ -459,6 +460,13 @@ export function AdminOrders() {
 
                 {/* Customer name */}
                 <div className="flex items-center gap-2 mb-3">
+                  {order.user?.avatar ? (
+                    <img src={order.user.avatar} alt={order.customerName} className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-neutral-200" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] font-bold text-neutral-500">{order.customerName.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                   <User className="w-4 h-4 text-neutral-400 flex-shrink-0" />
                   <span className="text-sm text-neutral-700 truncate">{order.customerName}</span>
                 </div>
@@ -587,11 +595,20 @@ export function AdminOrders() {
                         #{order.orderNumber.slice(-6)}
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="text-sm text-neutral-900">{order.customerName}</p>
-                          <p className="text-xs text-neutral-400 md:hidden">
-                            {formatDate(order.createdAt)}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          {order.user?.avatar ? (
+                            <img src={order.user.avatar} alt={order.customerName} className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-neutral-200" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] font-bold text-neutral-500">{order.customerName.charAt(0).toUpperCase()}</span>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-neutral-900">{order.customerName}</p>
+                            <p className="text-xs text-neutral-400 md:hidden">
+                              {formatDate(order.createdAt)}
+                            </p>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">

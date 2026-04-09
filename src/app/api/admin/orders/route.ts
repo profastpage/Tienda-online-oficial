@@ -7,6 +7,7 @@ async function fetchOrdersWithPaymentMethod(db: any, where: Record<string, unkno
     where,
     include: {
       items: true,
+      user: { select: { id: true, name: true, avatar: true } },
       paymentMethod: { select: { name: true, type: true } },
       mercadoPagoPayment: {
         select: {
@@ -31,6 +32,7 @@ async function fetchOrdersWithoutPaymentMethod(db: any, where: Record<string, un
     where,
     include: {
       items: true,
+      user: { select: { id: true, name: true, avatar: true } },
     },
     orderBy: { createdAt: orderBy.direction as 'asc' | 'desc' },
   })
@@ -42,6 +44,7 @@ async function fetchOrderWithPaymentMethod(db: any, id: string, data: Record<str
     data,
     include: {
       items: true,
+      user: { select: { id: true, name: true, avatar: true } },
       paymentMethod: { select: { name: true, type: true } },
       mercadoPagoPayment: {
         select: {
@@ -66,6 +69,7 @@ async function fetchOrderWithoutPaymentMethod(db: any, id: string, data: Record<
     data,
     include: {
       items: true,
+      user: { select: { id: true, name: true, avatar: true } },
     },
   })
 }

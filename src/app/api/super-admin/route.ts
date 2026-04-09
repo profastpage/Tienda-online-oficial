@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       include: {
         _count: { select: { users: true, products: true, orders: true, categories: true } },
         users: {
-          select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true },
+          select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
         },
       },
@@ -154,7 +154,7 @@ export async function PATCH(request: Request) {
         include: {
           _count: { select: { users: true, products: true, orders: true, categories: true } },
           users: {
-            select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true },
+            select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true },
           },
         },
       })
