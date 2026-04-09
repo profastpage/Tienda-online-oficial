@@ -16,6 +16,9 @@ import {
   Bell,
   Send,
   ShieldCheck,
+  Camera,
+  User,
+  Phone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +46,8 @@ import {
 } from '@/components/ui/select'
 import { useAuthStore } from '@/stores/auth-store'
 import TwoFactorSettings from '@/components/two-factor-settings'
+import { ImageUpload } from '@/components/image-upload'
+import { useToast } from '@/hooks/use-toast'
 
 interface StoreData {
   id: string
@@ -173,6 +178,17 @@ export function AdminSettings() {
   // 2FA state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
 
+  // Profile state
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    phone: '',
+    avatar: '',
+  })
+  const { toast } = useToast()
+  const { setUser } = useAuthStore()
+
   useEffect(() => {
     if (!storeId) return
     async function fetchStore() {
@@ -235,6 +251,71 @@ export function AdminSettings() {
     }
     fetchUser2FA()
   }, [user])
+
+  // Fetch admin profile data
+  useEffect(() => {
+    if (!user) return
+    setProfileForm({
+      name: user.name || '',
+      phone: user.phone || '',
+      avatar: user.avatar || '',
+    })
+  }, [user])
+
+  const handleSaveProfile = async () => {
+    if (!user) return
+    if (!profileForm.name.trim()) {
+      toast({
+        title: 'Error',
+        description: 'El nombre es obligatorio.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setProfileSaving(true)
+    setProfileSaved(false)
+    try {
+      const res = await fetch('/api/customer/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          name: profileForm.name,
+          phone: profileForm.phone,
+          avatar: profileForm.avatar,
+        }),
+      })
+      if (res.ok) {
+        const updatedUser = await res.json()
+        setUser({
+          ...user,
+          name: updatedUser.name,
+          phone: updatedUser.phone,
+          avatar: updatedUser.avatar,
+        })
+        setProfileSaved(true)
+        toast({
+          title: 'Perfil actualizado',
+          description: 'Tu información personal se ha guardado correctamente.',
+        })
+        setTimeout(() => setProfileSaved(false), 3000)
+      } else {
+        toast({
+          title: 'Error',
+          description: 'No se pudo guardar el perfil.',
+          variant: 'destructive',
+        })
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Hubo un error al guardar el perfil.',
+        variant: 'destructive',
+      })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!storeId) return
@@ -394,10 +475,183 @@ export function AdminSettings() {
     <div className="w-full max-w-2xl space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-bold text-neutral-900">Configuración de la Tienda</h2>
+        <h2 className="text-lg font-bold text-neutral-900">Configuración</h2>
         <p className="text-sm text-neutral-500 mt-1">
-          Administra la información general de tu tienda
+          Administra tu perfil y la información de tu tienda
         </p>
+      </div>
+
+      {/* ==================== MY PROFILE SECTION ==================== */}
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center">
+            <User className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-neutral-900">Mi Perfil</h2>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Tu información personal
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="rounded-xl border-neutral-200">
+        <CardContent className="p-6 space-y-5">
+          {/* Avatar */}
+          <div className="flex items-center gap-5">
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100">
+                {profileForm.avatar ? (
+                  <img
+                    src={profileForm.avatar}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
+                    <span className="text-xl font-bold text-white">
+                      {profileForm.name.charAt(0).toUpperCase() || 'A'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.createElement('input')
+                  input.type = 'file'
+                  input.accept = 'image/jpeg,image/png,image/webp,image/gif'
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0]
+                    if (!file) return
+                    const formData = new FormData()
+                    formData.append('file', file)
+                    formData.append('folder', 'avatars')
+                    formData.append('storeSlug', user?.storeSlug || 'store')
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                    if (res.ok) {
+                      const data = await res.json()
+                      setProfileForm({ ...profileForm, avatar: data.url })
+                    }
+                  }
+                  input.click()
+                }}
+                className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center hover:bg-neutral-800 transition-colors shadow-sm border-2 border-white"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold text-neutral-900">
+                {profileForm.name || 'Sin nombre'}
+              </h3>
+              <p className="text-sm text-neutral-400">{user?.email}</p>
+              <p className="text-xs text-neutral-300 mt-1 capitalize">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
+            </div>
+          </div>
+
+          <div className="max-w-[200px]">
+            <ImageUpload
+              value={profileForm.avatar}
+              onChange={(url) => setProfileForm({ ...profileForm, avatar: url })}
+              storeSlug={user?.storeSlug || 'store'}
+              folder="avatars"
+              className="[&>div]:!aspect-auto [&>div]:!h-[40px] [&>div>img]:!object-cover [&>div>img]:!rounded-lg"
+            />
+          </div>
+
+          <Separator className="bg-neutral-100" />
+
+          {/* Name */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-neutral-700">
+              <User className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5 text-neutral-400" />
+              Nombre completo
+            </Label>
+            <Input
+              value={profileForm.name}
+              onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+              placeholder="Tu nombre"
+              className="h-10 rounded-lg text-sm border-neutral-200"
+            />
+          </div>
+
+          {/* Email (read-only) */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-neutral-700">Correo electrónico</Label>
+            <Input
+              value={user?.email || ''}
+              disabled
+              className="h-10 rounded-lg text-sm border-neutral-200 bg-neutral-50 text-neutral-500 cursor-not-allowed"
+            />
+            <p className="text-xs text-neutral-400">El correo no puede ser modificado.</p>
+          </div>
+
+          {/* Phone */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-neutral-700">
+              <Phone className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5 text-neutral-400" />
+              Teléfono
+            </Label>
+            <Input
+              value={profileForm.phone}
+              onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+              placeholder="+51 999 888 777"
+              className="h-10 rounded-lg text-sm border-neutral-200"
+            />
+          </div>
+
+          {/* Save profile button */}
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              onClick={handleSaveProfile}
+              disabled={profileSaving}
+              className={`h-10 rounded-lg text-sm font-medium gap-2 ${
+                profileSaved
+                  ? 'bg-green-600 hover:bg-green-600 text-white'
+                  : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+              }`}
+            >
+              {profileSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : profileSaved ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  ¡Guardado!
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Guardar Perfil
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ==================== STORE SETTINGS SECTION ==================== */}
+      <Separator className="bg-neutral-200" />
+
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-neutral-200 flex items-center justify-center">
+            <Store className="w-4 h-4 text-neutral-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-neutral-900">Configuración de la Tienda</h2>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Administra la información general de tu tienda
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Logo preview */}

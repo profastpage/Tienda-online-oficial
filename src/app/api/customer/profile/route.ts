@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const db = await getDb()
     const user = await db.storeUser.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, phone: true, address: true, role: true, createdAt: true },
+      select: { id: true, email: true, name: true, phone: true, address: true, role: true, avatar: true, createdAt: true },
     })
     return NextResponse.json(user)
   } catch {
@@ -33,7 +33,7 @@ export async function PUT(request: Request) {
 
     const db = await getDb()
     const body = await request.json()
-    const { id, name, phone, address } = body
+    const { id, name, phone, address, avatar } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
     // Verify user can only update their own profile
@@ -44,11 +44,12 @@ export async function PUT(request: Request) {
     if (name) updateData.name = name
     if (phone !== undefined) updateData.phone = phone
     if (address !== undefined) updateData.address = address
+    if (avatar !== undefined) updateData.avatar = avatar
 
     const user = await db.storeUser.update({
       where: { id },
       data: updateData,
-      select: { id: true, email: true, name: true, phone: true, address: true, role: true },
+      select: { id: true, email: true, name: true, phone: true, address: true, role: true, avatar: true },
     })
     return NextResponse.json(user)
   } catch {

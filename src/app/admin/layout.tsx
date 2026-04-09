@@ -66,6 +66,7 @@ function SidebarNav({
   storeName,
   userName,
   userRole,
+  userAvatar,
 }: {
   items: NavItem[]
   activeSection: AdminSection
@@ -74,6 +75,7 @@ function SidebarNav({
   storeName: string
   userName: string
   userRole: string
+  userAvatar?: string
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -124,7 +126,18 @@ function SidebarNav({
       {/* User info & logout */}
       <div className="mt-auto border-t border-neutral-200 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-neutral-200 flex items-center justify-center flex-shrink-0">
+          {userAvatar ? (
+            <img
+              src={userAvatar}
+              alt={userName}
+              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none'
+                ;(e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden')
+              }}
+            />
+          ) : null}
+          <div className={`w-9 h-9 rounded-full bg-neutral-200 flex items-center justify-center flex-shrink-0 ${userAvatar ? 'hidden' : ''}`}>
             <span className="text-xs font-bold text-neutral-600">
               {userName.charAt(0).toUpperCase()}
             </span>
@@ -220,6 +233,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           storeName={storeName}
           userName={userName}
           userRole={user.role}
+          userAvatar={user.avatar}
         />
       </aside>
 
@@ -237,6 +251,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             storeName={storeName}
             userName={userName}
             userRole={user.role}
+            userAvatar={user.avatar}
           />
         </SheetContent>
       </Sheet>
@@ -289,10 +304,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <span className="text-[9px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded">SUPER</span>
                 )}
               </div>
-              <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center">
-                <span className="text-xs font-bold text-white">
-                  {userName.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={userName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement
+                      img.style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <span className="text-xs font-bold text-white">
+                    {userName.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
             </div>
           </div>

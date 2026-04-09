@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Save, Loader2, User, Mail, Phone, MapPin } from 'lucide-react'
+import { Save, Loader2, User, Mail, Phone, MapPin, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,12 +13,14 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/stores/auth-store'
 import TwoFactorSettings from '@/components/two-factor-settings'
+import { ImageUpload } from '@/components/image-upload'
 
 interface ProfileData {
   name: string
   email: string
   phone: string
   address: string
+  avatar: string
 }
 
 export function CustomerProfile() {
@@ -30,6 +32,7 @@ export function CustomerProfile() {
     email: '',
     phone: '',
     address: '',
+    avatar: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,6 +68,7 @@ export function CustomerProfile() {
             email: data.email || '',
             phone: data.phone || '',
             address: data.address || '',
+            avatar: data.avatar || '',
           })
         }
       } catch {
@@ -97,6 +101,7 @@ export function CustomerProfile() {
           name: profile.name,
           phone: profile.phone,
           address: profile.address,
+          avatar: profile.avatar,
         }),
       })
       if (res.ok) {
@@ -106,6 +111,7 @@ export function CustomerProfile() {
           name: updatedUser.name,
           phone: updatedUser.phone,
           address: updatedUser.address,
+          avatar: updatedUser.avatar,
         })
         toast({
           title: 'Perfil actualizado',
@@ -173,17 +179,69 @@ export function CustomerProfile() {
         <Card className="rounded-xl border-neutral-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-neutral-900 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl font-bold text-white">
-                  {profile.name.charAt(0).toUpperCase() || 'U'}
-                </span>
+              <div className="relative flex-shrink-0">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 bg-neutral-100">
+                  {profile.avatar ? (
+                    <img
+                      src={profile.avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
+                      <span className="text-xl font-bold text-white">
+                        {profile.name.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.accept = 'image/jpeg,image/png,image/webp,image/gif'
+                    input.onchange = async (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0]
+                      if (!file) return
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      formData.append('folder', 'avatars')
+                      formData.append('storeSlug', user?.storeSlug || 'store')
+                      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                      if (res.ok) {
+                        const data = await res.json()
+                        setProfile({ ...profile, avatar: data.url })
+                      }
+                    }
+                    input.click()
+                  }}
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center hover:bg-neutral-800 transition-colors shadow-sm border-2 border-white"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-bold text-neutral-900">
                   {profile.name || 'Sin nombre'}
                 </h3>
                 <p className="text-sm text-neutral-400">{profile.email}</p>
                 <p className="text-xs text-neutral-300 mt-1 capitalize">Cliente</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs font-medium text-neutral-500 mb-2">Cambiar foto de perfil</p>
+              <div className="w-full max-w-[200px] h-[40px]">
+                <ImageUpload
+                  value={profile.avatar}
+                  onChange={(url) => setProfile({ ...profile, avatar: url })}
+                  storeSlug={user?.storeSlug || 'store'}
+                  folder="avatars"
+                  className="h-full [&>div]:!aspect-auto [&>div]:!h-full [&>div>img]:!object-cover [&>div>img]:!rounded-lg [&_.group]:!rounded-lg"
+                />
               </div>
             </div>
           </CardContent>

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         storeId: existingByGoogleId.storeId,
         storeName: existingByGoogleId.store.name,
         storeSlug: existingByGoogleId.store.slug,
-        picture: existingByGoogleId.avatar || picture,
+        avatar: existingByGoogleId.avatar || picture || '',
         token,
       })
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         storeId: existingByEmail.storeId,
         storeName: existingByEmail.store.name,
         storeSlug: existingByEmail.store.slug,
-        picture: existingByEmail.avatar || picture,
+        avatar: existingByEmail.avatar || picture || '',
         token,
         linked: true, // Indicates Google was linked to existing account
       })
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
         storeId: user.storeId,
         storeName: store.name,
         storeSlug: store.slug,
-        picture: user.avatar || picture,
+        avatar: user.avatar || picture || '',
         token,
         isNewUser: true,
       })
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
       storeId: user.storeId,
       storeName: targetStore.name,
       storeSlug: targetStore.slug,
-      picture: user.avatar || picture,
+      avatar: user.avatar || picture || '',
       token,
       isNewUser: true,
     })

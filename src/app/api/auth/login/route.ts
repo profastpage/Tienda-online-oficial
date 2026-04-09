@@ -167,6 +167,7 @@ export async function POST(request: Request) {
           storeId: '__super_admin__',
           storeName: 'Super Admin',
           storeSlug: 'super-admin',
+          avatar: '',
           token,
         })
         response.cookies.set('auth-token', token, {
@@ -290,6 +291,7 @@ export async function POST(request: Request) {
       storeId: matchedUser.storeId,
       storeName: matchedUser.store.name,
       storeSlug: matchedUser.store.slug,
+      avatar: (matchedUser as Record<string, unknown>).avatar || '',
       token,
     })
 

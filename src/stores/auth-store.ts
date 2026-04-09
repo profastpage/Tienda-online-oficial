@@ -10,6 +10,7 @@ interface User {
   storeId: string
   storeName: string
   storeSlug?: string
+  avatar?: string
 }
 
 interface AuthState {
