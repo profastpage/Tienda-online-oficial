@@ -32,6 +32,7 @@ const PUBLIC_PATHS = [
   '/api/auth/signout',
   '/api/auth/check',
   '/api/auth-status',
+  '/api/migrate-db',
   '/api/products',
   '/api/categories',
   '/api/testimonials',
