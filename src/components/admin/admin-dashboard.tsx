@@ -159,7 +159,10 @@ export function AdminDashboard() {
     async function fetchStats() {
       try {
         const sid = user!.storeId
-        const res = await fetch(`/api/admin/dashboard?storeId=${sid}`)
+        const { token } = useAuthStore.getState()
+        const res = await fetch(`/api/admin/dashboard?storeId=${sid}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        })
         if (res.ok) {
           const data = await res.json()
           setStats(data)

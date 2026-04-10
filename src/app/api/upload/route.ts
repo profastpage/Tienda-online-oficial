@@ -1,62 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary with env vars (support multiple naming conventions)
-function getCloudinaryConfig() {
-  const cloudName =
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
-    process.env.CLOUDINARY_CLOUD_NAME ||
-    process.env.NEXT_PUBLIC_CLOUD_NAME ||
-    ''
-
-  const apiKey =
-    process.env.CLOUDINARY_API_KEY ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY ||
-    process.env.CLOUD_KEY ||
-    ''
-
-  const apiSecret =
-    process.env.CLOUDINARY_API_SECRET ||
-    process.env.CLOUDINARY_SECRET ||
-    process.env.CLOUD_SECRET ||
-    ''
-
-  return { cloudName, apiKey, apiSecret }
-}
-
-function ensureCloudinaryConfigured() {
-  const config = getCloudinaryConfig()
-
-  if (!config.cloudName || !config.apiKey || !config.apiSecret) {
-    return false
-  }
-
-  // Only configure once
-  if (!cloudinary.config().cloud_name) {
-    cloudinary.config({
-      cloud_name: config.cloudName,
-      api_key: config.apiKey,
-      api_secret: config.apiSecret,
-    })
-  }
-
-  return true
-}
+import { NextResponse } from 'next/server'
+import cloudinary from '@/lib/cloudinary'
+import { extractToken, verifyToken } from '@/lib/auth'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const VALID_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    // Validate Cloudinary configuration
-    if (!ensureCloudinaryConfigured()) {
-      return NextResponse.json(
-        {
-          error:
-            'Cloudinary no está configurado. Verifica las variables de entorno.',
-        },
-        { status: 500 }
-      )
+    // Auth check
+    const token = extractToken(request)
+    if (!token) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
     }
 
     const formData = await request.formData()
@@ -64,20 +22,14 @@ export async function POST(request: NextRequest) {
     const folder = (formData.get('folder') as string) || 'products'
     const storeSlug = (formData.get('storeSlug') as string) || 'store'
 
-    // Validate file exists
     if (!file) {
-      return NextResponse.json(
-        { error: 'No se encontró ningún archivo.' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'No se proporcionó ningún archivo' }, { status: 400 })
     }
 
     // Validate file type
-    if (!VALID_TYPES.includes(file.type)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        {
-          error: 'Tipo de archivo inválido. Usa JPG, PNG, WebP o GIF.',
-        },
+        { error: 'Tipo de archivo inválido. Usa JPG, PNG, WebP o GIF' },
         { status: 400 }
       )
     }
@@ -85,9 +37,7 @@ export async function POST(request: NextRequest) {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        {
-          error: `Archivo muy grande. Máximo 5MB (tu archivo: ${(file.size / (1024 * 1024)).toFixed(1)}MB).`,
-        },
+        { error: 'Archivo muy grande. Máximo 5MB' },
         { status: 400 }
       )
     }
@@ -96,58 +46,32 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Build Cloudinary folder path
-    const cloudFolder = `${folder}/${storeSlug}`.replace(/\/+/g, '/')
+    // Build the Cloudinary public ID with folder structure
+    const publicId = `${storeSlug}/${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
 
-    // Upload to Cloudinary using the upload API
-    return new Promise<NextResponse>((resolve) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: cloudFolder,
-            resource_type: 'image',
-            quality: 'auto:good',
-            fetch_format: 'auto',
-            transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
-          },
-          (error, result) => {
-            if (error || !result) {
-              console.error('Cloudinary upload error:', error)
-              resolve(
-                NextResponse.json(
-                  {
-                    error: 'Error al subir la imagen a Cloudinary.',
-                  },
-                  { status: 500 }
-                )
-              )
-              return
-            }
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(
+      `data:${file.type};base64,${buffer.toString('base64')}`,
+      {
+        public_id: publicId,
+        folder: `${storeSlug}/${folder}`,
+        resource_type: 'image',
+        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+      }
+    )
 
-            const sizeKB = Math.round(
-              (result.bytes || buffer.length) / 1024
-            )
-            const format =
-              result.format || file.type.split('/')[1] || 'auto'
+    const sizeKB = Math.round(file.size / 1024)
+    const format = result.format || file.type.split('/')[1] || 'jpg'
 
-            resolve(
-              NextResponse.json({
-                url: result.secure_url,
-                sizeKB,
-                format,
-                publicId: result.public_id,
-                width: result.width,
-                height: result.height,
-              })
-            )
-          }
-        )
-        .end(buffer)
+    return NextResponse.json({
+      url: result.secure_url,
+      sizeKB,
+      format,
     })
-  } catch (err) {
-    console.error('Upload route error:', err)
+  } catch (error) {
+    console.error('[Upload] Error:', error)
     return NextResponse.json(
-      { error: 'Error interno del servidor al subir la imagen.' },
+      { error: 'Error al subir la imagen' },
       { status: 500 }
     )
   }

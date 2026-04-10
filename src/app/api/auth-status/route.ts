@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server'
+import { extractToken, verifyToken, authError } from '@/lib/auth'
 
 // Diagnostic endpoint to verify NextAuth configuration
-// Call: GET /api/auth/check
-// Returns: status of Google OAuth credentials and NEXTAUTH settings
-export async function GET() {
+// Requires authentication
+export async function GET(request: Request) {
+  // Auth check
+  const token = extractToken(request)
+  if (!token) return authError('No autenticado')
+
+  const payload = await verifyToken(token)
+  if (!payload) return authError('Token inválido')
+
   const clientId = process.env.GOOGLE_CLIENT_ID || process.env['GOOGLE-CLIENT-ID'] || ''
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env['GOOGLE-CLIENT-SECRET'] || ''
   const nextauthUrl = process.env.NEXTAUTH_URL || ''

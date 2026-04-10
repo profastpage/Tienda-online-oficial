@@ -1,10 +1,21 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { extractToken, verifyToken, authError } from '@/lib/auth'
 
 // Database migration: ensure all columns from Prisma schema exist in the actual DB
 // Safe to call multiple times — only adds missing columns.
 
-export async function POST() {
+export async function POST(request: Request) {
+  // Auth check — only super-admin
+  const token = extractToken(request)
+  if (!token) return authError('No autenticado')
+
+  const payload = await verifyToken(token)
+  if (!payload) return authError('Token inválido')
+  if (payload.role !== 'super-admin') {
+    return authError('Solo super-admin puede ejecutar migraciones', 403)
+  }
+
   try {
     const db = await getDb()
 
@@ -81,7 +92,17 @@ export async function POST() {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Auth check — only super-admin
+  const token = extractToken(request)
+  if (!token) return authError('No autenticado')
+
+  const payload = await verifyToken(token)
+  if (!payload) return authError('Token inválido')
+  if (payload.role !== 'super-admin') {
+    return authError('Solo super-admin puede ver migraciones', 403)
+  }
+
   try {
     const db = await getDb()
 

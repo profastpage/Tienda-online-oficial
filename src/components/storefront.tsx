@@ -512,7 +512,7 @@ export default function Storefront() {
           fetchWithRetry('/api/products?store=urban-style'),
           fetchWithRetry('/api/categories?store=urban-style'),
           fetchWithRetry('/api/testimonials?store=urban-style'),
-          fetchWithRetry('/api/store/payment-methods?storeId=kmpw0h5ig4o518kg4zsm5huo3'),
+          fetchWithRetry(`/api/store/payment-methods?storeId=${user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3'}`),
         ])
         if (cancelled) return
         setProducts(Array.isArray(productsData) ? productsData : [])
@@ -626,7 +626,7 @@ export default function Storefront() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          storeId: 'kmpw0h5ig4o518kg4zsm5huo3',
+          storeId: user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3',
           customerName,
           customerPhone: formattedPhone,
           customerAddress,
@@ -655,7 +655,7 @@ export default function Storefront() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: checkoutData.id,
-          storeId: 'kmpw0h5ig4o518kg4zsm5huo3',
+          storeId: user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3',
           items: cart.items.map((item) => ({
             name: item.name,
             price: item.price,
@@ -700,7 +700,7 @@ export default function Storefront() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          storeId: 'kmpw0h5ig4o518kg4zsm5huo3',
+          storeId: user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3',
           customerName,
           customerPhone: formattedPhone,
           customerAddress,

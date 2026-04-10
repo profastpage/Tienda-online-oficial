@@ -198,7 +198,10 @@ export function AdminSettings() {
     if (!storeId) return
     async function fetchStore() {
       try {
-        const res = await fetch(`/api/admin/settings?storeId=${storeId}`)
+        const { token } = useAuthStore.getState()
+        const res = await fetch(`/api/admin/settings?storeId=${storeId}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        })
         if (res.ok) {
           const data = await res.json()
           setStore(data)
@@ -224,7 +227,10 @@ export function AdminSettings() {
     if (!storeId) return
     setPmLoading(true)
     try {
-      const res = await fetch(`/api/admin/payment-methods?storeId=${storeId}`)
+      const { token } = useAuthStore.getState()
+      const res = await fetch(`/api/admin/payment-methods?storeId=${storeId}`, {
+        ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+      })
       if (res.ok) {
         const data = await res.json()
         setPaymentMethods(data)

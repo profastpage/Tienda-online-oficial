@@ -191,7 +191,7 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
   const userEmail = user.email || ''
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex">
+    <div className="min-h-screen bg-neutral-100 flex overflow-x-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-[260px] lg:fixed lg:inset-y-0 bg-white border-r border-neutral-200 z-30">
         <SidebarNav

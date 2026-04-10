@@ -60,7 +60,10 @@ export function CustomerProfile() {
     const userId = user.id
     async function fetchProfile() {
       try {
-        const res = await fetch(`/api/customer/profile?userId=${userId}`)
+        const { token } = useAuthStore.getState()
+        const res = await fetch(`/api/customer/profile?userId=${userId}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        })
         if (res.ok) {
           const data = await res.json()
           setProfile({

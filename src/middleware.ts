@@ -31,8 +31,6 @@ const PUBLIC_PATHS = [
   '/api/auth/csrf',
   '/api/auth/signout',
   '/api/auth/check',
-  '/api/auth-status',
-  '/api/migrate-db',
   '/api/products',
   '/api/categories',
   '/api/testimonials',
@@ -117,6 +115,24 @@ export function middleware(request: NextRequest) {
           { status: 429 }
         )
       }
+    }
+    return NextResponse.next()
+  }
+
+  // Protect notify, auth-status, migrate-db (removed from PUBLIC_PATHS)
+  // Auth is handled by each route handler itself, but middleware blocks unauthenticated requests
+  if (
+    pathname.startsWith('/api/notify') ||
+    pathname.startsWith('/api/auth-status') ||
+    pathname.startsWith('/api/migrate-db')
+  ) {
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const jwtToken = token || cookieToken
+
+    if (!jwtToken) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
     return NextResponse.next()
   }
