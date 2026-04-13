@@ -96,7 +96,7 @@ const statusColors: Record<string, string> = {
 // ═══ Main Panel ═══
 export default function SuperAdminPanel() {
   const router = useRouter()
-  const { user, _hydrated: hydrated, hydrate, token: jwtToken, setUser, logout } = useAuthStore()
+  const { user, token: jwtToken, setUser, logout } = useAuthStore()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [data, setData] = useState<SuperAdminData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -109,21 +109,62 @@ export default function SuperAdminPanel() {
     storeName: string
     isActive?: boolean
   } | null>(null)
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authorized' | 'unauthorized'>('checking')
 
-  // Hydrate auth store on mount
+  // Verify auth via cookie (middleware already allowed access, double-confirm with API)
   useEffect(() => {
-    hydrate()
-  }, [hydrate])
+    let cancelled = false
 
-  // Check auth and fetch data when hydrated
-  useEffect(() => {
-    if (!hydrated) return
-    if (!user || user.role !== 'super-admin' || !jwtToken) {
-      router.push('/login')
-      return
+    async function verifyAuth() {
+      // If we already have user in store from a previous session, use it
+      if (user?.role === 'super-admin' && jwtToken) {
+        if (!cancelled) setAuthStatus('authorized')
+        return
+      }
+
+      // Otherwise verify via API using the httpOnly cookie
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        if (!res.ok) {
+          if (!cancelled) {
+            setAuthStatus('unauthorized')
+            router.push('/login')
+          }
+          return
+        }
+
+        const userData = await res.json()
+        if (!cancelled) {
+          if (userData.role === 'super-admin') {
+            // Restore user in Zustand store from cookie-verified data
+            setUser({
+              id: userData.id,
+              email: userData.email,
+              name: userData.name || 'Super Administrador',
+              phone: userData.phone || '',
+              address: userData.address || '',
+              role: 'super-admin',
+              storeId: userData.storeId || '__super_admin__',
+              storeName: 'Super Admin',
+              storeSlug: 'super-admin',
+            }, jwtToken || null)
+            setAuthStatus('authorized')
+          } else {
+            setAuthStatus('unauthorized')
+            router.push('/login')
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthStatus('unauthorized')
+          router.push('/login')
+        }
+      }
     }
-    fetchData()
-  }, [hydrated, user, jwtToken])
+
+    verifyAuth()
+    return () => { cancelled = true }
+  }, [user, jwtToken])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -170,6 +211,30 @@ export default function SuperAdminPanel() {
       setLoading(false)
     }
   }, [jwtToken, router])
+
+  // Fetch data only when auth is confirmed
+  useEffect(() => {
+    if (authStatus === 'authorized' && !data) {
+      fetchData()
+    }
+  }, [authStatus])
+
+  // Show loading state while verifying auth
+  if (authStatus === 'checking') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center">
+          <div className="w-10 h-10 border-[3px] border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-500">Verificando acceso...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show nothing if unauthorized (redirecting)
+  if (authStatus === 'unauthorized') {
+    return null
+  }
 
   const handleStoreAction = useCallback(async (action: 'toggle-store' | 'delete-store', storeId: string, isActive?: boolean) => {
     setActionLoading(storeId)
