@@ -111,18 +111,21 @@ export default function SuperAdminPanel() {
   } | null>(null)
   const [authStatus, setAuthStatus] = useState<'checking' | 'authorized' | 'unauthorized'>('checking')
 
-  // Verify auth via cookie (middleware already allowed access, double-confirm with API)
+  // Verify auth via cookie — runs ONLY ONCE on mount
   useEffect(() => {
     let cancelled = false
 
     async function verifyAuth() {
-      // If we already have user in store from a previous session, use it
+      // Already authorized — don't re-check
+      if (authStatus === 'authorized') return
+
+      // If user already in store with super-admin role, trust it
       if (user?.role === 'super-admin' && jwtToken) {
         if (!cancelled) setAuthStatus('authorized')
         return
       }
 
-      // Otherwise verify via API using the httpOnly cookie
+      // Verify via API using the httpOnly cookie
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' })
         if (!res.ok) {
@@ -136,8 +139,6 @@ export default function SuperAdminPanel() {
         const userData = await res.json()
         if (!cancelled) {
           if (userData.role === 'super-admin') {
-            // Restore user in Zustand store from cookie-verified data
-            // Use the fresh token returned by /api/auth/me
             setUser({
               id: userData.id,
               email: userData.email,
@@ -148,7 +149,7 @@ export default function SuperAdminPanel() {
               storeId: userData.storeId || '__super_admin__',
               storeName: 'Super Admin',
               storeSlug: 'super-admin',
-            }, userData.token || jwtToken || null)
+            }, userData.token || null)
             setAuthStatus('authorized')
           } else {
             setAuthStatus('unauthorized')
@@ -165,12 +166,14 @@ export default function SuperAdminPanel() {
 
     verifyAuth()
     return () => { cancelled = true }
-  }, [user, jwtToken])
+  }, [])  // Empty deps — runs only once on mount
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const headers: HeadersInit = jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {}
+      // Get current token from store at call time (not closure)
+      const currentToken = useAuthStore.getState().token
+      const headers: HeadersInit = currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}
       const res = await fetch('/api/super-admin', { headers })
       if (!res.ok) {
         // Auth failed — redirect to login
@@ -187,14 +190,13 @@ export default function SuperAdminPanel() {
         try {
           const seedRes = await fetch('/api/init-db', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
             body: JSON.stringify({ autoSeed: true }),
           })
           if (seedRes.ok) {
             const seedData = await seedRes.json()
             if (seedData.success) {
               console.log('[super-admin] Auto-seed successful, refreshing data...')
-              // Refresh data after seeding
               const refreshRes = await fetch('/api/super-admin', { headers })
               if (refreshRes.ok) {
                 const refreshJson = await refreshRes.json()
@@ -211,14 +213,14 @@ export default function SuperAdminPanel() {
     } finally {
       setLoading(false)
     }
-  }, [jwtToken, router])
+  }, [router])
 
   // Fetch data only when auth is confirmed
   useEffect(() => {
-    if (authStatus === 'authorized' && !data && jwtToken) {
+    if (authStatus === 'authorized' && !data) {
       fetchData()
     }
-  }, [authStatus, jwtToken])
+  }, [authStatus])
 
   // Show loading state while verifying auth
   if (authStatus === 'checking') {
