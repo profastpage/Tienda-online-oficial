@@ -47,7 +47,13 @@ const NEXTAUTH_URL = (() => {
 // NEXTAUTH_SECRET — Must be identical across all serverless invocations
 // ═══════════════════════════════════════════════════════════════
 
-const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || 'tienda-online-oficial-secret-2024-x7k9m2p5q8'
+const NEXTAUTH_SECRET = (() => {
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret) {
+    throw new Error('NEXTAUTH_SECRET environment variable is required. Set it in Vercel dashboard or .env.local')
+  }
+  return secret
+})()
 
 // ═══════════════════════════════════════════════════════════════
 // Logging (no secrets logged)
@@ -57,7 +63,7 @@ console.log('══════════════════════�
 console.log('[nextauth] Config:')
 console.log(`  Google creds: ${hasGoogleCredentials ? 'FOUND ✓' : 'MISSING ✗ — Set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET on Vercel'}`)
 console.log(`  URL:          ${NEXTAUTH_URL}`)
-console.log(`  Secret:       ${process.env.NEXTAUTH_SECRET ? 'from env' : 'using fallback'}`)
+console.log(`  Secret:       ${process.env.NEXTAUTH_SECRET ? 'from env ✓' : 'NOT SET ✗'}`)
 console.log(`  Env:          ${process.env.NODE_ENV || 'dev'}`)
 console.log('═══════════════════════════════════════════════════')
 

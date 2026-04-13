@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { filterSeedProducts } from '@/lib/seed-data'
+import { getClientIp, rateLimit } from '@/lib/auth'
+
+const CHAT_RATE_LIMIT = 10       // max requests
+const CHAT_RATE_WINDOW = 60000   // per 60 seconds
 
 const BASE_SYSTEM_PROMPT = `Eres un asistente de ventas amigable y profesional para "Urban Style", una tienda de ropa urbana y streetwear premium en Perú. Ayudas a los clientes con preguntas sobre productos, tallas, envíos, devoluciones y consultas generales. Sé cálido, profesional y conciso. Los precios están en Soles peruanos (S/). Horario: Lun-Sáb 9am-8pm. Envío: 1-3 días hábiles. Envío gratis en pedidos mayores a S/199. Pago: contra entrega o transferencia bancaria. Respondes SIEMPRE en español.
 
@@ -92,6 +96,18 @@ function generateSmartReply(userMessage: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 10 requests per minute per IP (distributed via DB)
+    const ip = getClientIp(request)
+    const rateKey = `chat:${ip}`
+    const allowed = await rateLimit(rateKey, CHAT_RATE_LIMIT, CHAT_RATE_WINDOW)
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Por favor espera un momento antes de intentar de nuevo.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { messages } = body
 

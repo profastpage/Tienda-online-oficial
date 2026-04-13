@@ -1,9 +1,12 @@
 import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
+import { getDb } from '@/lib/db'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tienda-online-oficial-jwt-secret-change-in-production-2024'
-)
+const JWT_SECRET_RAW = process.env.JWT_SECRET
+if (!JWT_SECRET_RAW) {
+  throw new Error('JWT_SECRET environment variable is required. Set it in Vercel dashboard or .env.local')
+}
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW)
 
 // Token expiration: 7 days
 const JWT_EXPIRATION = '7d'
@@ -72,22 +75,57 @@ export function authError(message: string = 'No autenticado', status: number = 4
   })
 }
 
-// Rate limiter (in-memory, simple)
-const rateLimiter = new Map<string, { count: number; resetTime: number }>()
+/**
+ * Distributed rate limiter using the database.
+ * Works across serverless invocations (unlike in-memory Map).
+ * Uses a sliding window approach.
+ * 
+ * @param key - Unique identifier (e.g. "chat:1.2.3.4", "login:1.2.3.4")
+ * @param maxRequests - Max requests allowed in the window
+ * @param windowMs - Window size in milliseconds (default: 60000 = 1 min)
+ * @returns true if request is allowed, false if rate limited
+ */
+export async function rateLimit(
+  key: string,
+  maxRequests: number = 30,
+  windowMs: number = 60000
+): Promise<boolean> {
+  try {
+    const db = await getDb()
+    const now = new Date()
+    const windowEnd = new Date(now.getTime() + windowMs)
 
-export function rateLimit(ip: string, maxRequests: number = 30, windowMs: number = 60000): boolean {
-  const now = Date.now()
-  const record = rateLimiter.get(ip)
+    // Try to find existing record
+    let record = await db.rateLimit.findUnique({
+      where: { key },
+    })
 
-  if (!record || now > record.resetTime) {
-    rateLimiter.set(ip, { count: 1, resetTime: now + windowMs })
+    // No record or window expired — create new
+    if (!record || now > record.windowEnd) {
+      await db.rateLimit.upsert({
+        where: { key },
+        create: { key, count: 1, windowEnd },
+        update: { count: 1, windowEnd },
+      })
+      return true
+    }
+
+    // Window still active
+    if (record.count >= maxRequests) {
+      return false
+    }
+
+    // Increment counter
+    await db.rateLimit.update({
+      where: { key },
+      data: { count: { increment: 1 } },
+    })
+    return true
+  } catch (error) {
+    // If DB is unavailable, fail open (allow request) but log
+    console.error('[rateLimit] DB error, allowing request:', error)
     return true
   }
-
-  if (record.count >= maxRequests) return false
-
-  record.count++
-  return true
 }
 
 // Get client IP from request

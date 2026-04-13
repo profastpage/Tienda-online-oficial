@@ -1,10 +1,71 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { getPayment } from '@/lib/mercadopago'
+import crypto from 'crypto'
 
 // Helper: always return 200 JSON (MercadoPago retries on non-2xx)
 function ok(body: Record<string, string> = { status: 'ok' }) {
   return NextResponse.json(body, { status: 200 })
+}
+
+/**
+ * Verify MercadoPago webhook signature to prevent fake notifications.
+ * MercadoPago sends X-Signature and X-Request-Id headers with HMAC-SHA256.
+ * See: https://www.mercadopago.com/developers/en/docs/checkout-pro/integrations/webhook-notifications
+ */
+function verifyMercadoPagoSignature(request: Request, body: string): boolean {
+  const signature = request.headers.get('x-signature')
+  const requestId = request.headers.get('x-request-id')
+
+  // If headers are missing, this might be a test or local call — allow in dev
+  if (!signature || !requestId) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[MercadoPago Webhook] Skipping signature verification (non-production)')
+      return true
+    }
+    console.warn('[MercadoPago Webhook] Missing X-Signature or X-Request-Id headers')
+    return false
+  }
+
+  const accessToken = process.env.MP_ACCESS_TOKEN
+  if (!accessToken) {
+    console.warn('[MercadoPago Webhook] MP_ACCESS_TOKEN not set, cannot verify signature')
+    return false
+  }
+
+  // Parse the signature header format: ts=<timestamp>,v1=<hex_signature>
+  const signatureParts = signature.split(',').reduce((acc, part) => {
+    const [key, value] = part.split('=')
+    acc[key.trim()] = value.trim()
+    return acc
+  }, {} as Record<string, string>)
+
+  const timestamp = signatureParts['ts']
+  const v1Signature = signatureParts['v1']
+
+  if (!timestamp || !v1Signature) {
+    console.warn('[MercadoPago Webhook] Invalid X-Signature format')
+    return false
+  }
+
+  // Build the manifest: request-id + timestamp + body
+  const manifest = `id:${requestId};request-id:${requestId};ts:${timestamp};`
+  const manifestWithBody = `${manifest}body:${body};`
+
+  // Compute HMAC-SHA256 with the access token
+  const computedSignature = crypto
+    .createHmac('sha256', accessToken)
+    .update(manifestWithBody)
+    .digest('hex')
+
+  if (computedSignature !== v1Signature) {
+    console.error('[MercadoPago Webhook] Signature verification FAILED')
+    console.error(`  Expected: ${v1Signature}`)
+    console.error(`  Computed: ${computedSignature}`)
+    return false
+  }
+
+  return true
 }
 
 // GET: MercadoPago IPN verification challenge
@@ -31,7 +92,21 @@ export async function GET(request: Request) {
 // POST: MercadoPago IPN notification handler
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const rawBody = await request.text()
+
+    // Verify webhook signature in production
+    if (process.env.NODE_ENV === 'production' && !verifyMercadoPagoSignature(request, rawBody)) {
+      console.error('[MercadoPago Webhook] FORBIDDEN — Invalid signature')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
+    }
+
+    let body: Record<string, any>
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      console.error('[MercadoPago Webhook] Invalid JSON body')
+      return ok({ status: 'invalid_json' })
+    }
 
     // Log notification for debugging
     console.log('[MercadoPago Webhook] Notification received:', JSON.stringify(body))

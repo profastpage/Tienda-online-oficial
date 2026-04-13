@@ -99,9 +99,10 @@ export async function verifyUserOwnership(
 }
 
 /**
- * Rate limit check for API routes
+ * Rate limit check for API routes (distributed via DB)
  */
-export function checkRateLimit(request: Request, max: number = 30, windowMs: number = 60000): boolean {
+export async function checkRateLimit(request: Request, max: number = 30, windowMs: number = 60000): Promise<boolean> {
   const ip = getClientIp(request)
-  return rateLimit(ip, max, windowMs)
+  const key = `api:${ip}`
+  return rateLimit(key, max, windowMs)
 }

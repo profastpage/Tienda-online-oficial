@@ -10,11 +10,11 @@ export async function POST(request: Request) {
 
     const db = await getDb()
     const body = await request.json()
-    const { orderId, storeId, items, customerEmail, customerName } = body
+    const { orderId, storeId, customerEmail, customerName } = body
 
-    if (!orderId || !storeId || !items || items.length === 0) {
+    if (!orderId || !storeId) {
       return NextResponse.json(
-        { error: 'Datos incompletos. Se requiere orderId, storeId e items.' },
+        { error: 'Datos incompletos. Se requiere orderId y storeId.' },
         { status: 400 }
       )
     }
@@ -33,12 +33,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'El pedido no pertenece a esta tienda' }, { status: 403 })
     }
 
-    // Build preference items from order items
-    const preferenceItems = (items.length > 0 ? items : order.items).map((item: any) => ({
-      name: item.productName || item.name,
-      price: Number(item.price),
-      quantity: Number(item.quantity),
-      image: item.productImage || item.image || undefined,
+    // SECURITY: ALWAYS use order items from database for prices.
+    // Client-supplied items are used ONLY for name/image override, NEVER for price/quantity.
+    // This prevents price manipulation attacks where a client sends items with price: 0.01.
+    const preferenceItems = order.items.map((dbItem) => ({
+      name: dbItem.productName || 'Producto',
+      price: Number(dbItem.price),       // ALWAYS from DB
+      quantity: Number(dbItem.quantity),  // ALWAYS from DB
+      image: dbItem.productImage || undefined,
     }))
 
     // Check if a MercadoPago payment already exists for this order

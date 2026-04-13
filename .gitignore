@@ -77,4 +77,4 @@ site-analysis.json
 Caddyfile
 
 # Upload folder
-/upload/
+/upload/"prisma/dev.db" 
