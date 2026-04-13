@@ -137,6 +137,7 @@ export default function SuperAdminPanel() {
         if (!cancelled) {
           if (userData.role === 'super-admin') {
             // Restore user in Zustand store from cookie-verified data
+            // Use the fresh token returned by /api/auth/me
             setUser({
               id: userData.id,
               email: userData.email,
@@ -147,7 +148,7 @@ export default function SuperAdminPanel() {
               storeId: userData.storeId || '__super_admin__',
               storeName: 'Super Admin',
               storeSlug: 'super-admin',
-            }, jwtToken || null)
+            }, userData.token || jwtToken || null)
             setAuthStatus('authorized')
           } else {
             setAuthStatus('unauthorized')
@@ -214,10 +215,10 @@ export default function SuperAdminPanel() {
 
   // Fetch data only when auth is confirmed
   useEffect(() => {
-    if (authStatus === 'authorized' && !data) {
+    if (authStatus === 'authorized' && !data && jwtToken) {
       fetchData()
     }
-  }, [authStatus])
+  }, [authStatus, jwtToken])
 
   // Show loading state while verifying auth
   if (authStatus === 'checking') {
