@@ -384,6 +384,7 @@ function AuthPageContent() {
                   <div className="mt-6 p-4 bg-neutral-50 rounded-xl border text-sm">
                     <p className="font-semibold text-neutral-700 mb-2">Cuentas de prueba:</p>
                     <div className="space-y-1.5 text-neutral-500">
+                      <p>🛡️ <strong>Super Admin:</strong> profastpage@gmail.com / Admin@2024</p>
                       <p>🔐 <strong>Admin:</strong> admin@urbanstyle.pe / admin123</p>
                       <p>👤 <strong>Cliente:</strong> cliente@email.com / cliente123</p>
                     </div>

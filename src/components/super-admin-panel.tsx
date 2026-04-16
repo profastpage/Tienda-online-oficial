@@ -96,7 +96,7 @@ const statusColors: Record<string, string> = {
 // ═══ Main Panel ═══
 export default function SuperAdminPanel() {
   const router = useRouter()
-  const { user, token: jwtToken, setUser, logout } = useAuthStore()
+  const { user, token: jwtToken, setUser, logout, _hydrated: hydrated } = useAuthStore()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [data, setData] = useState<SuperAdminData | null>(null)
   const [loading, setLoading] = useState(true)

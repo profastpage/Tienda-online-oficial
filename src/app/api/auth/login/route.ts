@@ -130,8 +130,8 @@ export async function POST(request: Request) {
     // ── Super Admin check ──
     const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
     // Validate hash wasn't corrupted by env variable expansion (Next.js @next/env expands $VAR)
-    let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$HSt2fkyesYwooMV.9rHkZ.qe0Nrr9Xe2yEraiwN7Nh6kG9tUJhrYq'
-    const SUPER_FALLBACK_HASH = '$2b$12$HSt2fkyesYwooMV.9rHkZ.qe0Nrr9Xe2yEraiwN7Nh6kG9tUJhrYq'
+    let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
+    const SUPER_FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
     if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
       superPasswordHash = SUPER_FALLBACK_HASH
     }
