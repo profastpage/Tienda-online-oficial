@@ -129,16 +129,24 @@ export async function POST(request: Request) {
 
     // ── Super Admin check ──
     const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
-    // Validate hash wasn't corrupted by env variable expansion (Next.js @next/env expands $VAR)
-    let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-    const SUPER_FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-    if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
-      superPasswordHash = SUPER_FALLBACK_HASH
-    }
+    const superPlainTextPassword = process.env.SUPER_ADMIN_PASSWORD
     const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
     if (email === superEmail) {
-      const isValid = await comparePassword(password, superPasswordHash)
-      if (isValid) {
+      // Priority 1: Plain text password (if SUPER_ADMIN_PASSWORD env var is set)
+      if (superPlainTextPassword && password === superPlainTextPassword) {
+        // Valid plain text login
+      } else {
+        // Priority 2: Hash comparison (backwards compatible)
+        let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
+        const SUPER_FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
+        if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
+          superPasswordHash = SUPER_FALLBACK_HASH
+        }
+        const hashValid = await comparePassword(password, superPasswordHash)
+        if (!hashValid) {
+          return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
+        }
+      }
         // Check if super admin has 2FA enabled
         const superAdmin2FASecret = process.env.SUPER_ADMIN_2FA_SECRET
         if (superAdmin2FASecret) {
