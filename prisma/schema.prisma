@@ -17,6 +17,8 @@ model Store {
   description    String   @default("")
   isActive       Boolean  @default(true)
   plan           String   @default("basico")
+  subscriptionExpiresAt DateTime? // when the current plan expires
+  trialDays      Int      @default(0) // extra trial days granted by super admin
   users          StoreUser[]
   categories     Category[]
   products       Product[]
@@ -24,6 +26,8 @@ model Store {
   testimonials   Testimonial[]
   paymentMethods PaymentMethod[]
   mercadoPagoPayments MercadoPagoPayment[]
+  coupons        Coupon[]
+  notifications  AdminNotification[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -200,6 +204,39 @@ model MercadoPagoPayment {
   @@index([storeId])
   @@index([status])
   @@index([paymentId])
+}
+
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type        String   @default("percentage") // percentage | fixed
+  value       Float    // e.g. 20 means 20% or S/20 fixed
+  minPurchase Float?  // minimum purchase amount to apply
+  maxUses     Int      @default(0) // 0 = unlimited
+  usedCount   Int      @default(0)
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([code])
+}
+
+model AdminNotification {
+  id        String   @id @default(cuid())
+  storeId   String?  // null = broadcast to all stores
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  type      String   @default("info") // info | promo | warning | coupon
+  title     String
+  message   String
+  data      String   @default("{}") // JSON for extra data (coupon code, link, etc)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([storeId])
 }
 
 model RateLimit {

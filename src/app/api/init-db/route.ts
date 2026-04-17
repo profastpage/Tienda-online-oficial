@@ -442,6 +442,61 @@ export async function POST(request: Request) {
         })
       }
 
+      // Seed sample orders for realism
+      const sampleStatuses = ['pending', 'confirmed', 'shipped', 'delivered']
+      const sampleOrderCount = demo.store.plan === 'premium' ? 8 : demo.store.plan === 'pro' ? 5 : 3
+      for (let i = 0; i < sampleOrderCount; i++) {
+        const prod = demo.products[i % demo.products.length]
+        const orderNum = `ORD-${demo.store.slug.substring(0, 4).toUpperCase()}-${String(1000 + i).padStart(4, '0')}`
+        try {
+          const order = await db.order.upsert({
+            where: { orderNumber: orderNum },
+            update: {},
+            create: {
+              id: `${demo.store.id}-order-${i}`,
+              orderNumber: orderNum,
+              customerName: i % 2 === 0 ? demo.customer.name : `Cliente Demo ${i + 1}`,
+              customerPhone: i % 2 === 0 ? (demo.customer.phone || '51988888888') : `5199999900${i}`,
+              customerAddress: `Calle ${i + 1}0${i}, Lima`,
+              status: sampleStatuses[i % sampleStatuses.length],
+              total: prod.price * (1 + Math.floor(Math.random() * 2)),
+              notes: '',
+              storeId: demoStoreId,
+              userId: demo.customer.id,
+              items: {
+                create: {
+                  id: `${demo.store.id}-item-${i}`,
+                  productId: prod.id,
+                  productName: prod.name,
+                  productImage: '',
+                  price: prod.price,
+                  quantity: 1 + Math.floor(Math.random() * 2),
+                  size: 'M',
+                  color: '',
+                },
+              },
+            },
+          })
+        } catch { /* order may already exist */ }
+      }
+
+      // Seed a coupon for each store
+      try {
+        await db.coupon.upsert({
+          where: { code: `BIENVENIDO${demo.store.plan.substring(0, 3).toUpperCase()}` },
+          update: {},
+          create: {
+            id: `${demo.store.id}-coupon-welcome`,
+            code: `BIENVENIDO${demo.store.plan.substring(0, 3).toUpperCase()}`,
+            storeId: demoStoreId,
+            type: 'percentage',
+            value: demo.store.plan === 'premium' ? 15 : demo.store.plan === 'pro' ? 10 : 5,
+            maxUses: 100,
+            isActive: true,
+          },
+        })
+      } catch { /* coupon may exist */ }
+
       seededStores.push({
         storeName: demo.store.name,
         adminEmail: demo.admin.email,
