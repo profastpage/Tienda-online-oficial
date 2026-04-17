@@ -116,11 +116,8 @@ export default function SuperAdminPanel() {
     let cancelled = false
 
     async function verifyAuth() {
-      // Already authorized — don't re-check
-      if (authStatus === 'authorized') return
-
       // If user already in store with super-admin role, trust it
-      if (user?.role === 'super-admin' && jwtToken) {
+      if (useAuthStore.getState().user?.role === 'super-admin' && useAuthStore.getState().token) {
         if (!cancelled) setAuthStatus('authorized')
         return
       }
@@ -131,7 +128,6 @@ export default function SuperAdminPanel() {
         if (!res.ok) {
           if (!cancelled) {
             setAuthStatus('unauthorized')
-            router.push('/login')
           }
           return
         }
@@ -153,13 +149,11 @@ export default function SuperAdminPanel() {
             setAuthStatus('authorized')
           } else {
             setAuthStatus('unauthorized')
-            router.push('/login')
           }
         }
       } catch {
         if (!cancelled) {
           setAuthStatus('unauthorized')
-          router.push('/login')
         }
       }
     }
@@ -167,6 +161,13 @@ export default function SuperAdminPanel() {
     verifyAuth()
     return () => { cancelled = true }
   }, [])  // Empty deps — runs only once on mount
+
+  // Redirect unauthorized users to login (via useEffect, not during render)
+  useEffect(() => {
+    if (authStatus === 'unauthorized') {
+      router.push('/login')
+    }
+  }, [authStatus, router])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -347,15 +348,13 @@ export default function SuperAdminPanel() {
   // ═══ Redirect logic via useEffect (NOT during render — React #310) ═══
   useEffect(() => {
     if (!hydrated) return
-    if (!user) {
-      router.push('/login')
-    } else if (user.role !== 'super-admin') {
+    if (!user || user.role !== 'super-admin') {
       router.push('/login')
     }
   }, [hydrated, user, router])
 
   // ═══ Auth check: show loading while checking auth ═══
-  if (!hydrated || !user || user.role !== 'super-admin') {
+  if (!hydrated || !user || user.role !== 'super-admin' || authStatus === 'checking') {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
