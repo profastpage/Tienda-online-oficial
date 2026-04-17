@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { comparePassword } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/api-auth'
 
@@ -16,13 +17,7 @@ export async function POST(request: Request) {
     }
 
     const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
-    // Get hash - validate it wasn't corrupted by env variable expansion
-    // (Next.js @next/env expands $VAR references, corrupting bcrypt hashes)
-    let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-    const FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-    if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
-      superPasswordHash = FALLBACK_HASH
-    }
+    const superPlainTextPassword = process.env.SUPER_ADMIN_PASSWORD
     const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
 
     // Verify email
@@ -31,8 +26,22 @@ export async function POST(request: Request) {
     }
 
     // Verify password
-    const isValid = await comparePassword(password, superPasswordHash)
-    if (!isValid) {
+    let passwordValid = false
+
+    // Priority 1: Plain text password (if SUPER_ADMIN_PASSWORD env var is set)
+    if (superPlainTextPassword && password === superPlainTextPassword) {
+      passwordValid = true
+    } else {
+      // Priority 2: Hash comparison (backwards compatible)
+      let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
+      const SUPER_FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
+      if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
+        superPasswordHash = SUPER_FALLBACK_HASH
+      }
+      passwordValid = await comparePassword(password, superPasswordHash)
+    }
+
+    if (!passwordValid) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
@@ -43,7 +52,8 @@ export async function POST(request: Request) {
       email: superEmail,
     })
 
-    // Set the super-admin-token cookie (different from auth-token)
+    // Set the super-admin-token cookie using next/headers
+    const cookieStore = await cookies()
     response.cookies.set('super-admin-token', superSecret, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
