@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Crown,
   Bot,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -256,6 +257,15 @@ export function AdminPanel() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <a
+                href={`/${user?.storeSlug || ''}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-medium hover:from-violet-700 hover:to-indigo-700 transition-all shadow-sm"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Tienda Oficial
+              </a>
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 border border-neutral-200">
                 <Store className="w-3.5 h-3.5 text-neutral-400" />
                 <span className="text-xs font-medium text-neutral-600">{storeName}</span>

@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Upload, ImageIcon, X, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/stores/auth-store'
 
 interface ImageUploadProps {
   value?: string
@@ -66,6 +67,7 @@ export function ImageUpload({
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
+          ...(useAuthStore.getState().token ? { headers: { Authorization: `Bearer ${useAuthStore.getState().token}` } } : {}),
         })
 
         setProgress(80)

@@ -662,7 +662,12 @@ export default function SuperAdminPanel() {
                             {/* Actions Grid */}
                             <div className="space-y-1.5">
                               <h4 className="text-[10px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider">Acciones</h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" className="col-span-2 sm:col-span-1">
+                                  <Button size="sm" className="w-full text-xs gap-1 h-9 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md">
+                                    <Eye className="w-3.5 h-3.5" /> Tienda Oficial
+                                  </Button>
+                                </a>
                                 <Button size="sm" className="text-xs gap-1 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleAction('store-token', store.id)} disabled={actionLoading === store.id}>
                                   {actionLoading === store.id ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><ExternalLink className="w-3.5 h-3.5" /> Gestionar</>}
                                 </Button>

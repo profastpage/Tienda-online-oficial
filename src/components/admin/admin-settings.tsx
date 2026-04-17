@@ -286,9 +286,13 @@ export function AdminSettings() {
     setProfileSaving(true)
     setProfileSaved(false)
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch('/api/customer/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           id: user.id,
           name: profileForm.name,
@@ -333,9 +337,13 @@ export function AdminSettings() {
     setSaving(true)
     setSaved(false)
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           id: storeId,
           ...form,
@@ -544,10 +552,18 @@ export function AdminSettings() {
                       formData.append('file', file)
                       formData.append('folder', 'avatars')
                       formData.append('storeSlug', user?.storeSlug || 'store')
-                      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                      const { token } = useAuthStore.getState()
+                      const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData,
+                        ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+                      })
                       if (res.ok) {
                         const data = await res.json()
                         setProfileForm({ ...profileForm, avatar: data.url })
+                      } else {
+                        const errData = await res.json().catch(() => ({ error: 'Error de autenticación' }))
+                        toast({ title: 'Error al subir', description: errData.error || 'No se pudo subir la imagen', variant: 'destructive' })
                       }
                     }
                     input.click()
@@ -569,10 +585,18 @@ export function AdminSettings() {
                     formData.append('file', file)
                     formData.append('folder', 'avatars')
                     formData.append('storeSlug', user?.storeSlug || 'store')
-                    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                    const { token } = useAuthStore.getState()
+                    const res = await fetch('/api/upload', {
+                      method: 'POST',
+                      body: formData,
+                      ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+                    })
                     if (res.ok) {
                       const data = await res.json()
                       setProfileForm({ ...profileForm, avatar: data.url })
+                    } else {
+                      const errData = await res.json().catch(() => ({ error: 'Error de autenticación' }))
+                      toast({ title: 'Error al subir', description: errData.error || 'No se pudo subir la imagen', variant: 'destructive' })
                     }
                   }
                   input.click()

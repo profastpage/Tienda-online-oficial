@@ -35,6 +35,7 @@ const PUBLIC_PATHS = [
   '/api/categories',
   '/api/testimonials',
   '/api/store/payment-methods',
+  '/api/store/info',
   '/api/leads',
   '/api/customer/checkout',
   '/api/upload',
