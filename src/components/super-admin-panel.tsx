@@ -344,28 +344,23 @@ export default function SuperAdminPanel() {
     { id: 'leads', label: 'Leads', icon: Mail },
   ]
 
-  // ═══ Auth check: redirect to login if not super admin ═══
-  if (!hydrated || (!user && hydrated)) {
-    if (hydrated && !user) {
+  // ═══ Redirect logic via useEffect (NOT during render — React #310) ═══
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user) {
+      router.push('/login')
+    } else if (user.role !== 'super-admin') {
       router.push('/login')
     }
+  }, [hydrated, user, router])
+
+  // ═══ Auth check: show loading while checking auth ═══
+  if (!hydrated || !user || user.role !== 'super-admin') {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-neutral-500">Cargando panel...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (user && user.role !== 'super-admin') {
-    router.push('/login')
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-neutral-500">Redirigiendo...</p>
         </div>
       </div>
     )
