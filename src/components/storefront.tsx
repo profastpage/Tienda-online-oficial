@@ -373,7 +373,12 @@ function TestimonialCarousel({ testimonials }: { testimonials: Testimonial[] }) 
   )
 }
 
-export default function Storefront() {
+interface StorefrontProps {
+  storeSlug?: string
+}
+
+export default function Storefront({ storeSlug: initialSlug }: StorefrontProps = {}) {
+  const effectiveSlug = initialSlug || 'urban-style'
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -509,9 +514,9 @@ export default function Storefront() {
     async function fetchData() {
       try {
         const [productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
-          fetchWithRetry('/api/products?store=urban-style'),
-          fetchWithRetry('/api/categories?store=urban-style'),
-          fetchWithRetry('/api/testimonials?store=urban-style'),
+          fetchWithRetry(`/api/products?store=${effectiveSlug}`),
+          fetchWithRetry(`/api/categories?store=${effectiveSlug}`),
+          fetchWithRetry(`/api/testimonials?store=${effectiveSlug}`),
           fetchWithRetry(`/api/store/payment-methods?storeId=${user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3'}`),
         ])
         if (cancelled) return

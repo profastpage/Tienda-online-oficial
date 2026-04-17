@@ -14,12 +14,14 @@ import {
   X,
   Store,
   ChevronRight,
+  ExternalLink,
   Crown,
   Bot,
   BookOpen,
   Shield,
   HelpCircle,
   ShoppingBag,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -66,6 +68,7 @@ function SidebarNav({
   onNavigate,
   onLogout,
   storeName,
+  storeSlug,
   userName,
   userRole,
   userAvatar,
@@ -75,6 +78,7 @@ function SidebarNav({
   onNavigate: (href: string) => void
   onLogout: () => void
   storeName: string
+  storeSlug?: string
   userName: string
   userRole: string
   userAvatar?: string
@@ -123,6 +127,23 @@ function SidebarNav({
             )
           })}
         </nav>
+
+        {/* Ver Mi Tienda - Official Store Button */}
+        {storeSlug && (
+          <div className="px-3 mt-4">
+            <a
+              href={`/${storeSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150 group bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-sm hover:shadow-md"
+            >
+              <Eye className="w-4.5 h-4.5 flex-shrink-0" />
+              <span className="flex-1 text-left">Ver Mi Tienda</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            </a>
+            <p className="text-[10px] text-neutral-400 mt-1.5 px-1">tienda-online-oficial.vercel.app/{storeSlug}</p>
+          </div>
+        )}
       </ScrollArea>
 
       {/* User info & logout */}
@@ -222,6 +243,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isSuperAdminMode = user.role === 'super-admin'
 
   const storeName = user.storeName || 'Mi Tienda'
+  const storeSlug = user.storeSlug || 'urban-style'
   const userName = user.name || 'Admin'
 
   return (
@@ -234,6 +256,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onNavigate={handleNavigate}
           onLogout={handleLogout}
           storeName={storeName}
+          storeSlug={storeSlug}
           userName={userName}
           userRole={user.role}
           userAvatar={user.avatar}
@@ -252,6 +275,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onNavigate={handleNavigate}
             onLogout={handleLogout}
             storeName={storeName}
+            storeSlug={storeSlug}
             userName={userName}
             userRole={user.role}
             userAvatar={user.avatar}
@@ -287,6 +311,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Ver Mi Tienda - Header Button */}
+              <a
+                href={`/${storeSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors text-xs font-medium"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Ver Mi Tienda</span>
+              </a>
               {isSuperAdminMode && (
                 <Button
                   variant="outline"
