@@ -11,7 +11,8 @@ import {
   LayoutDashboard, Eye, Clock, Package, UserCog, Tag,
   Send, Megaphone, CreditCard, Gift, Timer, Crown,
   ChevronRight, Copy, Check, Percent, DollarSign,
-  Bell, Info, AlertCircle, Zap, Database
+  Bell, Info, AlertCircle, Zap, Database,
+  Key, MessageSquare, Smartphone, MapPin, HeartHandshake, Globe
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,7 +22,7 @@ import { Input } from '@/components/ui/input'
 // ═══ Types ═══
 interface StoreData {
   id: string; name: string; slug: string; plan: string; isActive: boolean
-  logo: string; whatsappNumber: string; createdAt: string
+  logo: string; whatsappNumber: string; address: string; createdAt: string
   subscriptionExpiresAt?: string; trialDays: number
   _count: { users: number; products: number; orders: number; categories: number; coupons: number }
   users: UserData[]; coupons: CouponData[]
@@ -132,6 +133,7 @@ export default function SuperAdminPanel() {
   const [couponForm, setCouponForm] = useState({ code: '', type: 'percentage', value: '', minPurchase: '', maxUses: '', expiresAt: '' })
   const [notifForm, setNotifForm] = useState({ type: 'info', title: '', message: '' })
   const [subDays, setSubDays] = useState('30')
+  const [copied, setCopied] = useState<string | null>(null)
 
   // ═══ Auth ═══
   useEffect(() => {
@@ -159,6 +161,12 @@ export default function SuperAdminPanel() {
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
+  }
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(id)
+    setTimeout(() => setCopied(null), 2000)
   }
 
   const apiCall = useCallback(async (body: Record<string, any>) => {
@@ -491,6 +499,48 @@ export default function SuperAdminPanel() {
                   )}
                 </div>
 
+                {/* ── Demo Store Credentials ── */}
+                <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl p-4 sm:p-5 shadow-lg text-white">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Key className="w-4 h-4 text-amber-400" />
+                    <h3 className="text-sm font-bold">Tiendas Demo - Credenciales</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {[
+                      { plan: 'basico', name: 'Mi Tienda Basica', admin: 'basico@demo.pe', pass: 'demo123', customer: 'basico@cliente.com' },
+                      { plan: 'pro', name: 'TechStore Pro', admin: 'pro@demo.pe', pass: 'demo123', customer: 'pro@cliente.com' },
+                      { plan: 'premium', name: 'Fashion Premium', admin: 'premium@demo.pe', pass: 'demo123', customer: 'premium@cliente.com' },
+                    ].map((demo) => (
+                      <div key={demo.plan} className="bg-white/5 rounded-xl p-3 border border-white/10">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Badge className={`${planColors[demo.plan] || 'bg-neutral-600 text-white'} text-[10px] capitalize border-0 font-bold`}>{demo.plan}</Badge>
+                          <span className="text-[10px] text-neutral-300 truncate">{demo.name}</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <Shield className="w-3 h-3 text-amber-400 shrink-0" />
+                            <span className="text-[11px] text-neutral-200 truncate flex-1">{demo.admin}</span>
+                            <button onClick={() => copyToClipboard(demo.admin, `a-${demo.plan}`)} className="p-0.5 rounded hover:bg-white/10 shrink-0">
+                              {copied === `a-${demo.plan}` ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-neutral-500" />}
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Key className="w-3 h-3 text-neutral-400 shrink-0" />
+                            <span className="text-[11px] text-neutral-200">{demo.pass}</span>
+                            <button onClick={() => copyToClipboard(demo.pass, `p-${demo.plan}`)} className="p-0.5 rounded hover:bg-white/10 shrink-0">
+                              {copied === `p-${demo.plan}` ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-neutral-500" />}
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <UserPlus className="w-3 h-3 text-blue-400 shrink-0" />
+                            <span className="text-[10px] text-neutral-400 truncate flex-1">{demo.customer}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Recent Stores - Cards on all devices */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-neutral-900 px-1">Ultimas Tiendas</h3>
@@ -560,6 +610,35 @@ export default function SuperAdminPanel() {
                               <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.orders}</p><p className="text-[10px] text-neutral-500">Pedidos</p></div>
                               <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.categories}</p><p className="text-[10px] text-neutral-500">Categorias</p></div>
                               <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.coupons}</p><p className="text-[10px] text-neutral-500">Cupones</p></div>
+                            </div>
+
+                            {/* Store Contact Details (WhatsApp, Address) */}
+                            <div className="space-y-1.5">
+                              <h4 className="text-[10px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider">Datos de la Tienda</h4>
+                              <div className="bg-white rounded-lg border border-neutral-100 p-2.5 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Smartphone className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                                  <span className="text-xs text-neutral-700 font-medium">WhatsApp:</span>
+                                  <span className="text-xs text-neutral-600 flex-1">{store.whatsappNumber || 'No configurado'}</span>
+                                  {store.whatsappNumber && (
+                                    <a href={`https://wa.me/${store.whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50">
+                                      <MessageSquare className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </div>
+                                {store.address && (
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                    <span className="text-xs text-neutral-700 font-medium">Direccion:</span>
+                                    <span className="text-xs text-neutral-600">{store.address}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                  <span className="text-xs text-neutral-700 font-medium">URL:</span>
+                                  <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-700 underline truncate">{store.slug}</a>
+                                </div>
+                              </div>
                             </div>
 
                             {/* Contact Info */}
@@ -817,12 +896,31 @@ export default function SuperAdminPanel() {
       </Modal>
 
       {/* Notification Modal */}
-      <Modal open={notifModal.open} onClose={() => setNotifModal({ open: false, broadcast: true })} title={notifModal.broadcast ? 'Enviar Broadcast' : `Notificar - ${notifModal.storeName}`}>
+      <Modal open={notifModal.open} onClose={() => setNotifModal({ open: false, broadcast: true })} title={notifModal.broadcast ? 'Enviar Broadcast a Todas las Tiendas' : `Notificar - ${notifModal.storeName}`}>
         <div className="space-y-3">
           <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
             <Bell className="w-4 h-4 text-blue-600" />
             <span className="text-xs text-blue-700">{notifModal.broadcast ? 'Se enviara a TODAS las tiendas' : `Se enviara a: ${notifModal.storeName}`}</span>
           </div>
+
+          {/* Quick Promo Templates */}
+          <div>
+            <label className="text-xs font-medium text-neutral-700 mb-1.5 block">Plantillas Rapidas</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Bienvenida', type: 'info', title: 'Bienvenido a tu Tienda Online', msg: 'Tu tienda online esta lista. Comienza a configurar tus productos, categorias y metodos de pago. Si necesitas ayuda, no dudes en contactarnos.' },
+                { label: 'Promocion', type: 'promo', title: 'Gran Promocion Especial', msg: 'Aprovecha nuestra promocion especial. Usa el cupon BIENVENIDO10 y obtiene un 10% de descuento en tu primera compra. Valido por tiempo limitado.' },
+                { label: 'Recordatorio', type: 'warning', title: 'Renueva tu Suscripcion', msg: 'Tu suscripcion esta por vencer. Renueva ahora para no perder acceso a todas las funciones de tu tienda online. Contactanos para obtener descuentos por renovacion anticipada.' },
+                { label: 'Nuevo Cupon', type: 'coupon', title: 'Nuevo Cupon de Descuento Disponible', msg: 'Se ha creado un nuevo cupon de descuento exclusivo para ti. Revisa la seccion de cupones en tu panel de administracion para ver los detalles.' },
+                { label: 'Actualizacion', type: 'info', title: 'Nuevas Funciones Disponibles', msg: 'Hemos actualizado la plataforma con nuevas funciones. Ahora puedes gestionar mejor tus pedidos, productos y clientes desde el panel de administracion.' },
+              ].map((tpl) => (
+                <button key={tpl.label} onClick={() => setNotifForm({ type: tpl.type, title: tpl.title, message: tpl.msg })} className="text-[10px] px-2 py-1 rounded-lg bg-neutral-100 text-neutral-600 hover:bg-neutral-200 font-medium transition-colors">
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div><label className="text-xs font-medium text-neutral-700">Tipo</label>
             <select value={notifForm.type} onChange={(e) => setNotifForm(f => ({ ...f, type: e.target.value }))} className="w-full h-10 rounded-lg border border-neutral-200 px-3 text-sm bg-white">
               <option value="info">Info</option><option value="promo">Promocion</option><option value="warning">Alerta</option><option value="coupon">Cupon</option>
