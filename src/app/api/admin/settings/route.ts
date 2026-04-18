@@ -1,10 +1,10 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/api-auth'
+import { requireStoreOwner } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
 
-    // Verify the admin can only access their own store's data
+    // Verify the user can only access their own store's data
     if (storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()
@@ -34,7 +34,7 @@ export async function PUT(request: Request) {
     const { id, name, description, whatsappNumber, address, logo } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-    // Verify the admin can only update their own store
+    // Verify the user can only update their own store
     if (id !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }

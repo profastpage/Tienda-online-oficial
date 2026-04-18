@@ -1,11 +1,11 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
+import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const storeId = searchParams.get('storeId')
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
 
-    // Verify the admin can only access their own store's data
+    // Verify the user can only access their own store's data
     if (storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()
@@ -79,7 +79,7 @@ export async function PUT(request: Request) {
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
     // Verify store ownership before update
-    const ownership = await verifyStoreOwnership(request, 'category', id)
+    const ownership = await verifyStoreOwnershipAny(request, 'category', id)
     if (!ownership.authorized) return ownership.error
 
     const updateData: Record<string, unknown> = {}
@@ -102,7 +102,7 @@ export async function DELETE(request: Request) {
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
     // Verify store ownership before delete
-    const ownership = await verifyStoreOwnership(request, 'category', id)
+    const ownership = await verifyStoreOwnershipAny(request, 'category', id)
     if (!ownership.authorized) return ownership.error
 
     const db = await getDb()

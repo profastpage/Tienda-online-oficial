@@ -16,9 +16,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 })
     }
 
-    const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
+    const superEmail = process.env.SUPER_ADMIN_EMAIL
     const superPlainTextPassword = process.env.SUPER_ADMIN_PASSWORD
-    const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
+    const superSecret = process.env.SUPER_ADMIN_SECRET
+
+    if (!superEmail || !superSecret) {
+      return NextResponse.json({ error: 'Super admin no configurado. Faltan variables de entorno.' }, { status: 401 })
+    }
 
     // Verify email
     if (email !== superEmail) {
@@ -33,10 +37,9 @@ export async function POST(request: Request) {
       passwordValid = true
     } else {
       // Priority 2: Hash comparison (backwards compatible)
-      let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-      const SUPER_FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-      if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
-        superPasswordHash = SUPER_FALLBACK_HASH
+      let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH
+      if (!superPasswordHash) {
+        return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
       }
       passwordValid = await comparePassword(password, superPasswordHash)
     }

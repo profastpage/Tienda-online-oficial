@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import cloudinary from '@/lib/cloudinary'
+import cloudinary, { isConfigured } from '@/lib/cloudinary'
 import { extractToken, verifyToken } from '@/lib/auth'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -7,6 +7,14 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 export async function POST(request: Request) {
   try {
+    // Cloudinary config validation
+    if (!isConfigured()) {
+      return NextResponse.json(
+        { error: 'Cloudinary no está configurado. Agrega NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en las variables de entorno.' },
+        { status: 500 }
+      )
+    }
+
     // Auth check
     const token = extractToken(request)
     if (!token) {
@@ -69,9 +77,10 @@ export async function POST(request: Request) {
       format,
     })
   } catch (error) {
-    console.error('[Upload] Error:', error)
+    const cloudinaryError = error instanceof Error ? error.message : String(error)
+    console.error('[Upload] Error:', cloudinaryError, error)
     return NextResponse.json(
-      { error: 'Error al subir la imagen' },
+      { error: 'Error al subir la imagen', details: cloudinaryError },
       { status: 500 }
     )
   }

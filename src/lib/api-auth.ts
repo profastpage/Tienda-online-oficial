@@ -36,6 +36,60 @@ export async function requireAdmin(request: Request): Promise<
 }
 
 /**
+ * Require any authenticated user (any role: admin, customer, super-admin).
+ * Does NOT check for admin role - just checks they're logged in.
+ */
+export async function requireStoreOwner(request: Request): Promise<
+  | { user: JwtPayload; error: null }
+  | { user: null; error: NextResponse }
+> {
+  const result = await requireAuth(request)
+  return result
+}
+
+/**
+ * Verify that a resource belongs to the authenticated user's store.
+ * Uses requireAuth (not requireAdmin) so any authenticated user can access.
+ * Super admins bypass store ownership checks.
+ */
+export async function verifyStoreOwnershipAny(
+  request: Request,
+  model: 'product' | 'category' | 'order' | 'paymentMethod',
+  resourceId: string
+): Promise<
+  | { authorized: true; error: null }
+  | { authorized: false; error: NextResponse }
+> {
+  const auth = await requireAuth(request)
+  if (auth.error) return { authorized: false, error: auth.error }
+
+  // Super admins can access any store's resources
+  if (auth.user.role === 'super-admin') {
+    return { authorized: true, error: null }
+  }
+
+  try {
+    const db = await getDb()
+    const resource = await (db[model] as any).findUnique({
+      where: { id: resourceId },
+      select: { storeId: true },
+    })
+
+    if (!resource) {
+      return { authorized: false, error: NextResponse.json({ error: 'Recurso no encontrado' }, { status: 404 }) }
+    }
+
+    if (resource.storeId !== auth.user.storeId) {
+      return { authorized: false, error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) }
+    }
+
+    return { authorized: true, error: null }
+  } catch {
+    return { authorized: false, error: NextResponse.json({ error: 'Error de verificación' }, { status: 500 }) }
+  }
+}
+
+/**
  * Verify that a resource belongs to the authenticated user's store.
  * Used before PUT/DELETE operations.
  * Super admins bypass store ownership checks.

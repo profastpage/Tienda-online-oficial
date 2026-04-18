@@ -3,8 +3,6 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
 import { verifyToken, signToken } from '@/lib/auth'
 
-const SUPER_SECRET = '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
-
 async function verifySuperAdmin(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('authorization')
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
@@ -18,7 +16,7 @@ async function verifySuperAdmin(request: Request): Promise<boolean> {
   const token = bearerToken || cookieToken
   if (!token) return false
 
-  if (token === (process.env.SUPER_ADMIN_SECRET || SUPER_SECRET)) return true
+  if (token === process.env.SUPER_ADMIN_SECRET) return true
 
   try {
     const payload = await verifyToken(token)

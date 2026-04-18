@@ -128,10 +128,12 @@ export async function POST(request: Request) {
     }
 
     // ── Super Admin check ──
-    const superEmail = process.env.SUPER_ADMIN_EMAIL || 'profastpage@gmail.com'
+    const superEmail = process.env.SUPER_ADMIN_EMAIL
     const superPlainTextPassword = process.env.SUPER_ADMIN_PASSWORD
-    const superSecret = process.env.SUPER_ADMIN_SECRET || '46a175d2f1801e73d6944abe8cd28a01c393e33eb0c19e7e863b9e0aa0c84d84'
-    if (email === superEmail) {
+    const superSecret = process.env.SUPER_ADMIN_SECRET
+
+    // Skip super-admin check entirely if not configured (don't block regular login)
+    if (superEmail && email === superEmail) {
       let passwordValid = false
 
       // Priority 1: Plain text password (if SUPER_ADMIN_PASSWORD env var is set)
@@ -139,10 +141,9 @@ export async function POST(request: Request) {
         passwordValid = true
       } else {
         // Priority 2: Hash comparison (backwards compatible)
-        let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-        const SUPER_FALLBACK_HASH = '$2b$12$kE/z56LAyqZ.FeyrLaBFju/ryRX3BRSSiji19BB3rUWvJS8YU3wiy'
-        if (!superPasswordHash.startsWith('$2b$') || superPasswordHash.length < 55) {
-          superPasswordHash = SUPER_FALLBACK_HASH
+        let superPasswordHash = process.env.SUPER_ADMIN_PASSWORD_HASH
+        if (!superPasswordHash) {
+          return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
         }
         passwordValid = await comparePassword(password, superPasswordHash)
       }
@@ -189,13 +190,15 @@ export async function POST(request: Request) {
         maxAge: 60 * 60 * 24 * 7,
         path: '/',
       })
-      response.cookies.set('super-admin-token', superSecret, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
-        path: '/',
-      })
+      if (superSecret) {
+        response.cookies.set('super-admin-token', superSecret, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24,
+          path: '/',
+        })
+      }
       return response
     }
 

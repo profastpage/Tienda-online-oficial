@@ -1,14 +1,32 @@
 import { v2 as cloudinary } from 'cloudinary'
 
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+const API_KEY = process.env.CLOUDINARY_API_KEY
+const API_SECRET = process.env.CLOUDINARY_API_SECRET
+
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
-  api_key: process.env.CLOUDINARY_API_KEY || '',
-  api_secret: process.env.CLOUDINARY_API_SECRET || '',
+  cloud_name: CLOUD_NAME || '',
+  api_key: API_KEY || '',
+  api_secret: API_SECRET || '',
 })
 
-export default cloudinary
+/**
+ * Validate Cloudinary configuration is complete.
+ * Logs warnings when credentials are missing (does not crash).
+ */
+export function isConfigured(): boolean {
+  const configured = Boolean(CLOUD_NAME && API_KEY && API_SECRET)
+  if (!configured) {
+    const missing: string[] = []
+    if (!CLOUD_NAME) missing.push('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME')
+    if (!API_KEY) missing.push('CLOUDINARY_API_KEY')
+    if (!API_SECRET) missing.push('CLOUDINARY_API_SECRET')
+    console.warn(`[Cloudinary] Configuración incompleta. Faltan: ${missing.join(', ')}`)
+  }
+  return configured
+}
 
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+export default cloudinary
 
 /**
  * Get an optimized Cloudinary URL with transformations
