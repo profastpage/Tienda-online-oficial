@@ -96,9 +96,13 @@ export function CustomerProfile() {
 
     setSaving(true)
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch('/api/customer/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           id: user.id,
           name: profile.name,
@@ -121,13 +125,16 @@ export function CustomerProfile() {
           description: 'Tu información se ha guardado correctamente.',
         })
       } else {
+        const errData = await res.json().catch(() => ({ error: 'Error desconocido' }))
+        console.error('[CustomerProfile] Save failed:', res.status, errData)
         toast({
           title: 'Error',
-          description: 'No se pudo guardar los cambios.',
+          description: errData.error || 'No se pudo guardar los cambios.',
           variant: 'destructive',
         })
       }
-    } catch {
+    } catch (err) {
+      console.error('[CustomerProfile] Save error:', err)
       toast({
         title: 'Error',
         description: 'Hubo un error al guardar.',

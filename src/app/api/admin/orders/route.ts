@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireAdmin, verifyStoreOwnership } from '@/lib/api-auth'
+import { requireAdmin, verifyStoreOwnership, requireStoreOwner } from '@/lib/api-auth'
 
 async function fetchOrdersWithPaymentMethod(db: any, where: Record<string, unknown>, orderBy: Record<string, string>) {
   return db.order.findMany({
@@ -76,21 +76,23 @@ async function fetchOrderWithoutPaymentMethod(db: any, id: string, data: Record<
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    // Use requireStoreOwner (allows any authenticated user including super-admin)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()
     const { searchParams } = new URL(request.url)
-    const storeId = searchParams.get('storeId')
+    // FIX: Fallback to JWT storeId if not in query params — prevents 'storeId required' error
+    const storeId = searchParams.get('storeId') || auth.user.storeId
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const from = searchParams.get('from')
     const to = searchParams.get('to')
     const sort = searchParams.get('sort') || 'desc'
-    if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
+    if (!storeId) return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })
 
-    // Verify the admin can only access their own store's data
-    if (storeId !== auth.user.storeId) {
+    // FIX: Super-admin can view orders from any store
+    if (auth.user.role !== 'super-admin' && storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 

@@ -50,14 +50,20 @@ export async function PUT(request: Request) {
     if (address !== undefined) updateData.address = address
     if (avatar !== undefined) updateData.avatar = avatar
 
+    // Enhanced logging for debugging persistence issues
+    console.log('[customer/profile PUT] Updating user:', id, 'fields:', Object.keys(updateData))
+
     const user = await db.storeUser.update({
       where: { id },
       data: updateData,
       select: { id: true, email: true, name: true, phone: true, address: true, role: true, avatar: true },
     })
+
+    console.log('[customer/profile PUT] Success! Updated user:', user.id, 'avatar set:', !!user.avatar)
+
     return NextResponse.json(user)
   } catch (error) {
-    console.error('[customer/profile PUT]', error instanceof Error ? error.message : error)
+    console.error('[customer/profile PUT] ERROR:', error instanceof Error ? error.message : error)
     return NextResponse.json({ error: 'Error al guardar perfil', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
