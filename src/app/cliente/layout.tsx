@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -150,17 +150,19 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const refreshDone = useRef(false)
 
   // Hydrate auth store once
   useEffect(() => {
     hydrate()
   }, [hydrate])
 
-  // Refresh user data from DB after hydration (ensures avatar, name, etc. are up-to-date)
+  // Refresh user data from DB ONCE after hydration (ensures avatar, name, etc. are up-to-date)
   useEffect(() => {
-    if (!hydrated || !user) return
+    if (!hydrated || !user || refreshDone.current) return
     const token = useAuthStore.getState().token
     if (!token) return
+    refreshDone.current = true
     async function refreshUser() {
       try {
         const res = await fetch('/api/auth/me', {
@@ -168,17 +170,27 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
         })
         if (res.ok) {
           const freshData = await res.json()
-          // Merge fresh DB data with existing user (preserves token)
-          useAuthStore.getState().setUser({
-            ...user,
-            id: freshData.id || user.id,
-            name: freshData.name || user.name,
-            phone: freshData.phone || user.phone,
-            address: freshData.address || user.address,
-            avatar: freshData.avatar || user.avatar,
-            storeName: freshData.storeName || user.storeName,
-            storeSlug: freshData.storeSlug || user.storeSlug,
-          }, freshData.token)
+          const currentUser = useAuthStore.getState().user
+          if (!currentUser) return
+          // Only update if data actually changed (prevents unnecessary re-renders)
+          const needsUpdate =
+            (freshData.avatar && freshData.avatar !== currentUser.avatar) ||
+            (freshData.name && freshData.name !== currentUser.name) ||
+            (freshData.phone !== undefined && freshData.phone !== currentUser.phone) ||
+            (freshData.address !== undefined && freshData.address !== currentUser.address) ||
+            (freshData.storeName && freshData.storeName !== currentUser.storeName)
+          if (needsUpdate) {
+            useAuthStore.getState().setUser({
+              ...currentUser,
+              id: freshData.id || currentUser.id,
+              name: freshData.name || currentUser.name,
+              phone: freshData.phone ?? currentUser.phone,
+              address: freshData.address ?? currentUser.address,
+              avatar: freshData.avatar || currentUser.avatar,
+              storeName: freshData.storeName || currentUser.storeName,
+              storeSlug: freshData.storeSlug || currentUser.storeSlug,
+            }, freshData.token || token)
+          }
         }
       } catch {
         // Silent fail - use cached data
