@@ -7,7 +7,6 @@ import {
   Trash2,
   ImageIcon,
   FolderOpen,
-  Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,7 +89,6 @@ export function AdminCategories() {
   const [saving, setSaving] = useState(false)
 
   const storeId = user?.storeId || ''
-  const isDemoStore = storeId === 'kmpw0h5ig4o518kg4zsm5huo3'
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -202,20 +200,13 @@ export function AdminCategories() {
     <div className="w-full space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-end">
-        {isDemoStore ? (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-            <Lock className="w-4 h-4" />
-            <span>Demo — Categorías de solo lectura</span>
-          </div>
-        ) : (
-          <Button
-            onClick={openCreate}
-            className="bg-neutral-900 hover:bg-neutral-800 text-white h-10 rounded-lg text-sm font-medium gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar Categoría
-          </Button>
-        )}
+        <Button
+          onClick={openCreate}
+          className="bg-neutral-900 hover:bg-neutral-800 text-white h-10 rounded-lg text-sm font-medium gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Agregar Categoría
+        </Button>
       </div>
 
       {/* Categories table */}
@@ -281,12 +272,7 @@ export function AdminCategories() {
                         <span className="text-sm text-neutral-500">{cat.sortOrder}</span>
                       </TableCell>
                       <TableCell className="text-right">
-                        {isDemoStore ? (
-                          <div className="flex items-center justify-center w-full">
-                            <Lock className="w-3.5 h-3.5 text-amber-500" />
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -304,7 +290,6 @@ export function AdminCategories() {
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
-                        )}
                       </TableCell>
                     </TableRow>
                   ))

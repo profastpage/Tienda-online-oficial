@@ -1,24 +1,75 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/api-auth'
+import { requireStoreOwner } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     // Use storeId from JWT token instead of query param
     const storeId = auth.user.storeId
+    if (!storeId || storeId === '__super_admin__') {
+      // Super admin doesn't have a store — return empty dashboard
+      return NextResponse.json({
+        totalProducts: 0,
+        totalOrders: 0,
+        totalCustomers: 0,
+        pendingOrders: 0,
+        totalRevenue: 0,
+        recentOrders: [],
+        dailySales: [],
+        orderStatusDist: [],
+        newLeads: 0,
+        ordersToday: 0,
+        recentPayments: [],
+      })
+    }
 
     const db = await getDb()
+
+    // Helper: safely run a query, returning fallback on error
+    const safe = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+      try {
+        return await fn()
+      } catch (err) {
+        console.warn('[dashboard] Query error:', err instanceof Error ? err.message : err)
+        return fallback
+      }
+    }
 
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    // recentPayments is isolated in case PaymentMethod table doesn't exist
-    let recentPayments: any[] = []
-    try {
-      recentPayments = await db.order.findMany({
+    // Fetch all dashboard data with individual error handling
+    const [
+      totalProducts,
+      totalOrders,
+      totalCustomers,
+      recentOrders,
+      revenueData,
+      pendingCount,
+      leadsCount,
+      ordersToday,
+      recentPayments,
+    ] = await Promise.all([
+      safe(() => db.product.count({ where: { storeId } }), 0),
+      safe(() => db.order.count({ where: { storeId } }), 0),
+      safe(() => db.storeUser.count({ where: { storeId, role: 'customer' } }), 0),
+      safe(() => db.order.findMany({
+        where: { storeId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: { items: true },
+      }), []),
+      safe(() => db.order.aggregate({
+        where: { storeId, status: { in: ['delivered', 'shipped', 'confirmed', 'preparing'] } },
+        _sum: { total: true },
+      }), { _sum: { total: 0 } }),
+      safe(() => db.order.count({ where: { storeId, status: 'pending' } }), 0),
+      safe(() => db.lead.count({ where: { status: 'new' } }), 0),
+      safe(() => db.order.count({ where: { storeId, createdAt: { gte: todayStart } } }), 0),
+      safe(() => db.order.findMany({
         where: { storeId },
         take: 10,
         orderBy: { createdAt: 'desc' },
@@ -29,50 +80,17 @@ export async function GET(request: Request) {
           paymentMethod: { select: { name: true, type: true } },
           createdAt: true,
         },
-      })
-    } catch {
-      // PaymentMethod table may not exist on fresh deploy, fetch without it
-      try {
-        recentPayments = await db.order.findMany({
-          where: { storeId },
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            orderNumber: true,
-            total: true,
-            status: true,
-            createdAt: true,
-          },
-        })
-      } catch {
-        // Even orders table might not exist yet; leave as empty
-        recentPayments = []
-      }
-    }
-
-    const [totalProducts, totalOrders, totalCustomers, recentOrders, revenueData, pendingCount, leadsCount, ordersToday] = await Promise.all([
-      db.product.count({ where: { storeId } }),
-      db.order.count({ where: { storeId } }),
-      db.storeUser.count({ where: { storeId, role: 'customer' } }),
-      db.order.findMany({ where: { storeId }, orderBy: { createdAt: 'desc' }, take: 5, include: { items: true } }),
-      db.order.aggregate({ where: { storeId, status: { in: ['delivered', 'shipped', 'confirmed', 'preparing'] } }, _sum: { total: true } }),
-      db.order.count({ where: { storeId, status: 'pending' } }),
-      db.lead.count({ where: { status: 'new' } }),
-      db.order.count({ where: { storeId, createdAt: { gte: todayStart } } }),
+      }), []),
     ])
 
-    const totalRevenue = revenueData._sum.total || 0
+    const totalRevenue = revenueData._sum?.total || 0
 
     // Get daily sales for the last 7 days
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    sevenDaysAgo.setHours(0, 0, 0, 0)
-
-    const recentOrdersForChart = await db.order.findMany({
-      where: { storeId, createdAt: { gte: sevenDaysAgo } },
+    const recentOrdersForChart = await safe(() => db.order.findMany({
+      where: { storeId, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
       select: { total: true, createdAt: true, status: true },
       orderBy: { createdAt: 'asc' },
-    })
+    }), [])
 
     // Group by day
     const dailySales: { date: string; total: number; orders: number }[] = []
@@ -105,13 +123,13 @@ export async function GET(request: Request) {
     }
 
     // Order status distribution
-    const statusCounts = await db.order.groupBy({
+    const statusCounts = await safe(() => db.order.groupBy({
       by: ['status'],
       where: { storeId },
       _count: { status: true },
-    })
+    }), [])
 
-    const orderStatusDist = statusCounts.map((s) => ({
+    const orderStatusDist = statusCounts.map((s: { status: string; _count: { status: number } }) => ({
       status: s.status,
       count: s._count.status,
     }))

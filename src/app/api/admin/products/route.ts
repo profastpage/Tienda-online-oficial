@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
 
     // Verify the user can only access their own store's data
-    if (storeId !== auth.user.storeId) {
+    // Super-admin bypasses store ownership check
+    if (auth.user.role !== 'super-admin' && storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 

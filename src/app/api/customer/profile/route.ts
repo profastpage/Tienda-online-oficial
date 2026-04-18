@@ -20,9 +20,13 @@ export async function GET(request: Request) {
       where: { id: userId },
       select: { id: true, email: true, name: true, phone: true, address: true, role: true, avatar: true, createdAt: true },
     })
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    }
     return NextResponse.json(user)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[customer/profile GET]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al obtener perfil', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
 
@@ -52,7 +56,8 @@ export async function PUT(request: Request) {
       select: { id: true, email: true, name: true, phone: true, address: true, role: true, avatar: true },
     })
     return NextResponse.json(user)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[customer/profile PUT]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al guardar perfil', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }

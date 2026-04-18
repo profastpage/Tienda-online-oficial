@@ -57,24 +57,45 @@ export async function POST(request: Request) {
     // Build the Cloudinary public ID with folder structure
     const publicId = `${storeSlug}/${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary with aggressive optimization
     const result = await cloudinary.uploader.upload(
       `data:${file.type};base64,${buffer.toString('base64')}`,
       {
         public_id: publicId,
         folder: `${storeSlug}/${folder}`,
         resource_type: 'image',
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+        // Main transformation: auto quality + auto format + DPR auto + responsive
+        transformation: [
+          {
+            quality: 'auto:good',
+            fetch_format: 'auto',
+            dpr: 'auto',
+          },
+        ],
+        // Eager transformations for responsive delivery
+        eager: [
+          { width: 400, height: 400, crop: 'fill', quality: 'auto:good', fetch_format: 'auto' },
+          { width: 800, height: 800, crop: 'fill', quality: 'auto:good', fetch_format: 'auto' },
+          { width: 1200, height: 630, crop: 'fill', quality: 'auto:good', fetch_format: 'auto' },
+        ],
+        eager_async: true,
+        // Limit output size
+        max_file_size: 2000000, // Max 2MB output
+        // Strip metadata for privacy and smaller file size
+        strip_exif: true,
       }
     )
 
     const sizeKB = Math.round(file.size / 1024)
-    const format = result.format || file.type.split('/')[1] || 'jpg'
+    const format = result.format || file.type.split('/')[1] || 'auto'
 
     return NextResponse.json({
       url: result.secure_url,
       sizeKB,
       format,
+      publicId: result.public_id,
+      width: result.width,
+      height: result.height,
     })
   } catch (error) {
     const cloudinaryError = error instanceof Error ? error.message : String(error)

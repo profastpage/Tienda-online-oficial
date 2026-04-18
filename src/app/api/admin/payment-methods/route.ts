@@ -1,19 +1,19 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/api-auth'
+import { requireStoreOwner } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()
     const { searchParams } = new URL(request.url)
-    const storeId = searchParams.get('storeId')
+    const storeId = searchParams.get('storeId') || auth.user.storeId
     if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
 
-    // Verify the admin can only access their own store's data
-    if (storeId !== auth.user.storeId) {
+    // Super-admin bypasses store ownership check
+    if (auth.user.role !== 'super-admin' && storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
@@ -22,14 +22,15 @@ export async function GET(request: Request) {
       orderBy: { sortOrder: 'asc' },
     })
     return NextResponse.json(methods)
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch payment methods' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/payment-methods GET]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al obtener metodos de pago' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
     const db = await getDb()

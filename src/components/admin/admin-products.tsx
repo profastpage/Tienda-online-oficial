@@ -9,7 +9,6 @@ import {
   Trash2,
   ImageIcon,
   PackageOpen,
-  Lock,
 } from 'lucide-react'
 import { ImageUpload } from '@/components/image-upload'
 import { Button } from '@/components/ui/button'
@@ -141,7 +140,6 @@ export function AdminProducts() {
   const [planLimit, setPlanLimit] = useState(2)
 
   const storeId = user?.storeId || ''
-  const isDemoStore = storeId === 'kmpw0h5ig4o518kg4zsm5huo3'
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -346,20 +344,13 @@ export function AdminProducts() {
             className="pl-9 h-10 bg-white border-neutral-200 rounded-lg text-sm"
           />
         </div>
-        {isDemoStore ? (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-            <Lock className="w-4 h-4" />
-            <span>Demo — Productos de solo lectura</span>
-          </div>
-        ) : (
-          <Button
+        <Button
             onClick={openCreate}
             className="bg-neutral-900 hover:bg-neutral-800 text-white h-10 rounded-lg text-sm font-medium gap-2"
           >
             <Plus className="w-4 h-4" />
             Agregar Producto
           </Button>
-        )}
       </div>
 
       {/* Mobile Card Layout */}
@@ -440,13 +431,7 @@ export function AdminProducts() {
 
                       {/* Actions row */}
                       <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-neutral-100">
-                        {isDemoStore ? (
-                          <div className="flex items-center gap-1.5 text-amber-500">
-                            <Lock className="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-medium">Solo lectura</span>
-                          </div>
-                        ) : (
-                          <>
+                        <>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -466,7 +451,6 @@ export function AdminProducts() {
                               Eliminar
                             </Button>
                           </>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -494,7 +478,7 @@ export function AdminProducts() {
                       {search ? 'Intenta con otra búsqueda' : 'Agrega tu primer producto para comenzar'}
                     </p>
                   </div>
-                  {!search && !isDemoStore && (
+                  {!search && (
                     <Button
                       onClick={openCreate}
                       className="mt-1 bg-neutral-900 hover:bg-neutral-800 text-white h-9 rounded-lg text-sm font-medium gap-2"
@@ -622,11 +606,6 @@ export function AdminProducts() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isDemoStore ? (
-                            <div className="flex items-center justify-center w-full">
-                              <Lock className="w-3.5 h-3.5 text-amber-500" />
-                            </div>
-                          ) : (
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 variant="ghost"
@@ -645,7 +624,6 @@ export function AdminProducts() {
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                             </div>
-                          )}
                         </TableCell>
                       </TableRow>
                     ))
