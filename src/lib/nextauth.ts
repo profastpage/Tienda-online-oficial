@@ -47,13 +47,13 @@ const NEXTAUTH_URL = (() => {
 // NEXTAUTH_SECRET — Must be identical across all serverless invocations
 // ═══════════════════════════════════════════════════════════════
 
-const NEXTAUTH_SECRET = (() => {
-  const secret = process.env.NEXTAUTH_SECRET
+function getNextAuthSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET
   if (!secret) {
     throw new Error('NEXTAUTH_SECRET environment variable is required. Set it in Vercel dashboard or .env.local')
   }
   return secret
-})()
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Logging (no secrets logged)
@@ -87,7 +87,9 @@ export const authOptions: NextAuthOptions = {
       ]
     : [],
 
-  secret: NEXTAUTH_SECRET,
+  secret: (() => {
+    try { return getNextAuthSecret() } catch { return undefined }
+  })(),
   url: NEXTAUTH_URL,
 
   pages: {

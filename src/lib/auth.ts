@@ -2,11 +2,13 @@ import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
 import { getDb } from '@/lib/db'
 
-const JWT_SECRET_RAW = process.env.JWT_SECRET
-if (!JWT_SECRET_RAW) {
-  throw new Error('JWT_SECRET environment variable is required. Set it in Vercel dashboard or .env.local')
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required. Set it in Vercel dashboard or .env.local')
+  }
+  return new TextEncoder().encode(secret)
 }
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW)
 
 // Token expiration: 7 days
 const JWT_EXPIRATION = '7d'
@@ -24,13 +26,13 @@ export async function signToken(payload: JwtPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime(JWT_EXPIRATION)
     .setIssuedAt()
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 }
 
 // Verify and decode a JWT token
 export async function verifyToken(token: string): Promise<JwtPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return {
       userId: payload.userId as string,
       email: payload.email as string,

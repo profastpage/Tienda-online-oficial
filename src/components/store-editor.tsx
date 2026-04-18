@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { useAuthStore } from '@/stores/auth-store'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
-import ImageUpload from '@/components/image-upload'
+import { ImageUpload } from '@/components/image-upload'
 
 interface StoreInfo {
   id: string
