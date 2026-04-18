@@ -9,8 +9,8 @@ export async function GET(request: Request) {
 
     const db = await getDb()
     const { searchParams } = new URL(request.url)
-    const storeId = searchParams.get('storeId')
-    if (!storeId) return NextResponse.json({ error: 'storeId required' }, { status: 400 })
+    const storeId = searchParams.get('storeId') || auth.user.storeId
+    if (!storeId) return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })
 
     // Verify the user can only access their own store's data
     // Super-admin bypasses store ownership check

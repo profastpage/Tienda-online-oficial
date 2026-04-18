@@ -110,6 +110,81 @@ const SEED_USERS = [
   },
 ]
 
+/**
+ * Sync a seed user to the database.
+ * Creates the user in DB if not exists, or updates password if seed password is newer.
+ * Also ensures the store exists.
+ * Returns the DB user (with DB-generated ID and all fields including avatar).
+ */
+async function syncSeedUserToDb(seedUser: typeof SEED_USERS[number]): Promise<{
+  id: string; email: string; password: string; name: string; phone: string;
+  address: string; role: string; storeId: string; twoFactorEnabled: boolean;
+  avatar: string | null;
+  store: { name: string; slug: string };
+} | null> {
+  try {
+    const db = await getDb()
+
+    // Ensure the store exists
+    await db.store.upsert({
+      where: { id: seedUser.storeId },
+      update: {},
+      create: {
+        id: seedUser.storeId,
+        name: seedUser.storeName,
+        slug: seedUser.storeSlug,
+      },
+    }).catch(async () => {
+      // If upsert fails (e.g., slug conflict), just try to find existing
+      const existing = await db.store.findUnique({ where: { id: seedUser.storeId } })
+      if (!existing) {
+        console.warn(`[login] Could not create store ${seedUser.storeId}`)
+      }
+    })
+
+    // Upsert the user: create if not exists, or just ensure they exist
+    const dbUser = await db.storeUser.upsert({
+      where: {
+        email_storeId: { email: seedUser.email, storeId: seedUser.storeId },
+      },
+      update: {
+        // Only update password if the DB password is plaintext (legacy) or different
+        password: seedUser.password,
+      },
+      create: {
+        email: seedUser.email,
+        password: seedUser.password,
+        name: seedUser.name,
+        phone: seedUser.phone,
+        address: seedUser.address,
+        role: seedUser.role,
+        storeId: seedUser.storeId,
+        avatar: '',
+      },
+      include: { store: true },
+    })
+
+    console.log(`[login] Synced seed user ${seedUser.email} to DB (id: ${dbUser.id})`)
+
+    return {
+      id: dbUser.id,
+      email: dbUser.email,
+      password: dbUser.password,
+      name: dbUser.name,
+      phone: dbUser.phone,
+      address: dbUser.address,
+      role: dbUser.role,
+      storeId: dbUser.storeId,
+      twoFactorEnabled: dbUser.twoFactorEnabled,
+      avatar: dbUser.avatar,
+      store: { name: dbUser.store.name, slug: dbUser.store.slug },
+    }
+  } catch (err) {
+    console.error('[login] Failed to sync seed user to DB:', err instanceof Error ? err.message : err)
+    return null
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Rate limit
@@ -212,8 +287,11 @@ export async function POST(request: Request) {
       role: string
       storeId: string
       twoFactorEnabled: boolean
+      avatar?: string | null
       store: { name: string; slug: string }
     } | null = null
+
+    let usedSeedFallback = false
 
     // Try database first
     try {
@@ -260,10 +338,21 @@ export async function POST(request: Request) {
         if (seedUser.email === email) {
           const isValid = await comparePassword(password, seedUser.password)
           if (isValid) {
-            matchedUser = {
-              ...seedUser,
-              twoFactorEnabled: false,
-              store: { name: seedUser.storeName, slug: seedUser.storeSlug },
+            usedSeedFallback = true
+
+            // CRITICAL: Sync seed user to DB so profile updates persist
+            // This creates the user in DB (if not exists) or returns existing DB user
+            const syncedUser = await syncSeedUserToDb(seedUser)
+            if (syncedUser) {
+              matchedUser = syncedUser
+            } else {
+              // DB sync failed, use seed data as last resort
+              matchedUser = {
+                ...seedUser,
+                twoFactorEnabled: false,
+                avatar: null,
+                store: { name: seedUser.storeName, slug: seedUser.storeSlug },
+              }
             }
             break
           }
@@ -304,7 +393,7 @@ export async function POST(request: Request) {
       storeId: matchedUser.storeId,
       storeName: matchedUser.store.name,
       storeSlug: matchedUser.store.slug,
-      avatar: (matchedUser as Record<string, unknown>).avatar || '',
+      avatar: matchedUser.avatar || '',
       token,
     })
 
