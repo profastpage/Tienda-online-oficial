@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     if (auth.error) return auth.error
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = searchParams.get('userId') || auth.user.userId
     if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
     // Verify user can only access their own profile
@@ -110,7 +110,8 @@ export async function PUT(request: Request) {
 
     const db = await getDb()
     const body = await request.json()
-    const { id, name, phone, address, avatar } = body
+    const { id: bodyId, name, phone, address, avatar } = body
+    const id = bodyId || auth.user.userId
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
     // Verify user can only update their own profile

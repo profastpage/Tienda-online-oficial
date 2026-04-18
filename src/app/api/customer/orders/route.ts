@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     if (auth.error) return auth.error
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = searchParams.get('userId') || auth.user.userId
     if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
     // Verify user can only access their own orders

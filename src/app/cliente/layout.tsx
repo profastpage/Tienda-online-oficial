@@ -156,6 +156,37 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
     hydrate()
   }, [hydrate])
 
+  // Refresh user data from DB after hydration (ensures avatar, name, etc. are up-to-date)
+  useEffect(() => {
+    if (!hydrated || !user) return
+    const token = useAuthStore.getState().token
+    if (!token) return
+    async function refreshUser() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const freshData = await res.json()
+          // Merge fresh DB data with existing user (preserves token)
+          useAuthStore.getState().setUser({
+            ...user,
+            id: freshData.id || user.id,
+            name: freshData.name || user.name,
+            phone: freshData.phone || user.phone,
+            address: freshData.address || user.address,
+            avatar: freshData.avatar || user.avatar,
+            storeName: freshData.storeName || user.storeName,
+            storeSlug: freshData.storeSlug || user.storeSlug,
+          }, freshData.token)
+        }
+      } catch {
+        // Silent fail - use cached data
+      }
+    }
+    refreshUser()
+  }, [hydrated, user])
+
   // Derive active section from URL
   const activeSection = (URL_TO_CUSTOMER_SECTION[pathname] || 'dashboard') as CustomerSection
 
