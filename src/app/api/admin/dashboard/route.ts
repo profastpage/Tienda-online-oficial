@@ -129,7 +129,8 @@ export async function GET(request: Request) {
       ordersToday,
       recentPayments,
     })
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/dashboard GET]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al obtener dashboard', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }

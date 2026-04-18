@@ -19,8 +19,12 @@ export async function GET(request: Request) {
 
     const store = await db.store.findUnique({ where: { id: storeId } })
     return NextResponse.json(store)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/settings GET]', error instanceof Error ? error.message : error)
+    return NextResponse.json(
+      { error: 'Error al obtener configuracion', details: error instanceof Error ? error.message : 'Unknown' },
+      { status: 500 }
+    )
   }
 }
 
@@ -48,7 +52,11 @@ export async function PUT(request: Request) {
 
     const store = await db.store.update({ where: { id }, data: updateData })
     return NextResponse.json(store)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/settings PUT]', error instanceof Error ? error.message : error)
+    return NextResponse.json(
+      { error: 'Error al guardar configuracion', details: error instanceof Error ? error.message : 'Unknown' },
+      { status: 500 }
+    )
   }
 }

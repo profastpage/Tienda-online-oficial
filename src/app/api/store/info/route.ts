@@ -30,7 +30,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json(store)
   } catch (error) {
-    console.error('[store/info] Error:', error)
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+    console.error('[store/info] Error:', error instanceof Error ? error.message : error)
+    return NextResponse.json(
+      { error: 'Error al obtener informacion de la tienda', details: error instanceof Error ? error.message : 'Unknown' },
+      { status: 500 }
+    )
   }
 }

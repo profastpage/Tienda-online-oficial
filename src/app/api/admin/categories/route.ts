@@ -24,8 +24,9 @@ export async function GET(request: Request) {
       orderBy: { sortOrder: 'asc' },
     })
     return NextResponse.json(categories)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/categories GET]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al obtener categorias', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
 
@@ -66,8 +67,9 @@ export async function POST(request: Request) {
       include: { _count: { select: { products: true } } },
     })
     return NextResponse.json(category, { status: 201 })
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/categories POST]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al crear categoria', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
 
@@ -90,8 +92,9 @@ export async function PUT(request: Request) {
 
     const category = await db.category.update({ where: { id }, data: updateData, include: { _count: { select: { products: true } } } })
     return NextResponse.json(category)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/categories PUT]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al actualizar categoria', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
 
@@ -108,7 +111,8 @@ export async function DELETE(request: Request) {
     const db = await getDb()
     await db.category.delete({ where: { id } })
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/categories DELETE]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al eliminar categoria', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }

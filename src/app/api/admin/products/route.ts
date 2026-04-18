@@ -24,8 +24,9 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     })
     return NextResponse.json(products)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/products GET]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al obtener productos', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
 
@@ -96,7 +97,8 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed'
     if (msg.includes('Unique')) return NextResponse.json({ error: 'Slug ya existe' }, { status: 409 })
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[admin/products POST]', msg)
+    return NextResponse.json({ error: 'Error al crear producto', details: msg }, { status: 500 })
   }
 }
 
@@ -132,7 +134,8 @@ export async function PUT(request: Request) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed'
     if (msg.includes('Unique')) return NextResponse.json({ error: 'Slug ya existe' }, { status: 409 })
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[admin/products PUT]', msg)
+    return NextResponse.json({ error: 'Error al actualizar producto', details: msg }, { status: 500 })
   }
 }
 
@@ -149,7 +152,8 @@ export async function DELETE(request: Request) {
     const db = await getDb()
     await db.product.delete({ where: { id } })
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[admin/products DELETE]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Error al eliminar producto', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
