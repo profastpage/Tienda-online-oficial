@@ -2,17 +2,15 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { signToken, comparePassword, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
 
-// Bcrypt hash for demo123
-const DEMO_PASSWORD_HASH = '$2b$10$Os0Gf3rq3gWmtX4by93Xt.8OdNP8MhStHW41jWTTkbWvIItXXCnf2'
-// Bcrypt hash for cliente123
-const CLIENTE_PASSWORD_HASH = '$2b$10$Xa/6CkIZADH0l5Kr296XNOoAm6nqYbnPPWETD4Dsmk0dYFjSwZImS'
+// Bcrypt hash for admin123 (ALL seed users use the same password)
+const ADMIN_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
 
 // Seed users for fallback when DB is unavailable or empty
 const SEED_USERS = [
   {
     id: 'seed-admin-001',
     email: 'admin@urbanstyle.pe',
-    password: '$2b$10$GVQcWTi4dfqJoiLNcmp0EupYzPu2OO4GO1gWiUAoqvW9hcqpy9AAy',
+    password: ADMIN_PASSWORD_HASH,
     name: 'Admin Urban Style',
     phone: '51999999999',
     address: '',
@@ -24,7 +22,7 @@ const SEED_USERS = [
   {
     id: 'seed-client-001',
     email: 'cliente@email.com',
-    password: '$2b$10$7QKH/7wCqEt6J0ufdz8hG.qpjNeatsnuDZ3WCd/l0bDTONL1nx4aG',
+    password: ADMIN_PASSWORD_HASH,
     name: 'Cliente Demo',
     phone: '51988888888',
     address: '',
@@ -37,7 +35,7 @@ const SEED_USERS = [
   {
     id: 'seed-admin-basico',
     email: 'basico@demo.pe',
-    password: DEMO_PASSWORD_HASH,
+    password: ADMIN_PASSWORD_HASH,
     name: 'Carlos Básico',
     phone: '51999999991',
     address: '',
@@ -49,7 +47,7 @@ const SEED_USERS = [
   {
     id: 'seed-cliente-basico',
     email: 'basico@cliente.com',
-    password: CLIENTE_PASSWORD_HASH,
+    password: ADMIN_PASSWORD_HASH,
     name: 'Cliente Básico',
     phone: '',
     address: '',
@@ -62,7 +60,7 @@ const SEED_USERS = [
   {
     id: 'seed-admin-pro',
     email: 'pro@demo.pe',
-    password: DEMO_PASSWORD_HASH,
+    password: ADMIN_PASSWORD_HASH,
     name: 'María Pro',
     phone: '51999999992',
     address: '',
@@ -74,7 +72,7 @@ const SEED_USERS = [
   {
     id: 'seed-cliente-pro',
     email: 'pro@cliente.com',
-    password: CLIENTE_PASSWORD_HASH,
+    password: ADMIN_PASSWORD_HASH,
     name: 'Cliente Pro',
     phone: '',
     address: '',
@@ -87,7 +85,7 @@ const SEED_USERS = [
   {
     id: 'seed-admin-premium',
     email: 'premium@demo.pe',
-    password: DEMO_PASSWORD_HASH,
+    password: ADMIN_PASSWORD_HASH,
     name: 'Ana Premium',
     phone: '51999999993',
     address: '',
@@ -99,7 +97,7 @@ const SEED_USERS = [
   {
     id: 'seed-cliente-premium',
     email: 'premium@cliente.com',
-    password: CLIENTE_PASSWORD_HASH,
+    password: ADMIN_PASSWORD_HASH,
     name: 'Cliente Premium',
     phone: '',
     address: '',
