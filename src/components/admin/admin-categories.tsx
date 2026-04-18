@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/table'
 import { ImageUpload } from '@/components/image-upload'
 import { useAuthStore } from '@/stores/auth-store'
+import { useToast } from '@/hooks/use-toast'
 
 interface CategoryItem {
   id: string
@@ -76,6 +77,9 @@ function generateSlug(text: string): string {
 
 export function AdminCategories() {
   const user = useAuthStore((s) => s.user)
+  const token = useAuthStore((s) => s.token)
+  const { toast } = useToast()
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
   const [categories, setCategories] = useState<CategoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
@@ -90,12 +94,13 @@ export function AdminCategories() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/categories?storeId=${storeId}`)
+      const res = await fetch(`/api/admin/categories?storeId=${storeId}`, { headers: authHeaders })
       if (res.ok) setCategories(await res.json())
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminCategories] fetch error:', err)
+      toast({ title: 'Error', description: 'No se pudieron cargar las categorias', variant: 'destructive' })
     }
-  }, [storeId])
+  }, [storeId, authHeaders, toast])
 
   useEffect(() => {
     fetchCategories().finally(() => setLoading(false))
@@ -141,16 +146,21 @@ export function AdminCategories() {
 
       const res = await fetch('/api/admin/categories', {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify(payload),
       })
 
       if (res.ok) {
         await fetchCategories()
         setFormOpen(false)
+        toast({ title: editingId ? 'Categoria actualizada' : 'Categoria creada' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo guardar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminCategories] handleSave error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -159,14 +169,19 @@ export function AdminCategories() {
   const handleDelete = async () => {
     if (!deletingId) return
     try {
-      const res = await fetch(`/api/admin/categories?id=${deletingId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/categories?id=${deletingId}`, { method: 'DELETE', headers: authHeaders })
       if (res.ok) {
         setCategories((prev) => prev.filter((c) => c.id !== deletingId))
         setDeleteOpen(false)
         setDeletingId(null)
+        toast({ title: 'Categoria eliminada' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo eliminar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminCategories] handleDelete error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     }
   }
 
@@ -374,7 +389,7 @@ export function AdminCategories() {
                   O ingresa una URL directamente:
                 </p>
               )}
-              {!form.image || true && (
+              {!form.image && (
                 <Input
                   value={form.image}
                   onChange={(e) => setForm({ ...form, image: e.target.value })}

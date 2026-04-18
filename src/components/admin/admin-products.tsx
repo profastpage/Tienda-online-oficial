@@ -53,6 +53,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useAuthStore } from '@/stores/auth-store'
+import { useToast } from '@/hooks/use-toast'
 
 interface Category {
   id: string
@@ -124,6 +125,9 @@ function generateSlug(text: string): string {
 
 export function AdminProducts() {
   const user = useAuthStore((s) => s.user)
+  const token = useAuthStore((s) => s.token)
+  const { toast } = useToast()
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -141,24 +145,26 @@ export function AdminProducts() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/products?storeId=${storeId}`)
+      const res = await fetch(`/api/admin/products?storeId=${storeId}`, { headers: authHeaders })
       if (res.ok) setProducts(await res.json())
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminProducts] fetchProducts error:', err)
+      toast({ title: 'Error', description: 'No se pudieron cargar los productos', variant: 'destructive' })
     }
-  }, [storeId])
+  }, [storeId, authHeaders, toast])
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/categories?storeId=${storeId}`)
+      const res = await fetch(`/api/admin/categories?storeId=${storeId}`, { headers: authHeaders })
       if (res.ok) {
         const data = await res.json()
         setCategories(data.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })))
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminProducts] fetchCategories error:', err)
+      toast({ title: 'Error', description: 'No se pudieron cargar las categorias', variant: 'destructive' })
     }
-  }, [storeId])
+  }, [storeId, authHeaders, toast])
 
   useEffect(() => {
     Promise.all([fetchProducts(), fetchCategories()]).finally(() => setLoading(false))
@@ -168,7 +174,7 @@ export function AdminProducts() {
   useEffect(() => {
     async function fetchPlanLimit() {
       try {
-        const res = await fetch(`/api/admin/settings?storeId=${storeId}`)
+        const res = await fetch(`/api/admin/settings?storeId=${storeId}`, { headers: authHeaders })
         if (res.ok) {
           const storeData = await res.json()
           const plan = storeData.plan || 'basico'
@@ -176,8 +182,8 @@ export function AdminProducts() {
           const limits: Record<string, number> = { free: 1, basico: 1, pro: 2, premium: 4 }
           setPlanLimit(limits[plan] || 1)
         }
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[AdminProducts] fetchPlanLimit error:', err)
       }
     }
     if (storeId) fetchPlanLimit()
@@ -269,16 +275,21 @@ export function AdminProducts() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify(payload),
       })
 
       if (res.ok) {
         await fetchProducts()
         setFormOpen(false)
+        toast({ title: editingId ? 'Producto actualizado' : 'Producto creado' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo guardar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminProducts] handleSave error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -287,14 +298,19 @@ export function AdminProducts() {
   const handleDelete = async () => {
     if (!deletingId) return
     try {
-      const res = await fetch(`/api/admin/products?id=${deletingId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/products?id=${deletingId}`, { method: 'DELETE', headers: authHeaders })
       if (res.ok) {
         setProducts((prev) => prev.filter((p) => p.id !== deletingId))
         setDeleteOpen(false)
         setDeletingId(null)
+        toast({ title: 'Producto eliminado' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo eliminar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminProducts] handleDelete error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     }
   }
 

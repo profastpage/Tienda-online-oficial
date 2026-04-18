@@ -357,10 +357,15 @@ export function AdminSettings() {
         if (user && form.name !== user.storeName) {
           useAuthStore.getState().setUser({ ...user, storeName: form.name })
         }
+        toast({ title: 'Tienda actualizada' })
         setTimeout(() => setSaved(false), 3000)
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo guardar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminSettings] saveStore error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -384,9 +389,10 @@ export function AdminSettings() {
     setPmSaving(true)
     setPmSaved(false)
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch('/api/admin/payment-methods', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           storeId,
           ...paymentForm,
@@ -397,10 +403,15 @@ export function AdminSettings() {
         setPaymentForm({ ...defaultPaymentForm })
         setShowAddForm(false)
         await fetchPaymentMethods()
+        toast({ title: 'Metodo de pago agregado' })
         setTimeout(() => setPmSaved(false), 3000)
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo guardar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminSettings] savePaymentMethod error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setPmSaving(false)
     }
@@ -426,17 +437,23 @@ export function AdminSettings() {
     if (!editingPayment) return
     setEditSaving(true)
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch(`/api/admin/payment-methods/${editingPayment.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(editForm),
       })
       if (res.ok) {
         setEditingPayment(null)
         await fetchPaymentMethods()
+        toast({ title: 'Metodo de pago actualizado' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo actualizar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminSettings] updatePaymentMethod error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setEditSaving(false)
     }
@@ -445,16 +462,18 @@ export function AdminSettings() {
   // Toggle payment method active status
   const handleTogglePayment = async (pm: PaymentMethod) => {
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch(`/api/admin/payment-methods/${pm.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ ...pm, isActive: !pm.isActive }),
       })
       if (res.ok) {
         await fetchPaymentMethods()
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminSettings] togglePayment error:', err)
+      toast({ title: 'Error', description: 'No se pudo cambiar estado', variant: 'destructive' })
     }
   }
 
@@ -463,15 +482,21 @@ export function AdminSettings() {
     if (!deletingPayment) return
     setDeleteSaving(true)
     try {
+      const { token } = useAuthStore.getState()
       const res = await fetch(`/api/admin/payment-methods/${deletingPayment.id}`, {
         method: 'DELETE',
+        ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
       })
       if (res.ok) {
         setDeletingPayment(null)
         await fetchPaymentMethods()
+        toast({ title: 'Metodo de pago eliminado' })
+      } else {
+        toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' })
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[AdminSettings] deletePayment error:', err)
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setDeleteSaving(false)
     }
