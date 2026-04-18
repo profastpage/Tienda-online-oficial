@@ -29,10 +29,17 @@ export default function StorePage() {
     setMounted(true)
   }, [])
 
-  // Check if current user owns this store
+  // Check if current user owns this store (or is an admin)
   useEffect(() => {
     if (!mounted || !user) {
       setIsOwner(false)
+      setCheckingOwner(false)
+      return
+    }
+
+    // Admins can always access the editor
+    if (user.role === 'admin' || user.role === 'super-admin') {
+      setIsOwner(true)
       setCheckingOwner(false)
       return
     }

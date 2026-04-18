@@ -216,7 +216,8 @@ export function CustomerProfile() {
                         formData.append('file', file)
                         formData.append('folder', 'avatars')
                         formData.append('storeSlug', user?.storeSlug || 'store')
-                        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                        const { token: authToken } = useAuthStore.getState()
+                        const res = await fetch('/api/upload', { method: 'POST', body: formData, ...(authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {}) })
                         if (res.ok) {
                           const data = await res.json()
                           setProfile({ ...profile, avatar: data.url })
@@ -241,7 +242,8 @@ export function CustomerProfile() {
                       formData.append('file', file)
                       formData.append('folder', 'avatars')
                       formData.append('storeSlug', user?.storeSlug || 'store')
-                      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                      const { token: authToken2 } = useAuthStore.getState()
+                      const res = await fetch('/api/upload', { method: 'POST', body: formData, ...(authToken2 ? { headers: { Authorization: `Bearer ${authToken2}` } } : {}) })
                       if (res.ok) {
                         const data = await res.json()
                         setProfile({ ...profile, avatar: data.url })

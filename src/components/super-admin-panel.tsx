@@ -499,48 +499,6 @@ export default function SuperAdminPanel() {
                   )}
                 </div>
 
-                {/* ── Demo Store Credentials ── */}
-                <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl p-4 sm:p-5 shadow-lg text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Key className="w-4 h-4 text-amber-400" />
-                    <h3 className="text-sm font-bold">Tiendas Demo - Credenciales</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {[
-                      { plan: 'basico', name: 'Mi Tienda Basica', admin: 'basico@demo.pe', pass: 'demo123', customer: 'basico@cliente.com' },
-                      { plan: 'pro', name: 'TechStore Pro', admin: 'pro@demo.pe', pass: 'demo123', customer: 'pro@cliente.com' },
-                      { plan: 'premium', name: 'Fashion Premium', admin: 'premium@demo.pe', pass: 'demo123', customer: 'premium@cliente.com' },
-                    ].map((demo) => (
-                      <div key={demo.plan} className="bg-white/5 rounded-xl p-3 border border-white/10">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Badge className={`${planColors[demo.plan] || 'bg-neutral-600 text-white'} text-[10px] capitalize border-0 font-bold`}>{demo.plan}</Badge>
-                          <span className="text-[10px] text-neutral-300 truncate">{demo.name}</span>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5">
-                            <Shield className="w-3 h-3 text-amber-400 shrink-0" />
-                            <span className="text-[11px] text-neutral-200 truncate flex-1">{demo.admin}</span>
-                            <button onClick={() => copyToClipboard(demo.admin, `a-${demo.plan}`)} className="p-0.5 rounded hover:bg-white/10 shrink-0">
-                              {copied === `a-${demo.plan}` ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-neutral-500" />}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Key className="w-3 h-3 text-neutral-400 shrink-0" />
-                            <span className="text-[11px] text-neutral-200">{demo.pass}</span>
-                            <button onClick={() => copyToClipboard(demo.pass, `p-${demo.plan}`)} className="p-0.5 rounded hover:bg-white/10 shrink-0">
-                              {copied === `p-${demo.plan}` ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-neutral-500" />}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <UserPlus className="w-3 h-3 text-blue-400 shrink-0" />
-                            <span className="text-[10px] text-neutral-400 truncate flex-1">{demo.customer}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Recent Stores - Cards on all devices */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-neutral-900 px-1">Ultimas Tiendas</h3>

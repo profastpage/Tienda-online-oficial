@@ -381,26 +381,6 @@ function AuthPageContent() {
                     </Button>
                   </form>
 
-                  <div className="mt-6 p-4 bg-neutral-50 rounded-xl border text-sm">
-                    <p className="font-semibold text-neutral-700 mb-2">Tiendas Demo por Plan:</p>
-                    <div className="space-y-1.5 text-neutral-500">
-                      <div>
-                        <p className="text-xs font-medium text-neutral-600">Basico - Mi Tienda Basica</p>
-                        <p className="text-xs">Admin: basico@demo.pe / demo123</p>
-                        <p className="text-xs">Cliente: basico@cliente.com / cliente123</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-neutral-600">Pro - TechStore Pro</p>
-                        <p className="text-xs">Admin: pro@demo.pe / demo123</p>
-                        <p className="text-xs">Cliente: pro@cliente.com / cliente123</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-neutral-600">Premium - Fashion Premium</p>
-                        <p className="text-xs">Admin: premium@demo.pe / demo123</p>
-                        <p className="text-xs">Cliente: premium@cliente.com / cliente123</p>
-                      </div>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
