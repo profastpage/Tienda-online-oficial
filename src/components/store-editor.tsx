@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   X, Save, Loader2, Camera, Plus, Trash2, Pencil,
   Store, Image as ImageIcon, Upload, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Phone, MapPin, MessageSquare,
-  ShoppingBag, ArrowLeft, Package, Tag, Settings, Eye, Edit3
+  ShoppingBag, ArrowLeft, Package, Tag, Settings, Eye, Edit3,
+  ToggleLeft, ToggleRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,12 +43,14 @@ interface Category {
 interface Product {
   id: string
   name: string
+  slug: string
   price: number
   image: string
   images: string
   description: string
   inStock: boolean
-  category: { name: string; slug: string }
+  categoryId: string
+  category: { name: string; slug: string; id: string }
 }
 
 export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; onExit?: () => void }) {
@@ -89,7 +92,23 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
   const [newCategory, setNewCategory] = useState({ name: '', image: '' })
   const [newCategoryUploading, setNewCategoryUploading] = useState(false)
 
-  const getAuthHeaders = useCallback(() => {
+  // Editing product (inline edit for existing product)
+  const [editingProductId, setEditingProductId] = useState<string | null>(null)
+  const [editProductForm, setEditProductForm] = useState({
+    name: '',
+    price: '',
+    description: '',
+    categoryId: '',
+    inStock: true,
+  })
+  const [savingProductId, setSavingProductId] = useState<string | null>(null)
+
+  // Editing category name
+  const [editingCatId, setEditingCatId] = useState<string | null>(null)
+  const [editCatName, setEditCatName] = useState('')
+  const [savingCatId, setSavingCatId] = useState<string | null>(null)
+
+  const getAuthHeaders = useCallback((): Record<string, string> => {
     if (token) return { Authorization: `Bearer ${token}` }
     return {}
   }, [token])
@@ -116,7 +135,6 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
           logo: storeData.logo || '',
         })
       } else {
-        // Fallback: use auth user data when DB fetch fails
         console.warn('[StoreEditor] Store fetch failed, using auth fallback')
         setFetchError(true)
         const fallbackStore: StoreInfo = {
@@ -154,7 +172,6 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
     } catch (err) {
       console.error('[StoreEditor] Fetch error:', err)
       setFetchError(true)
-      // Fallback: use auth user data on network error
       const fallbackStore: StoreInfo = {
         id: user?.storeId || '',
         name: user?.storeName || user?.name || storeSlug,
@@ -193,7 +210,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
     if (!storeInfo?.id) {
       toast({
         title: 'Tienda no inicializada',
-        description: 'No se encontró el ID de la tienda. La tienda necesita ser creada en la base de datos primero. Intenta recargar la página o contacta al soporte.',
+        description: 'No se encontro el ID de la tienda. Intenta recargar la pagina.',
         variant: 'destructive',
       })
       return
@@ -232,10 +249,11 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
     formData.append('file', file)
     formData.append('folder', folder)
     formData.append('storeSlug', storeSlug)
+    const headers = getAuthHeaders()
     const res = await fetch('/api/upload', {
       method: 'POST',
       body: formData,
-      ...getAuthHeaders() ? { headers: getAuthHeaders() } : {},
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
     })
     if (res.ok) {
       const data = await res.json()
@@ -262,6 +280,8 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
     }
     input.click()
   }, [storeSlug])
+
+  // ═══ PRODUCT CRUD ═══
 
   // Add product
   const handleAddProduct = async () => {
@@ -307,7 +327,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
 
   // Delete product
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('¿Eliminar este producto?')) return
+    if (!confirm('Eliminar este producto?')) return
     try {
       const res = await fetch(`/api/admin/products?id=${productId}&storeId=${storeInfo?.id}`, {
         method: 'DELETE',
@@ -315,12 +335,108 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
       })
       if (res.ok) {
         setProducts(prev => prev.filter(p => p.id !== productId))
+        if (editingProductId === productId) setEditingProductId(null)
         toast({ title: 'Producto eliminado' })
       }
     } catch {
       toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' })
     }
   }
+
+  // Open edit form for a product
+  const handleStartEditProduct = (product: Product) => {
+    setEditingProductId(product.id)
+    setEditProductForm({
+      name: product.name,
+      price: String(product.price),
+      description: product.description || '',
+      categoryId: product.categoryId || product.category?.id || '',
+      inStock: product.inStock !== false,
+    })
+  }
+
+  // Save edited product (name, price, description, category, stock)
+  const handleSaveEditProduct = async (productId: string) => {
+    if (!editProductForm.name || !editProductForm.price) {
+      toast({ title: 'Error', description: 'Nombre y precio son obligatorios', variant: 'destructive' })
+      return
+    }
+    setSavingProductId(productId)
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          id: productId,
+          storeId: storeInfo?.id,
+          name: editProductForm.name,
+          price: parseFloat(editProductForm.price),
+          description: editProductForm.description,
+          categoryId: editProductForm.categoryId || undefined,
+          inStock: editProductForm.inStock,
+          slug: editProductForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...updated } : p))
+        setEditingProductId(null)
+        toast({ title: 'Producto actualizado' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo actualizar', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
+    } finally {
+      setSavingProductId(null)
+    }
+  }
+
+  // Toggle product stock status (quick action)
+  const handleToggleStock = async (product: Product) => {
+    try {
+      const newStock = !product.inStock
+      const res = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          id: product.id,
+          storeId: storeInfo?.id,
+          inStock: newStock,
+        }),
+      })
+      if (res.ok) {
+        setProducts(prev => prev.map(p => p.id === product.id ? { ...p, inStock: newStock } : p))
+        toast({ title: newStock ? 'Producto en stock' : 'Producto sin stock' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo actualizar', variant: 'destructive' })
+    }
+  }
+
+  // Update product image
+  const handleProductImageChange = async (productId: string, newUrl: string) => {
+    try {
+      const res = await fetch(`/api/admin/products`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          id: productId,
+          storeId: storeInfo?.id,
+          image: newUrl,
+        }),
+      })
+      if (res.ok) {
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, image: newUrl } : p))
+        toast({ title: 'Imagen actualizada' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo actualizar', variant: 'destructive' })
+    }
+  }
+
+  // ═══ CATEGORY CRUD ═══
 
   // Add category
   const handleAddCategory = async () => {
@@ -360,7 +476,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
 
   // Delete category
   const handleDeleteCategory = async (catId: string) => {
-    if (!confirm('¿Eliminar esta categoria?')) return
+    if (!confirm('Eliminar esta categoria?')) return
     try {
       const res = await fetch(`/api/admin/categories?id=${catId}&storeId=${storeInfo?.id}`, {
         method: 'DELETE',
@@ -375,31 +491,45 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
     }
   }
 
-  // Update product image
-  const handleProductImageChange = async (productId: string, newUrl: string) => {
+  // Save edited category name
+  const handleSaveEditCategory = async (catId: string) => {
+    if (!editCatName.trim()) {
+      toast({ title: 'Error', description: 'El nombre no puede estar vacio', variant: 'destructive' })
+      return
+    }
+    setSavingCatId(catId)
     try {
-      const res = await fetch(`/api/admin/products`, {
+      const res = await fetch('/api/admin/categories', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
-          id: productId,
+          id: catId,
           storeId: storeInfo?.id,
-          image: newUrl,
+          name: editCatName.trim(),
+          slug: editCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         }),
       })
       if (res.ok) {
-        setProducts(prev => prev.map(p => p.id === productId ? { ...p, image: newUrl } : p))
-        toast({ title: 'Imagen actualizada' })
+        setCategories(prev => prev.map(c => c.id === catId ? { ...c, name: editCatName.trim(), slug: editCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') } : c))
+        // Also update products referencing this category
+        setProducts(prev => prev.map(p => p.category?.id === catId ? { ...p, category: { ...p.category, name: editCatName.trim() } } : p))
+        setEditingCatId(null)
+        toast({ title: 'Categoria actualizada' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo actualizar', variant: 'destructive' })
       }
     } catch {
-      toast({ title: 'Error', description: 'No se pudo actualizar', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
+    } finally {
+      setSavingCatId(null)
     }
   }
 
   // Update category image
   const handleCategoryImageChange = async (catId: string, newUrl: string) => {
     try {
-      const res = await fetch(`/api/admin/categories`, {
+      const res = await fetch('/api/admin/categories', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
@@ -416,6 +546,8 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
       toast({ title: 'Error', description: 'No se pudo actualizar', variant: 'destructive' })
     }
   }
+
+  // ═══ LOADING / ERROR STATES ═══
 
   if (loading) {
     return (
@@ -439,8 +571,8 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
           </p>
           <p className="text-xs text-neutral-400 mb-4">
             {hasStoreId
-              ? 'No se pudieron cargar los datos completos de la tienda desde la base de datos. Puedes continuar editando con los datos básicos o reintentar la conexión.'
-              : 'No se encontró información de la tienda. Verifica que estés autenticado correctamente.'}
+              ? 'No se pudieron cargar los datos completos de la tienda. Puedes continuar editando con los datos basicos o reintentar la conexion.'
+              : 'No se encontro informacion de la tienda. Verifica que estes autenticado correctamente.'}
           </p>
           <Button
             variant="outline"
@@ -455,6 +587,8 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
       </div>
     )
   }
+
+  // ═══ MAIN RENDER ═══
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
@@ -547,7 +681,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
       )}
 
       {/* Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24">
 
         {/* ═══ STORE SETTINGS SECTION ═══ */}
         {activeSection === 'store' && (
@@ -791,44 +925,200 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
                 <p className="text-xs text-neutral-400 mt-1">Agrega tu primer producto para comenzar</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="space-y-3 sm:space-y-4">
                 {products.map(product => (
-                  <div key={product.id} className="bg-white rounded-xl border overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
-                    {/* Product Image - Clickable to change */}
-                    <div
-                      className="relative aspect-square bg-neutral-100 cursor-pointer"
-                      onClick={() => handleFileInput('image/jpeg,image/png,image/webp', 'products', (url) => handleProductImageChange(product.id, url))}
-                    >
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="w-8 h-8 text-neutral-300" />
+                  <Card key={product.id} className="rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-0">
+                      <div className="flex flex-col sm:flex-row">
+                        {/* Product Image - Clickable to change */}
+                        <div
+                          className="relative w-full sm:w-32 h-40 sm:h-auto bg-neutral-100 cursor-pointer shrink-0"
+                          onClick={() => handleFileInput('image/jpeg,image/png,image/webp', 'products', (url) => handleProductImageChange(product.id, url))}
+                        >
+                          {product.image ? (
+                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="w-8 h-8 text-neutral-300" />
+                            </div>
+                          )}
+                          {/* Hover overlay for camera */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="bg-white rounded-full p-2 shadow-lg">
+                              <Camera className="w-4 h-4 text-neutral-700" />
+                            </div>
+                          </div>
+                          {/* Stock indicator */}
+                          <div className="absolute top-2 right-2">
+                            <Badge className={`text-[9px] px-1.5 py-0 ${product.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                              {product.inStock ? 'En stock' : 'Sin stock'}
+                            </Badge>
+                          </div>
+                          {/* Price badge */}
+                          <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-lg">
+                            <span className="text-xs font-bold text-neutral-900">S/ {product.price?.toFixed(2)}</span>
+                          </div>
                         </div>
-                      )}
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <div className="bg-white rounded-full p-2 shadow-lg">
-                          <Camera className="w-4 h-4 text-neutral-700" />
+
+                        {/* Product Info + Actions */}
+                        <div className="flex-1 p-3 sm:p-4">
+                          {editingProductId === product.id ? (
+                            /* ═══ INLINE EDIT FORM ═══ */
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-bold text-neutral-900">Editando producto</p>
+                                <button onClick={() => setEditingProductId(null)} className="text-neutral-400 hover:text-neutral-600">
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-neutral-500">Nombre</Label>
+                                  <Input
+                                    value={editProductForm.name}
+                                    onChange={(e) => setEditProductForm({ ...editProductForm, name: e.target.value })}
+                                    className="h-8 rounded-lg text-sm"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-neutral-500">Precio (S/)</Label>
+                                  <Input
+                                    value={editProductForm.price}
+                                    onChange={(e) => setEditProductForm({ ...editProductForm, price: e.target.value })}
+                                    type="number"
+                                    step="0.01"
+                                    className="h-8 rounded-lg text-sm"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-medium text-neutral-500">Descripcion</Label>
+                                <Textarea
+                                  value={editProductForm.description}
+                                  onChange={(e) => setEditProductForm({ ...editProductForm, description: e.target.value })}
+                                  rows={2}
+                                  className="rounded-lg text-sm resize-none"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-medium text-neutral-500">Categoria</Label>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {categories.map(cat => (
+                                    <button
+                                      key={cat.id}
+                                      onClick={() => setEditProductForm({ ...editProductForm, categoryId: cat.id })}
+                                      className={`text-[10px] px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                                        editProductForm.categoryId === cat.id
+                                          ? 'bg-neutral-900 text-white'
+                                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                      }`}
+                                    >
+                                      {cat.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 pt-1">
+                                {/* Stock Toggle */}
+                                <button
+                                  onClick={() => setEditProductForm({ ...editProductForm, inStock: !editProductForm.inStock })}
+                                  className="flex items-center gap-1.5 text-xs"
+                                >
+                                  {editProductForm.inStock ? (
+                                    <ToggleRight className="w-5 h-5 text-green-600" />
+                                  ) : (
+                                    <ToggleLeft className="w-5 h-5 text-neutral-400" />
+                                  )}
+                                  <span className={editProductForm.inStock ? 'text-green-700 font-medium' : 'text-neutral-400'}>
+                                    {editProductForm.inStock ? 'En stock' : 'Sin stock'}
+                                  </span>
+                                </button>
+
+                                <div className="flex-1" />
+
+                                {/* Save / Cancel */}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingProductId(null)}
+                                  className="text-xs h-7 rounded-lg"
+                                >
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveEditProduct(product.id)}
+                                  disabled={savingProductId === product.id}
+                                  className="text-xs h-7 rounded-lg bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                                >
+                                  {savingProductId === product.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <><Save className="w-3 h-3" /> Guardar</>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* ═══ PRODUCT VIEW ═══ */
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold text-neutral-900 truncate">{product.name}</p>
+                                  <p className="text-[10px] text-neutral-400 mt-0.5">{product.category?.name || 'Sin categoria'}</p>
+                                </div>
+                                <p className="text-sm font-bold text-neutral-900 shrink-0">S/ {product.price?.toFixed(2)}</p>
+                              </div>
+
+                              {product.description && (
+                                <p className="text-[11px] text-neutral-500 mt-1.5 line-clamp-2">{product.description}</p>
+                              )}
+
+                              {/* Actions row */}
+                              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-neutral-100">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleStartEditProduct(product)}
+                                  className="text-[10px] h-6 px-2 rounded-md gap-1"
+                                >
+                                  <Pencil className="w-3 h-3" /> Editar
+                                </Button>
+
+                                <button
+                                  onClick={() => handleToggleStock(product)}
+                                  className={`text-[10px] h-6 px-2 rounded-md flex items-center gap-1 transition-colors ${
+                                    product.inStock
+                                      ? 'text-amber-600 hover:bg-amber-50'
+                                      : 'text-green-600 hover:bg-green-50'
+                                  }`}
+                                >
+                                  {product.inStock ? (
+                                    <><ToggleRight className="w-3.5 h-3.5" /> Pausar</>
+                                  ) : (
+                                    <><ToggleLeft className="w-3.5 h-3.5" /> Activar</>
+                                  )}
+                                </button>
+
+                                <div className="flex-1" />
+
+                                <button
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="text-[10px] h-6 px-2 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors"
+                                >
+                                  <Trash2 className="w-3 h-3" /> Eliminar
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {/* Price badge */}
-                      <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-lg">
-                        <span className="text-xs font-bold text-neutral-900">S/ {product.price?.toFixed(2)}</span>
-                      </div>
-                    </div>
-                    {/* Product Info */}
-                    <div className="p-2.5 sm:p-3">
-                      <p className="text-xs sm:text-sm font-medium text-neutral-900 truncate">{product.name}</p>
-                      <p className="text-[10px] text-neutral-400 truncate">{product.category?.name || 'Sin categoria'}</p>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="mt-2 text-[10px] text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" /> Eliminar
-                      </button>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
@@ -895,7 +1185,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
               )}
             </AnimatePresence>
 
-            {/* Categories Grid */}
+            {/* Categories Grid - now with inline name editing */}
             {categories.length === 0 ? (
               <div className="bg-white rounded-2xl border p-8 sm:p-12 text-center">
                 <Tag className="w-12 h-12 mx-auto mb-3 text-neutral-200" />
@@ -903,36 +1193,89 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
                 <p className="text-xs text-neutral-400 mt-1">Crea categorias para organizar tus productos</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {categories.map(cat => (
-                  <div key={cat.id} className="bg-white rounded-xl border overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
-                    <div
-                      className="relative aspect-video bg-neutral-100 cursor-pointer"
-                      onClick={() => handleFileInput('image/jpeg,image/png,image/webp', 'categories', (url) => handleCategoryImageChange(cat.id, url))}
-                    >
-                      {cat.image ? (
-                        <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="w-8 h-8 text-neutral-300" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="bg-white rounded-full p-2 shadow-lg">
-                          <Camera className="w-4 h-4 text-neutral-700" />
+                  <Card key={cat.id} className="rounded-xl border overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-0">
+                      {/* Category Image */}
+                      <div
+                        className="relative aspect-video bg-neutral-100 cursor-pointer"
+                        onClick={() => handleFileInput('image/jpeg,image/png,image/webp', 'categories', (url) => handleCategoryImageChange(cat.id, url))}
+                      >
+                        {cat.image ? (
+                          <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="w-8 h-8 text-neutral-300" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="bg-white rounded-full p-2 shadow-lg">
+                            <Camera className="w-4 h-4 text-neutral-700" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="p-2.5 sm:p-3 flex items-center justify-between">
-                      <p className="text-xs sm:text-sm font-medium text-neutral-900 truncate">{cat.name}</p>
-                      <button
-                        onClick={() => handleDeleteCategory(cat.id)}
-                        className="shrink-0 text-red-500 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+
+                      {/* Category Name + Actions */}
+                      <div className="p-3">
+                        {editingCatId === cat.id ? (
+                          /* Inline edit category name */
+                          <div className="space-y-2">
+                            <Input
+                              value={editCatName}
+                              onChange={(e) => setEditCatName(e.target.value)}
+                              className="h-8 rounded-lg text-sm"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveEditCategory(cat.id)
+                                if (e.key === 'Escape') setEditingCatId(null)
+                              }}
+                            />
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingCatId(null)}
+                                className="text-[10px] h-6 rounded-md"
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveEditCategory(cat.id)}
+                                disabled={savingCatId === cat.id}
+                                className="text-[10px] h-6 rounded-md bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                              >
+                                {savingCatId === cat.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <><Save className="w-3 h-3" /> Guardar</>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-neutral-900 truncate">{cat.name}</p>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name) }}
+                                className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                className="p-1.5 rounded-md text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
@@ -944,16 +1287,13 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
       <AnimatePresence>
         {hasChanges && (
           <motion.div
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            exit={{ y: 100 }}
-            className="fixed bottom-0 left-0 right-0 z-50 p-3 sm:p-4"
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-neutral-900 text-white border-t shadow-lg"
           >
-            <div className="max-w-lg mx-auto bg-neutral-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-400" />
-                <span className="text-xs sm:text-sm font-medium">Cambios sin guardar</span>
-              </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+              <p className="text-xs text-neutral-300">Tienes cambios sin guardar en la configuracion de la tienda</p>
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -968,7 +1308,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
                     })
                     setHasChanges(false)
                   }}
-                  className="text-xs text-white/70 hover:text-white hover:bg-white/10 h-8 rounded-lg"
+                  className="text-xs h-7 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800"
                 >
                   Descartar
                 </Button>
@@ -976,10 +1316,9 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
                   size="sm"
                   onClick={handleSaveAll}
                   disabled={saving}
-                  className="text-xs bg-green-500 hover:bg-green-600 text-white h-8 rounded-lg gap-1.5"
+                  className="text-xs h-7 rounded-lg bg-green-600 hover:bg-green-700 text-white gap-1"
                 >
-                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Guardar
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Save className="w-3 h-3" /> Guardar Cambios</>}
                 </Button>
               </div>
             </div>
