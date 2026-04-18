@@ -62,6 +62,7 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [activeSection, setActiveSection] = useState<'store' | 'products' | 'categories'>('store')
+  const [fetchError, setFetchError] = useState(false)
 
   // Store settings form
   const [storeForm, setStoreForm] = useState({
@@ -94,43 +95,109 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
   }, [token])
 
   // Fetch all data
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [storeRes, catsRes, prodsRes] = await Promise.all([
-          fetch(`/api/store/info?slug=${storeSlug}`),
-          fetch(`/api/categories?store=${storeSlug}`),
-          fetch(`/api/products?store=${storeSlug}`),
-        ])
+  const fetchStoreData = useCallback(async () => {
+    setLoading(true)
+    setFetchError(false)
+    try {
+      const [storeRes, catsRes, prodsRes] = await Promise.all([
+        fetch(`/api/store/info?slug=${storeSlug}`),
+        fetch(`/api/categories?store=${storeSlug}`),
+        fetch(`/api/products?store=${storeSlug}`),
+      ])
 
-        if (storeRes.ok) {
-          const storeData = await storeRes.json()
-          setStoreInfo(storeData)
-          setStoreForm({
-            name: storeData.name || '',
-            description: storeData.description || '',
-            whatsappNumber: storeData.whatsappNumber || '',
-            address: storeData.address || '',
-            logo: storeData.logo || '',
-          })
+      if (storeRes.ok) {
+        const storeData = await storeRes.json()
+        setStoreInfo(storeData)
+        setStoreForm({
+          name: storeData.name || '',
+          description: storeData.description || '',
+          whatsappNumber: storeData.whatsappNumber || '',
+          address: storeData.address || '',
+          logo: storeData.logo || '',
+        })
+      } else {
+        // Fallback: use auth user data when DB fetch fails
+        console.warn('[StoreEditor] Store fetch failed, using auth fallback')
+        setFetchError(true)
+        const fallbackStore: StoreInfo = {
+          id: user?.storeId || '',
+          name: user?.storeName || user?.name || storeSlug,
+          slug: storeSlug,
+          logo: user?.avatar || '',
+          description: '',
+          whatsappNumber: '',
+          address: '',
+          plan: 'basico',
+          isActive: true,
         }
-        if (catsRes.ok) setCategories(await catsRes.json())
-        if (prodsRes.ok) setProducts(await prodsRes.json())
-      } catch (err) {
-        console.error('[StoreEditor] Fetch error:', err)
-      } finally {
-        setLoading(false)
+        setStoreInfo(fallbackStore)
+        setStoreForm({
+          name: fallbackStore.name,
+          description: '',
+          whatsappNumber: '',
+          address: '',
+          logo: '',
+        })
       }
+      if (catsRes.ok) {
+        const catsData = await catsRes.json()
+        setCategories(Array.isArray(catsData) ? catsData : [])
+      } else {
+        setCategories([])
+      }
+      if (prodsRes.ok) {
+        const prodsData = await prodsRes.json()
+        setProducts(Array.isArray(prodsData) ? prodsData : [])
+      } else {
+        setProducts([])
+      }
+    } catch (err) {
+      console.error('[StoreEditor] Fetch error:', err)
+      setFetchError(true)
+      // Fallback: use auth user data on network error
+      const fallbackStore: StoreInfo = {
+        id: user?.storeId || '',
+        name: user?.storeName || user?.name || storeSlug,
+        slug: storeSlug,
+        logo: user?.avatar || '',
+        description: '',
+        whatsappNumber: '',
+        address: '',
+        plan: 'basico',
+        isActive: true,
+      }
+      setStoreInfo(fallbackStore)
+      setStoreForm({
+        name: fallbackStore.name,
+        description: '',
+        whatsappNumber: '',
+        address: '',
+        logo: '',
+      })
+      setCategories([])
+      setProducts([])
+    } finally {
+      setLoading(false)
     }
-    fetchData()
-  }, [storeSlug])
+  }, [storeSlug, user])
+
+  useEffect(() => {
+    fetchStoreData()
+  }, [fetchStoreData])
 
   // Mark changes
   const markChanged = () => setHasChanges(true)
 
   // Save store settings
   const saveStoreSettings = async () => {
-    if (!storeInfo?.id) return
+    if (!storeInfo?.id) {
+      toast({
+        title: 'Tienda no inicializada',
+        description: 'No se encontró el ID de la tienda. La tienda necesita ser creada en la base de datos primero. Intenta recargar la página o contacta al soporte.',
+        variant: 'destructive',
+      })
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch('/api/admin/settings', {
@@ -362,11 +429,28 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
   }
 
   if (!storeInfo) {
+    const hasStoreId = !!user?.storeId
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="text-center p-8">
-          <Store className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-          <p className="text-sm text-neutral-500">Tienda no encontrada</p>
+        <div className="text-center p-8 max-w-sm">
+          <Store className={`w-12 h-12 mx-auto mb-3 ${hasStoreId ? 'text-amber-400' : 'text-neutral-300'}`} />
+          <p className="text-sm font-medium text-neutral-700 mb-1">
+            {hasStoreId ? 'Datos de tienda no disponibles' : 'Tienda no encontrada'}
+          </p>
+          <p className="text-xs text-neutral-400 mb-4">
+            {hasStoreId
+              ? 'No se pudieron cargar los datos completos de la tienda desde la base de datos. Puedes continuar editando con los datos básicos o reintentar la conexión.'
+              : 'No se encontró información de la tienda. Verifica que estés autenticado correctamente.'}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchStoreData()}
+            className="text-xs gap-1.5 rounded-lg"
+          >
+            <Loader2 className="w-3.5 h-3.5" />
+            Reintentar
+          </Button>
         </div>
       </div>
     )
@@ -439,6 +523,28 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
           </div>
         </div>
       </div>
+
+      {/* Fetch Error Warning Banner */}
+      {fetchError && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+              <p className="text-xs text-amber-700 truncate">
+                Los datos de la tienda se cargaron desde tu cuenta. Algunos datos pueden estar incompletos.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchStoreData()}
+              className="shrink-0 text-xs gap-1.5 h-7 rounded-lg border-amber-300 text-amber-700 hover:bg-amber-100"
+            >
+              Reintentar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
