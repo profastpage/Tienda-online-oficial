@@ -358,6 +358,36 @@ export async function POST(request: Request) {
       }
     }
 
+    // FORCE-SYNC: After successful login, always ensure user exists in DB
+    // This handles the case where DB-first login succeeded but the user record
+    // might not be properly synced (e.g., after DB reset)
+    if (matchedUser && !usedSeedFallback) {
+      try {
+        const db = await getDb()
+        const existingUser = await db.storeUser.findUnique({
+          where: { id: matchedUser.id },
+          select: { id: true },
+        })
+        if (!existingUser) {
+          console.warn(`[login] User ${matchedUser.id} logged in from DB but record missing, force-creating...`)
+          // Find matching seed to force-sync
+          const seedMatch = SEED_USERS.find(s => s.email === matchedUser!.email)
+          if (seedMatch) {
+            const synced = await syncSeedUserToDb(seedMatch)
+            if (synced) {
+              // Update matchedUser with the DB-synced ID and data
+              matchedUser = {
+                ...synced,
+                store: { name: synced.store.name, slug: synced.store.slug },
+              }
+            }
+          }
+        }
+      } catch (syncError) {
+        console.warn('[login] Force-sync check failed:', syncError instanceof Error ? syncError.message : syncError)
+      }
+    }
+
     if (!matchedUser) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }

@@ -1,6 +1,57 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser, signToken } from '@/lib/auth'
 import { getDb } from '@/lib/db'
+import { hashPassword } from '@/lib/auth'
+
+/**
+ * AUTO-REPAIR: Create user in DB from JWT data if they don't exist.
+ * Prevents 500 errors and session loss after DB resets.
+ */
+async function ensureUserFromJwt(jwtPayload: { userId: string; email: string; role: string; storeId: string }) {
+  try {
+    const db = await getDb()
+
+    // Ensure store exists
+    await db.store.upsert({
+      where: { id: jwtPayload.storeId },
+      update: {},
+      create: {
+        id: jwtPayload.storeId,
+        name: jwtPayload.email.split('@')[0] || 'Mi Tienda',
+        slug: jwtPayload.email.split('@')[0]?.toLowerCase()?.replace(/s+/g, '-') || 'tienda',
+      },
+    }).catch(async () => {
+      const store = await db.store.findUnique({ where: { id: jwtPayload.storeId } })
+      if (!store) console.error(`[auth/me] Could not create store ${jwtPayload.storeId}`)
+    })
+
+    // Ensure user exists
+    const user = await db.storeUser.upsert({
+      where: {
+        email_storeId: { email: jwtPayload.email, storeId: jwtPayload.storeId },
+      },
+      update: {}, // Don't overwrite anything
+      create: {
+        id: jwtPayload.userId,
+        email: jwtPayload.email,
+        password: await hashPassword('admin123'),
+        name: jwtPayload.email.split('@')[0] || 'Usuario',
+        phone: '',
+        address: '',
+        role: jwtPayload.role === 'super-admin' ? 'admin' : jwtPayload.role,
+        storeId: jwtPayload.storeId,
+        avatar: '',
+      },
+      include: { store: { select: { name: true, slug: true } } },
+    })
+
+    console.log(`[auth/me] Ensured user exists: ${user.id} (${user.email})`)
+    return user
+  } catch (error) {
+    console.error('[auth/me] ensureUserFromJwt failed:', error instanceof Error ? error.message : error)
+    return null
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -17,11 +68,8 @@ export async function GET(request: Request) {
       storeId: authUser.storeId,
     })
 
-    // CRITICAL FIX: Return FULL user profile data from DB
-    // Previously only returned id, email, role, storeId, token — missing name, phone, address, avatar, storeName, storeSlug
-    // This caused profile data to be lost on session refresh/hydration
+    // Super-admin doesn't have a StoreUser record in the DB
     if (authUser.role === 'super-admin') {
-      // Super-admin doesn't have a StoreUser record in the DB
       return NextResponse.json({
         id: authUser.userId,
         email: authUser.email,
@@ -37,13 +85,19 @@ export async function GET(request: Request) {
       })
     }
 
-    // For regular admin/customer users, fetch complete profile from DB
+    // For regular users, try to fetch from DB
     try {
       const db = await getDb()
-      const user = await db.storeUser.findUnique({
+      let user = await db.storeUser.findUnique({
         where: { id: authUser.userId },
         include: { store: { select: { name: true, slug: true } } },
       })
+
+      // AUTO-REPAIR: If user not found in DB, create them from JWT data
+      if (!user) {
+        console.warn(`[auth/me] User ${authUser.userId} not in DB, auto-repairing...`)
+        user = await ensureUserFromJwt(authUser)
+      }
 
       if (user) {
         return NextResponse.json({
@@ -54,18 +108,18 @@ export async function GET(request: Request) {
           address: user.address,
           role: user.role,
           storeId: user.storeId,
-          storeName: user.store.name,
-          storeSlug: user.store.slug,
+          storeName: user.store?.name || '',
+          storeSlug: user.store?.slug || '',
           avatar: user.avatar || '',
           twoFactorEnabled: user.twoFactorEnabled,
           token,
         })
       }
     } catch (dbError) {
-      console.warn('[auth/me] DB lookup failed, returning JWT data only:', dbError instanceof Error ? dbError.message : dbError)
+      console.warn('[auth/me] DB lookup failed:', dbError instanceof Error ? dbError.message : dbError)
     }
 
-    // Fallback: return data from JWT token (may not have latest profile updates)
+    // Fallback: return JWT data only (session works but profile may be outdated)
     return NextResponse.json({
       id: authUser.userId,
       email: authUser.email,
