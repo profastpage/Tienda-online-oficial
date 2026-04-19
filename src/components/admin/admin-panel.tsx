@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import {
   LayoutDashboard,
   Package,
@@ -17,6 +18,7 @@ import {
   Crown,
   Bot,
   ExternalLink,
+  Edit3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -257,14 +259,24 @@ export function AdminPanel() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Editor de Tienda Button */}
+              <Link href={`/${user?.storeSlug || ''}/editordetienda`}>
+                <Button
+                  size="sm"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-medium hover:from-violet-700 hover:to-indigo-700 transition-all shadow-sm"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Editor de Tienda
+                </Button>
+              </Link>
               <a
                 href={`/${user?.storeSlug || ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-medium hover:from-violet-700 hover:to-indigo-700 transition-all shadow-sm"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-all shadow-sm"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Tienda Oficial
+                Ver Tienda
               </a>
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 border border-neutral-200">
                 <Store className="w-3.5 h-3.5 text-neutral-400" />

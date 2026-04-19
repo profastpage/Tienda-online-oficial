@@ -1,22 +1,22 @@
 'use client'
 
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { useEffect, useState, useCallback } from 'react'
-import { ShoppingBag, Edit3, Eye, X, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ShoppingBag, Edit3, ExternalLink, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth-store'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 
 const Storefront = dynamic(() => import('@/components/storefront'), { ssr: false })
-const StoreEditor = dynamic(() => import('@/components/store-editor'), { ssr: false })
 
 export default function StorePage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   const [mounted, setMounted] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
-  const [editMode, setEditMode] = useState(false)
   const [checkingOwner, setCheckingOwner] = useState(true)
   const user = useAuthStore((s) => s.user)
   const hydrate = useAuthStore((s) => s.hydrate)
@@ -75,16 +75,6 @@ export default function StorePage() {
     )
   }
 
-  // Show editor mode for store owner
-  if (editMode && isOwner) {
-    return (
-      <StoreEditor
-        storeSlug={slug}
-        onExit={() => setEditMode(false)}
-      />
-    )
-  }
-
   return (
     <div className="relative">
       {/* Storefront - always visible */}
@@ -92,9 +82,9 @@ export default function StorePage() {
 
       {/* Edit Mode Toggle - only for store owner */}
       <AnimatePresence>
-        {isOwner && !checkingOwner && !editMode && (
+        {isOwner && !checkingOwner && (
           <>
-            {/* Floating Edit Button */}
+            {/* Floating Edit Button - Navigate to dedicated editor route */}
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -102,13 +92,14 @@ export default function StorePage() {
               transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 20 }}
               className="fixed bottom-6 right-6 z-50"
             >
-              <Button
-                onClick={() => setEditMode(true)}
-                className="h-14 w-14 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:scale-105 group"
-                size="icon"
-              >
-                <Edit3 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-              </Button>
+              <Link href={`/${slug}/editordetienda`}>
+                <Button
+                  className="h-14 w-14 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:scale-105 group"
+                  size="icon"
+                >
+                  <Edit3 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                </Button>
+              </Link>
               <p className="text-center text-[10px] font-medium text-neutral-500 mt-1.5">Editar Tienda</p>
             </motion.div>
 
@@ -123,12 +114,12 @@ export default function StorePage() {
               <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-center py-1.5 px-4 text-xs font-medium">
                 <div className="flex items-center justify-center gap-2">
                   <span>Eres el propietario de esta tienda</span>
-                  <button
-                    onClick={() => setEditMode(true)}
+                  <Link 
+                    href={`/${slug}/editordetienda`}
                     className="bg-white/20 hover:bg-white/30 px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 transition-colors"
                   >
                     <Edit3 className="w-3 h-3" /> Editar
-                  </button>
+                  </Link>
                 </div>
               </div>
             </motion.div>
