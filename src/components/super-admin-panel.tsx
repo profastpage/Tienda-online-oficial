@@ -171,12 +171,15 @@ export default function SuperAdminPanel() {
 
   const apiCall = useCallback(async (body: Record<string, any>) => {
     const t = token || localStorage.getItem('auth-token')
+    console.log('[super-admin-panel] apiCall:', body)
     const res = await fetch('/api/super-admin', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
       body: JSON.stringify(body),
     })
-    return res.json()
+    const json = await res.json()
+    console.log('[super-admin-panel] apiCall response:', json)
+    return json
   }, [token])
 
   const fetchData = useCallback(async () => {

@@ -65,9 +65,11 @@ export async function GET(request: Request) {
         description: string
         isActive: number
         plan: string
+        subscriptionExpiresAt: string | null
+        trialDays: number
         createdAt: Date
         updatedAt: Date
-      }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, createdAt, updatedAt FROM Store ORDER BY createdAt DESC`
+      }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, subscriptionExpiresAt, trialDays, createdAt, updatedAt FROM Store ORDER BY createdAt DESC`
       
       // Get counts for each store
       stores = await Promise.all(rawStores.map(async (store) => {
@@ -234,9 +236,14 @@ export async function PATCH(request: Request) {
     // ── Toggle Store Active/Suspended ──
     if (action === 'toggle-store') {
       const { storeId, isActive } = body
-      if (!storeId || typeof isActive !== 'boolean') return NextResponse.json({ error: 'Datos requeridos' }, { status: 400 })
+      console.log('[super-admin] toggle-store:', { storeId, isActive, isActiveType: typeof isActive })
+      if (!storeId || typeof isActive !== 'boolean') {
+        console.log('[super-admin] toggle-store validation failed:', { storeId, isActiveType: typeof isActive })
+        return NextResponse.json({ error: 'Datos requeridos', received: { storeId, isActive, isActiveType: typeof isActive } }, { status: 400 })
+      }
       
-      await db.$executeRaw`UPDATE Store SET isActive = ${isActive ? 1 : 0}, updatedAt = ${new Date().toISOString()} WHERE id = ${storeId}`
+      const result = await db.$executeRaw`UPDATE Store SET isActive = ${isActive ? 1 : 0}, updatedAt = ${new Date().toISOString()} WHERE id = ${storeId}`
+      console.log('[super-admin] UPDATE result:', result)
       
       const stores = await db.$queryRaw<{
         id: string
@@ -250,6 +257,7 @@ export async function PATCH(request: Request) {
         plan: string
       }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan FROM Store WHERE id = ${storeId}`
       
+      console.log('[super-admin] Store after update:', stores[0])
       return NextResponse.json({ success: true, message: `Tienda ${isActive ? 'activada' : 'suspendida'}`, store: stores[0] })
     }
 
@@ -386,19 +394,24 @@ export async function PATCH(request: Request) {
     // ── Set Subscription Expiry / Extend Time ──
     if (action === 'set-subscription' || action === 'grant-trial') {
       const { storeId, days } = body
+      console.log('[super-admin] set-subscription:', { storeId, days, daysType: typeof days })
+      
       if (!storeId || !days || typeof days !== 'number' || days <= 0) {
-        return NextResponse.json({ error: 'storeId y days (numero positivo) requeridos' }, { status: 400 })
+        console.log('[super-admin] set-subscription validation failed')
+        return NextResponse.json({ error: 'storeId y days (numero positivo) requeridos', received: { storeId, days, daysType: typeof days } }, { status: 400 })
       }
 
       // Calculate expiry date from now
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + days)
+      console.log('[super-admin] Setting expiry to:', expiresAt.toISOString())
 
-      await db.$executeRaw`
+      const updateResult = await db.$executeRaw`
         UPDATE Store
         SET subscriptionExpiresAt = ${expiresAt.toISOString()}, updatedAt = ${new Date().toISOString()}
         WHERE id = ${storeId}
       `
+      console.log('[super-admin] Subscription UPDATE result:', updateResult)
 
       const stores = await db.$queryRaw<{
         id: string
@@ -406,6 +419,8 @@ export async function PATCH(request: Request) {
         slug: string
         subscriptionExpiresAt: string | null
       }[]>`SELECT id, name, slug, subscriptionExpiresAt FROM Store WHERE id = ${storeId}`
+      
+      console.log('[super-admin] Store after subscription update:', stores[0])
 
       return NextResponse.json({
         success: true,
