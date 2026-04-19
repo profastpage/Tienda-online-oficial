@@ -180,30 +180,41 @@ export async function GET(request: Request) {
     const testCategory = categories[0]
     const now = new Date().toISOString()
     
-    const insertQuery = `
-      INSERT INTO Product (
-        id, name, slug, description, price, image, 
-        categoryId, storeId, isFeatured, isNew, 
-        rating, reviewCount, inStock, createdAt, updatedAt
-      ) VALUES (?, ?, ?, '', ?, '', ?, ?, 0, 0, 4.5, 0, 1, ?, ?)
-    `
-
     try {
-      await db.$executeRawUnsafe(
-        insertQuery,
-        [testProductId, 'Test Product', `test-product-${Date.now()}`, 99.99, testCategory.id, user.storeId, now, now]
-      )
+      // Use template literal syntax which works correctly with Prisma
+      await db.$executeRaw`
+        INSERT INTO Product (
+          id, name, slug, description, price, image, 
+          categoryId, storeId, isFeatured, isNew, 
+          rating, reviewCount, inStock, createdAt, updatedAt
+        ) VALUES (
+          ${testProductId},
+          ${'Test Product'},
+          ${`test-product-${Date.now()}`},
+          ${''},
+          ${99.99},
+          ${''},
+          ${testCategory.id},
+          ${user.storeId},
+          ${0},
+          ${0},
+          ${4.5},
+          ${0},
+          ${1},
+          ${now},
+          ${now}
+        )
+      `
       results.testProductCreated = { id: testProductId, name: 'Test Product' }
 
       // Verify the product was created
-      const createdProduct = await db.$queryRawUnsafe<{ id: string; name: string; storeId: string }[]>(
-        `SELECT id, name, storeId FROM Product WHERE id = ?`,
-        [testProductId]
-      )
+      const createdProduct = await db.$queryRaw<{ id: string; name: string; storeId: string }[]>`
+        SELECT id, name, storeId FROM Product WHERE id = ${testProductId}
+      `
       results.testProductFound = createdProduct[0] || 'NOT_FOUND_AFTER_INSERT'
 
       // Clean up test product
-      await db.$executeRawUnsafe(`DELETE FROM Product WHERE id = ?`, [testProductId])
+      await db.$executeRaw`DELETE FROM Product WHERE id = ${testProductId}`
       results.testProductCleanedUp = true
 
     } catch (insertError) {
