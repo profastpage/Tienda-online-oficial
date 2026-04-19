@@ -126,41 +126,83 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   const fetchStoreData = useCallback(async () => {
     setLoading(true)
     setFetchError(false)
+    
+    // Quick check: if user has store data in auth, use it immediately
+    if (user?.storeId && user?.storeName) {
+      const quickStore: StoreInfo = {
+        id: user.storeId,
+        name: user.storeName,
+        slug: storeSlug,
+        logo: user.avatar || '',
+        description: '',
+        whatsappNumber: '',
+        address: '',
+        plan: 'basico',
+        isActive: true,
+      }
+      setStoreInfo(quickStore)
+      setStoreForm({
+        name: quickStore.name,
+        description: '',
+        whatsappNumber: '',
+        address: '',
+        logo: quickStore.logo,
+      })
+    }
+    
     try {
-      // First try to fetch store by slug, but also pass storeId if available
-      const storeUrl = user?.storeId 
-        ? `/api/store/info?slug=${storeSlug}&storeId=${user.storeId}`
-        : `/api/store/info?slug=${storeSlug}`
+      // Use authenticated admin endpoints for all data
+      const headers = getAuthHeaders()
       
-      // Use authenticated admin endpoints for categories to avoid seed data fallback
-      const catsUrl = user?.storeId
-        ? `/api/admin/categories?storeId=${user.storeId}`
-        : `/api/admin/categories`
-
-      const [storeRes, catsRes, prodsRes] = await Promise.all([
-        fetch(storeUrl),
-        fetch(catsUrl, { headers: getAuthHeaders() }),
-        fetch(`/api/products?store=${storeSlug}`),
+      // Fetch categories and products from admin endpoints
+      const [catsRes, prodsRes] = await Promise.all([
+        fetch(`/api/admin/categories`, { headers }),
+        fetch(`/api/admin/products`, { headers }),
       ])
 
-      if (storeRes.ok) {
-        const storeData = await storeRes.json()
-        setStoreInfo(storeData)
-        setStoreForm({
-          name: storeData.name || '',
-          description: storeData.description || '',
-          whatsappNumber: storeData.whatsappNumber || '',
-          address: storeData.address || '',
-          logo: storeData.logo || '',
-        })
+      if (catsRes.ok) {
+        const catsData = await catsRes.json()
+        setCategories(Array.isArray(catsData) ? catsData : [])
       } else {
-        console.warn('[StoreEditor] Store fetch failed, using auth fallback')
-        setFetchError(true)
+        setCategories([])
+      }
+      
+      if (prodsRes.ok) {
+        const prodsData = await prodsRes.json()
+        setProducts(Array.isArray(prodsData) ? prodsData : [])
+      } else {
+        setProducts([])
+      }
+      
+      // Fetch store info if not already set from user data
+      if (!user?.storeId) {
+        const storeUrl = `/api/store/info?slug=${storeSlug}`
+        const storeRes = await fetch(storeUrl)
+        if (storeRes.ok) {
+          const storeData = await storeRes.json()
+          setStoreInfo(storeData)
+          setStoreForm({
+            name: storeData.name || '',
+            description: storeData.description || '',
+            whatsappNumber: storeData.whatsappNumber || '',
+            address: storeData.address || '',
+            logo: storeData.logo || '',
+          })
+        } else {
+          setFetchError(true)
+        }
+      }
+    } catch (err) {
+      console.error('[StoreEditor] Fetch error:', err)
+      setFetchError(true)
+      
+      // Set fallback store from user data if available
+      if (user?.storeId) {
         const fallbackStore: StoreInfo = {
-          id: user?.storeId || '',
-          name: user?.storeName || user?.name || storeSlug,
+          id: user.storeId,
+          name: user.storeName || user.name || storeSlug,
           slug: storeSlug,
-          logo: user?.avatar || '',
+          logo: user.avatar || '',
           description: '',
           whatsappNumber: '',
           address: '',
@@ -176,46 +218,10 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
           logo: '',
         })
       }
-      if (catsRes.ok) {
-        const catsData = await catsRes.json()
-        setCategories(Array.isArray(catsData) ? catsData : [])
-      } else {
-        setCategories([])
-      }
-      if (prodsRes.ok) {
-        const prodsData = await prodsRes.json()
-        setProducts(Array.isArray(prodsData) ? prodsData : [])
-      } else {
-        setProducts([])
-      }
-    } catch (err) {
-      console.error('[StoreEditor] Fetch error:', err)
-      setFetchError(true)
-      const fallbackStore: StoreInfo = {
-        id: user?.storeId || '',
-        name: user?.storeName || user?.name || storeSlug,
-        slug: storeSlug,
-        logo: user?.avatar || '',
-        description: '',
-        whatsappNumber: '',
-        address: '',
-        plan: 'basico',
-        isActive: true,
-      }
-      setStoreInfo(fallbackStore)
-      setStoreForm({
-        name: fallbackStore.name,
-        description: '',
-        whatsappNumber: '',
-        address: '',
-        logo: '',
-      })
-      setCategories([])
-      setProducts([])
     } finally {
       setLoading(false)
     }
-  }, [storeSlug, user])
+  }, [storeSlug, user, getAuthHeaders])
 
   useEffect(() => {
     fetchStoreData()
