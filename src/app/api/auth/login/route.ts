@@ -388,6 +388,29 @@ export async function POST(request: Request) {
       }
     }
 
+    // Ensure store data exists (auto-repair if store was deleted)
+    if (matchedUser && matchedUser.store) {
+      // Store exists - use it
+    } else if (matchedUser) {
+      console.warn(`[login] User ${matchedUser.id} has no store, auto-creating...`)
+      try {
+        const db3 = await getDb()
+        const autoStore = await db3.store.upsert({
+          where: { id: matchedUser.storeId },
+          update: {},
+          create: {
+            id: matchedUser.storeId,
+            name: matchedUser.name ? `${matchedUser.name}'s Tienda` : 'Mi Tienda',
+            slug: matchedUser.email.split('@')[0]?.toLowerCase()?.replace(/[^a-z0-9]+/g, '-') || `tienda-${Date.now().toString(36)}`,
+          },
+        })
+        matchedUser = { ...matchedUser, store: { name: autoStore.name, slug: autoStore.slug } }
+      } catch (repairErr) {
+        console.error('[login] Auto-repair store failed:', repairErr)
+        matchedUser = { ...matchedUser, store: { name: 'Mi Tienda', slug: 'tienda' } }
+      }
+    }
+
     if (!matchedUser) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
@@ -419,8 +442,8 @@ export async function POST(request: Request) {
       address: matchedUser.address,
       role: matchedUser.role,
       storeId: matchedUser.storeId,
-      storeName: matchedUser.store.name,
-      storeSlug: matchedUser.store.slug,
+      storeName: matchedUser.store?.name || 'Mi Tienda',
+      storeSlug: matchedUser.store?.slug || 'tienda',
       avatar: matchedUser.avatar || '',
       token,
     })

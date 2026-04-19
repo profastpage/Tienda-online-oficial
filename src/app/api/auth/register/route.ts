@@ -50,7 +50,14 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Nombre de tienda requerido' }, { status: 400 })
         }
         storeNameStr = storeName
-        const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        let slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
+        // Ensure slug is unique (append random suffix if needed)
+        const existingSlug = await db.store.findUnique({ where: { slug } })
+        if (existingSlug) {
+          slug = `${slug}-${Date.now().toString(36)}`
+        }
+
         const store = await db.store.create({
           data: { name: storeName, slug, whatsappNumber: phone || '', plan: plan || 'basico' },
         })
@@ -103,13 +110,23 @@ export async function POST(request: Request) {
         storeId: user.storeId,
       })
 
-      // Get store name for response
+      // Get store data for response
       const storeData = await db.store.findUnique({ where: { id: storeId } })
       const responseStoreName = storeNameStr || storeData?.name || 'Tienda'
+      const responseStoreSlug = storeData?.slug || storeNameStr?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tienda'
 
       const response = NextResponse.json({
-        id: user.id, email: user.email, name: user.name, role: user.role,
-        storeId: user.storeId, storeName: responseStoreName, token,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone || '',
+        address: user.address || '',
+        role: user.role,
+        storeId: user.storeId,
+        storeName: responseStoreName,
+        storeSlug: responseStoreSlug,
+        avatar: '',
+        token,
       })
 
       response.cookies.set('auth-token', token, {
@@ -122,50 +139,12 @@ export async function POST(request: Request) {
 
       return response
     } catch (dbError) {
-      console.warn('[register] Database unavailable, using seed fallback:', dbError)
-      dbAvailable = false
+      console.error('[register] Database error:', dbError instanceof Error ? dbError.message : dbError)
+      return NextResponse.json(
+        { error: 'Error de base de datos. Intenta de nuevo en unos segundos.' },
+        { status: 503 }
+      )
     }
-
-    // Fallback for when DB is unavailable - still allow registration with seed store
-    if (!dbAvailable) {
-      if (role === 'admin') {
-        if (!storeName) {
-          return NextResponse.json({ error: 'Nombre de tienda requerido' }, { status: 400 })
-        }
-        storeNameStr = storeName
-      }
-
-      storeId = SEED_STORE.id
-
-      // Generate JWT token with seed data
-      const fakeUserId = 'user-' + Date.now()
-      const token = await signToken({
-        userId: fakeUserId,
-        email,
-        role,
-        storeId,
-      })
-
-      const response = NextResponse.json({
-        id: fakeUserId, email, name, role,
-        storeId,
-        storeName: storeNameStr || SEED_STORE.name,
-        token,
-        warning: 'La base de datos no está disponible. Los datos se perderán al recargar.',
-      })
-
-      response.cookies.set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7,
-        path: '/',
-      })
-
-      return response
-    }
-
-    return NextResponse.json({ error: 'Error al registrar' }, { status: 500 })
   } catch (error) {
     console.error('[register] Error:', error)
     return NextResponse.json({ error: 'Error al registrar' }, { status: 500 })
