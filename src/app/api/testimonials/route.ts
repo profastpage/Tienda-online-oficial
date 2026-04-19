@@ -1,13 +1,40 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { seedTestimonials } from '@/lib/seed-data'
+
+// Default testimonials for demo stores
+const defaultTestimonials = [
+  {
+    id: 't1',
+    name: 'María García',
+    role: 'Cliente Frecuente',
+    content: 'Excelente calidad y atención. Los productos llegaron en perfectas condiciones y el envío fue súper rápido.',
+    rating: 5,
+  },
+  {
+    id: 't2',
+    name: 'Carlos López',
+    role: 'Cliente Verificado',
+    content: 'La mejor tienda online que he usado. Los precios son competitivos y la atención al cliente es excepcional.',
+    rating: 5,
+  },
+  {
+    id: 't3',
+    name: 'Ana Torres',
+    role: 'Compradora Regular',
+    content: 'Me encanta la variedad de productos. Siempre encuentro lo que busco y la calidad es excelente.',
+    rating: 5,
+  },
+]
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const storeSlug = searchParams.get('store') || 'urban-store'
+    const storeSlug = searchParams.get('store')
 
-    // Try database first
+    if (!storeSlug) {
+      return NextResponse.json(defaultTestimonials)
+    }
+
     try {
       const db = await getDb()
 
@@ -22,13 +49,14 @@ export async function GET(request: Request) {
           return NextResponse.json(testimonials)
         }
       }
+      // Store not found or no testimonials - return default
+      return NextResponse.json(defaultTestimonials)
     } catch (dbError) {
-      console.warn('[api/testimonials] Database unavailable, using seed data fallback:', dbError)
+      console.warn('[api/testimonials] Database error:', dbError instanceof Error ? dbError.message : dbError)
+      return NextResponse.json(defaultTestimonials)
     }
-
-    // Fallback to seed data
-    return NextResponse.json(seedTestimonials)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (error) {
+    console.error('[api/testimonials] Error:', error)
+    return NextResponse.json(defaultTestimonials)
   }
 }
