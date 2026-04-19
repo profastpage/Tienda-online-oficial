@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
+import { ensureStoreExists } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -45,6 +46,9 @@ export async function POST(request: Request) {
 
     // Use storeId from JWT token, not from request body
     const storeId = auth.user.storeId
+
+    // Ensure store exists (critical for demo/seed accounts)
+    await ensureStoreExists(db, storeId)
 
     // Check plan limits before creating category
     const store = await db.store.findUnique({ where: { id: storeId }, select: { plan: true } })

@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth, verifyUserOwnership } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/auth'
+import { ensureStoreExists } from '@/lib/store-helpers'
 
 /**
  * AUTO-REPAIR: Ensure a user record exists in the DB for the given JWT payload.
@@ -23,20 +24,8 @@ async function ensureUserExists(jwtPayload: { userId: string; email: string; rol
     // User doesn't exist in DB — auto-create from JWT data
     console.warn(`[customer/profile] User ${jwtPayload.userId} not in DB, auto-creating...`)
 
-    // Ensure the store exists too
-    await db.store.upsert({
-      where: { id: jwtPayload.storeId },
-      update: {},
-      create: {
-        id: jwtPayload.storeId,
-        name: jwtPayload.email.split('@')[0] || 'Mi Tienda',
-        slug: jwtPayload.email.split('@')[0]?.toLowerCase()?.replace(/\s+/g, '-') || 'tienda',
-      },
-    }).catch(async () => {
-      // Store may already exist
-      const store = await db.store.findUnique({ where: { id: jwtPayload.storeId } })
-      if (!store) console.error(`[customer/profile] Could not create store ${jwtPayload.storeId}`)
-    })
+    // Ensure the store exists too (using shared helper)
+    await ensureStoreExists(db, jwtPayload.storeId)
 
     // Create the user
     const user = await db.storeUser.create({

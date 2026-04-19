@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireStoreOwner } from '@/lib/api-auth'
+import { ensureStoreExists } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
 
     // Use storeId from JWT token, not from request body
     const storeId = auth.user.storeId
+
+    // Ensure store exists (critical for demo/seed accounts)
+    await ensureStoreExists(db, storeId)
 
     const method = await db.paymentMethod.create({
       data: {
