@@ -4,6 +4,9 @@ import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 
+// Version marker for debugging
+console.log('[admin/categories] Route loaded - v2026.04.19.2')
+
 type CategoryData = {
   id: string
   name: string
