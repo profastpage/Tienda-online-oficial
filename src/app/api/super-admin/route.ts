@@ -27,21 +27,6 @@ async function verifySuperAdmin(request: Request): Promise<boolean> {
   return false
 }
 
-// Safe store fields for select (excludes columns that may not exist in older DBs)
-const STORE_SELECT_FIELDS = {
-  id: true,
-  name: true,
-  slug: true,
-  logo: true,
-  whatsappNumber: true,
-  address: true,
-  description: true,
-  isActive: true,
-  plan: true,
-  createdAt: true,
-  updatedAt: true,
-}
-
 // ═══════════════════════════════════════════════════════════════
 // GET — Fetch all dashboard data
 // ═══════════════════════════════════════════════════════════════
@@ -68,71 +53,139 @@ export async function GET(request: Request) {
     let totalLeads = 0
     const errors: string[] = []
 
-    // 1. Stores with full details - use explicit select
+    // 1. Stores with full details - use raw SQL for robustness
     try {
-      stores = await db.store.findMany({
-        select: {
-          ...STORE_SELECT_FIELDS,
-          _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } },
-          users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
-          coupons: { orderBy: { createdAt: 'desc' } },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
+      const rawStores = await db.$queryRaw<{
+        id: string
+        name: string
+        slug: string
+        logo: string
+        whatsappNumber: string
+        address: string
+        description: string
+        isActive: number
+        plan: string
+        createdAt: Date
+        updatedAt: Date
+      }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, createdAt, updatedAt FROM Store ORDER BY createdAt DESC`
+      
+      // Get counts for each store
+      stores = await Promise.all(rawStores.map(async (store) => {
+        try {
+          const userCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM StoreUser WHERE storeId = ${store.id}`
+          const productCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Product WHERE storeId = ${store.id}`
+          const orderCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM \`Order\` WHERE storeId = ${store.id}`
+          const categoryCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Category WHERE storeId = ${store.id}`
+          
+          // Get users for this store
+          const users = await db.$queryRaw<{
+            id: string
+            email: string
+            name: string
+            phone: string
+            role: string
+            avatar: string
+            createdAt: Date
+          }[]>`SELECT id, email, name, phone, role, avatar, createdAt FROM StoreUser WHERE storeId = ${store.id} ORDER BY createdAt DESC`
+          
+          return {
+            ...store,
+            isActive: store.isActive === 1,
+            _count: {
+              users: userCount[0]?.count || 0,
+              products: productCount[0]?.count || 0,
+              orders: orderCount[0]?.count || 0,
+              categories: categoryCount[0]?.count || 0,
+              coupons: 0,
+            },
+            users: users || [],
+          }
+        } catch {
+          return {
+            ...store,
+            isActive: store.isActive === 1,
+            _count: { users: 0, products: 0, orders: 0, categories: 0, coupons: 0 },
+            users: [],
+          }
+        }
+      }))
     } catch (err) { errors.push('Tiendas'); console.error(err) }
 
     // 2. All users
     try {
-      allUsers = await db.storeUser.findMany({
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          phone: true,
-          address: true,
-          role: true,
-          avatar: true,
-          createdAt: true,
-          storeId: true,
-          store: { select: { id: true, name: true, slug: true, plan: true, isActive: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
+      allUsers = await db.$queryRaw<{
+        id: string
+        email: string
+        name: string
+        phone: string
+        address: string
+        role: string
+        avatar: string
+        createdAt: Date
+        storeId: string
+      }[]>`SELECT id, email, name, phone, address, role, avatar, createdAt, storeId FROM StoreUser ORDER BY createdAt DESC`
+      
+      // Add store info to users
+      allUsers = await Promise.all(allUsers.map(async (user) => {
+        try {
+          const store = await db.$queryRaw<{
+            id: string
+            name: string
+            slug: string
+            plan: string
+            isActive: number
+          }[]>`SELECT id, name, slug, plan, isActive FROM Store WHERE id = ${user.storeId}`
+          return { ...user, store: store[0] || null }
+        } catch {
+          return { ...user, store: null }
+        }
+      }))
     } catch (err) { errors.push('Usuarios'); console.error(err) }
 
     // 3. Leads
     try {
-      leads = await db.lead.findMany({ orderBy: { createdAt: 'desc' }, take: 100 })
-      totalLeads = await db.lead.count()
+      leads = await db.$queryRaw<any[]>`SELECT * FROM Lead ORDER BY createdAt DESC LIMIT 100`
+      const leadCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Lead`
+      totalLeads = leadCount[0]?.count || leads.length
     } catch (err) { errors.push('Leads'); console.error(err); totalLeads = leads.length }
 
     // 4. Coupons
     try {
-      coupons = await db.coupon.findMany({
-        select: {
-          id: true,
-          code: true,
-          type: true,
-          value: true,
-          minPurchase: true,
-          maxUses: true,
-          usedCount: true,
-          isActive: true,
-          expiresAt: true,
-          createdAt: true,
-          storeId: true,
-          store: { select: { id: true, name: true, slug: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
+      coupons = await db.$queryRaw<{
+        id: string
+        code: string
+        type: string
+        value: number
+        minPurchase: number | null
+        maxUses: number
+        usedCount: number
+        isActive: number
+        expiresAt: Date | null
+        createdAt: Date
+        storeId: string
+      }[]>`SELECT id, code, type, value, minPurchase, maxUses, usedCount, isActive, expiresAt, createdAt, storeId FROM Coupon ORDER BY createdAt DESC`
+      
+      // Add store info to coupons
+      coupons = await Promise.all(coupons.map(async (coupon) => {
+        try {
+          const store = await db.$queryRaw<{
+            id: string
+            name: string
+            slug: string
+          }[]>`SELECT id, name, slug FROM Store WHERE id = ${coupon.storeId}`
+          return { ...coupon, store: store[0] || null }
+        } catch {
+          return { ...coupon, store: null }
+        }
+      }))
     } catch (err) { errors.push('Coupons'); console.error(err) }
 
     // Aggregate stats
     const totalStores = stores.length
     const activeStores = stores.filter(s => s.isActive).length
     const totalUsers = allUsers.length
-    const totalProducts = stores.reduce((sum, s) => sum + s._count.products, 0)
-    const totalOrders = stores.reduce((sum, s) => sum + s._count.orders, 0)
+    const totalProducts = stores.reduce((sum, s) => sum + (s._count?.products || 0), 0)
+    const totalOrders = stores.reduce((sum, s) => sum + (s._count?.orders || 0), 0)
     const totalCoupons = coupons.length
 
     const planDistribution: Record<string, number> = {}
@@ -182,23 +235,29 @@ export async function PATCH(request: Request) {
     if (action === 'toggle-store') {
       const { storeId, isActive } = body
       if (!storeId || typeof isActive !== 'boolean') return NextResponse.json({ error: 'Datos requeridos' }, { status: 400 })
-      const store = await db.store.update({
-        where: { id: storeId },
-        data: { isActive },
-        select: {
-          ...STORE_SELECT_FIELDS,
-          _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } },
-          users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true } },
-        },
-      })
-      return NextResponse.json({ success: true, message: `Tienda ${isActive ? 'activada' : 'suspendida'}`, store })
+      
+      await db.$executeRaw`UPDATE Store SET isActive = ${isActive ? 1 : 0}, updatedAt = ${new Date().toISOString()} WHERE id = ${storeId}`
+      
+      const stores = await db.$queryRaw<{
+        id: string
+        name: string
+        slug: string
+        logo: string
+        whatsappNumber: string
+        address: string
+        description: string
+        isActive: number
+        plan: string
+      }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan FROM Store WHERE id = ${storeId}`
+      
+      return NextResponse.json({ success: true, message: `Tienda ${isActive ? 'activada' : 'suspendida'}`, store: stores[0] })
     }
 
     // ── Delete Store ──
     if (action === 'delete-store') {
       const { storeId } = body
       if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
-      await db.store.delete({ where: { id: storeId } })
+      await db.$executeRaw`DELETE FROM Store WHERE id = ${storeId}`
       return NextResponse.json({ success: true, message: 'Tienda eliminada con todos sus datos' })
     }
 
@@ -208,26 +267,27 @@ export async function PATCH(request: Request) {
       if (!storeId || !plan) return NextResponse.json({ error: 'Datos requeridos' }, { status: 400 })
       const validPlans = ['basico', 'pro', 'premium', 'empresarial', 'gratis']
       if (!validPlans.includes(plan)) return NextResponse.json({ error: 'Plan invalido' }, { status: 400 })
-      const store = await db.store.update({
-        where: { id: storeId },
-        data: { plan },
-        select: {
-          ...STORE_SELECT_FIELDS,
-          _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } },
-          users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true } },
-        },
-      })
-      return NextResponse.json({ success: true, message: `Plan cambiado a ${plan}`, store })
+      
+      await db.$executeRaw`UPDATE Store SET plan = ${plan}, updatedAt = ${new Date().toISOString()} WHERE id = ${storeId}`
+      
+      const stores = await db.$queryRaw<{
+        id: string
+        name: string
+        slug: string
+        plan: string
+      }[]>`SELECT id, name, slug, plan FROM Store WHERE id = ${storeId}`
+      
+      return NextResponse.json({ success: true, message: `Plan cambiado a ${plan}`, store: stores[0] })
     }
 
     // ── Store Impersonation Token ──
     if (action === 'store-token') {
       const { storeId } = body
       if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
-      const store = await db.store.findUnique({ 
-        where: { id: storeId },
-        select: { id: true, name: true, slug: true },
-      })
+      
+      const stores = await db.$queryRaw<{ id: string; name: string; slug: string }[]>`SELECT id, name, slug FROM Store WHERE id = ${storeId}`
+      const store = stores[0]
+      
       if (!store) return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
 
       const tempToken = await signToken({
@@ -250,48 +310,40 @@ export async function PATCH(request: Request) {
       const { storeId, code, type, value, minPurchase, maxUses, expiresAt } = body
       if (!storeId || !code || !type || value === undefined) return NextResponse.json({ error: 'Datos requeridos: storeId, code, type, value' }, { status: 400 })
 
-      const existing = await db.coupon.findUnique({ where: { code: code.toUpperCase() } })
-      if (existing) return NextResponse.json({ error: 'El codigo de cupon ya existe' }, { status: 409 })
+      const existing = await db.$queryRaw<{ id: string }[]>`SELECT id FROM Coupon WHERE code = ${code.toUpperCase()}`
+      if (existing.length > 0) return NextResponse.json({ error: 'El codigo de cupon ya existe' }, { status: 409 })
 
-      const coupon = await db.coupon.create({
-        data: {
-          code: code.toUpperCase(),
-          storeId,
-          type: type || 'percentage',
-          value: parseFloat(value),
-          minPurchase: minPurchase ? parseFloat(minPurchase) : null,
-          maxUses: maxUses ? parseInt(maxUses) : 0,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-        },
-      })
+      const couponId = `coupon_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      const now = new Date().toISOString()
+      
+      await db.$executeRaw`
+        INSERT INTO Coupon (id, code, storeId, type, value, minPurchase, maxUses, usedCount, isActive, expiresAt, createdAt)
+        VALUES (${couponId}, ${code.toUpperCase()}, ${storeId}, ${type || 'percentage'}, ${parseFloat(value)}, ${minPurchase ? parseFloat(minPurchase) : null}, ${maxUses ? parseInt(maxUses) : 0}, 0, 1, ${expiresAt ? new Date(expiresAt).toISOString() : null}, ${now})
+      `
 
       // Create notification for the store
-      await db.adminNotification.create({
-        data: {
-          storeId,
-          type: 'coupon',
-          title: 'Nuevo Cupon de Descuento',
-          message: `Cupon ${coupon.code.toUpperCase()} creado: ${type === 'percentage' ? `${value}%` : `S/ ${value}`} de descuento`,
-          data: JSON.stringify({ couponCode: coupon.code }),
-        },
-      })
+      const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      await db.$executeRaw`
+        INSERT INTO AdminNotification (id, storeId, type, title, message, data, createdAt)
+        VALUES (${notifId}, ${storeId}, 'coupon', 'Nuevo Cupon de Descuento', ${`Cupon ${code.toUpperCase()} creado: ${type === 'percentage' ? `${value}%` : `S/ ${value}`} de descuento`}, '{}', ${now})
+      `
 
-      return NextResponse.json({ success: true, message: 'Cupon creado exitosamente', coupon })
+      return NextResponse.json({ success: true, message: 'Cupon creado exitosamente' })
     }
 
     // ── Toggle Coupon Active ──
     if (action === 'toggle-coupon') {
       const { couponId, isActive } = body
       if (!couponId) return NextResponse.json({ error: 'couponId requerido' }, { status: 400 })
-      const coupon = await db.coupon.update({ where: { id: couponId }, data: { isActive: isActive !== false } })
-      return NextResponse.json({ success: true, message: `Cupon ${isActive ? 'activado' : 'desactivado'}`, coupon })
+      await db.$executeRaw`UPDATE Coupon SET isActive = ${isActive !== false ? 1 : 0} WHERE id = ${couponId}`
+      return NextResponse.json({ success: true, message: `Cupon ${isActive ? 'activado' : 'desactivado'}` })
     }
 
     // ── Delete Coupon ──
     if (action === 'delete-coupon') {
       const { couponId } = body
       if (!couponId) return NextResponse.json({ error: 'couponId requerido' }, { status: 400 })
-      await db.coupon.delete({ where: { id: couponId } })
+      await db.$executeRaw`DELETE FROM Coupon WHERE id = ${couponId}`
       return NextResponse.json({ success: true, message: 'Cupon eliminado' })
     }
 
@@ -300,16 +352,26 @@ export async function PATCH(request: Request) {
       const { storeId, type, title, message, broadcast } = body
       if (!title || !message) return NextResponse.json({ error: 'titulo y mensaje requeridos' }, { status: 400 })
 
+      const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      const now = new Date().toISOString()
+
       if (broadcast) {
         // Send to ALL stores
-        const allStores = await db.store.findMany({ select: { id: true } })
-        const notifications = allStores.map(s => ({ storeId: s.id, type: type || 'info', title, message, data: '{}' }))
-        await db.adminNotification.createMany({ data: notifications })
+        const allStores = await db.$queryRaw<{ id: string }[]>`SELECT id FROM Store`
+        for (const s of allStores) {
+          await db.$executeRaw`
+            INSERT INTO AdminNotification (id, storeId, type, title, message, data, createdAt)
+            VALUES (${`notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`}, ${s.id}, ${type || 'info'}, ${title}, ${message}, '{}', ${now})
+          `
+        }
         return NextResponse.json({ success: true, message: `Notificacion enviada a ${allStores.length} tiendas` })
       } else {
         if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
-        const notification = await db.adminNotification.create({ data: { storeId, type: type || 'info', title, message, data: '{}' } })
-        return NextResponse.json({ success: true, message: 'Notificacion enviada', notification })
+        await db.$executeRaw`
+          INSERT INTO AdminNotification (id, storeId, type, title, message, data, createdAt)
+          VALUES (${notifId}, ${storeId}, ${type || 'info'}, ${title}, ${message}, '{}', ${now})
+        `
+        return NextResponse.json({ success: true, message: 'Notificacion enviada' })
       }
     }
 
@@ -317,7 +379,7 @@ export async function PATCH(request: Request) {
     if (action === 'delete-lead') {
       const { leadId } = body
       if (!leadId) return NextResponse.json({ error: 'leadId requerido' }, { status: 400 })
-      await db.lead.delete({ where: { id: leadId } })
+      await db.$executeRaw`DELETE FROM Lead WHERE id = ${leadId}`
       return NextResponse.json({ success: true, message: 'Lead eliminado' })
     }
 
