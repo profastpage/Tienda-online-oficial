@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
+import { getProductsByStore, createProduct, updateProduct, PRODUCT_SAFE_FIELDS } from '@/lib/product-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -20,12 +21,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    const products = await db.product.findMany({
-      where: { storeId },
-      include: { category: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' },
-    })
-    return NextResponse.json(products)
+    // Use safe product query to avoid schema mismatch errors
+    const products = await getProductsByStore(db, storeId)
+    
+    // Fetch categories separately for each product
+    const productsWithCategories = await Promise.all(
+      products.map(async (product) => {
+        try {
+          const category = await db.category.findUnique({
+            where: { id: product.categoryId },
+            select: { name: true, slug: true, id: true }
+          })
+          return { ...product, category }
+        } catch {
+          return { ...product, category: null }
+        }
+      })
+    )
+    
+    return NextResponse.json(productsWithCategories)
   } catch (error) {
     console.error('[admin/products GET]', error instanceof Error ? error.message : error)
     return NextResponse.json({ error: 'Error al obtener productos', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
@@ -87,18 +101,51 @@ export async function POST(request: Request) {
       )
     }
 
-    const product = await db.product.create({
-      data: {
-        storeId, name, slug, description: description || '', price,
-        comparePrice: comparePrice || null, image: image || '',
-        images: typeof images === 'string' ? images : JSON.stringify(parsedImages.filter(Boolean)),
-        categoryId, isFeatured: isFeatured || false, isNew: isNew || false,
-        discount: discount || null, inStock: inStock !== undefined ? inStock : true,
-        sizes: JSON.stringify(sizes || []), colors: JSON.stringify(colors || []),
-      },
-      include: { category: { select: { name: true } } },
+    // Use safe product creation
+    const product = await createProduct(db, {
+      storeId,
+      name,
+      slug,
+      description: description || '',
+      price,
+      comparePrice: comparePrice || null,
+      image: image || '',
+      images: typeof images === 'string' ? images : JSON.stringify(parsedImages.filter(Boolean)),
+      categoryId,
+      isFeatured: isFeatured || false,
+      isNew: isNew || false,
+      discount: discount || null,
+      inStock: inStock !== undefined ? inStock : true,
+      sizes: JSON.stringify(sizes || []),
+      colors: JSON.stringify(colors || []),
     })
-    return NextResponse.json(product, { status: 201 })
+    
+    if (!product) {
+      // Try direct query without images field if helper failed
+      try {
+        const fallbackProduct = await db.product.create({
+          data: {
+            storeId, name, slug, description: description || '', price,
+            comparePrice: comparePrice || null, image: image || '',
+            categoryId, isFeatured: isFeatured || false, isNew: isNew || false,
+            discount: discount || null, inStock: inStock !== undefined ? inStock : true,
+          },
+          select: PRODUCT_SAFE_FIELDS,
+        })
+        return NextResponse.json(fallbackProduct, { status: 201 })
+      } catch (fallbackError) {
+        console.error('[admin/products POST] Fallback also failed:', fallbackError)
+        return NextResponse.json({ error: 'Error al crear producto', details: 'Database error' }, { status: 500 })
+      }
+    }
+    
+    // Fetch category for response
+    const category = await db.category.findUnique({
+      where: { id: categoryId },
+      select: { name: true, slug: true, id: true }
+    })
+    
+    return NextResponse.json({ ...product, category }, { status: 201 })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed'
     if (msg.includes('Unique')) return NextResponse.json({ error: 'Slug ya existe' }, { status: 409 })
@@ -134,8 +181,38 @@ export async function PUT(request: Request) {
     if (data.colors !== undefined) updateData.colors = JSON.stringify(data.colors)
     if (data.images !== undefined) updateData.images = data.images
 
-    const product = await db.product.update({ where: { id }, data: updateData, include: { category: { select: { name: true } } } })
-    return NextResponse.json(product)
+    // Use safe product update
+    const product = await updateProduct(db, id, updateData)
+    
+    if (!product) {
+      // Try without problematic fields
+      const safeUpdateData = { ...updateData }
+      delete safeUpdateData.images
+      delete safeUpdateData.sizes
+      delete safeUpdateData.colors
+      
+      const fallbackProduct = await db.product.update({ 
+        where: { id }, 
+        data: safeUpdateData,
+        select: PRODUCT_SAFE_FIELDS
+      })
+      
+      // Fetch category
+      const category = await db.category.findUnique({
+        where: { id: fallbackProduct.categoryId },
+        select: { name: true, slug: true, id: true }
+      })
+      
+      return NextResponse.json({ ...fallbackProduct, category })
+    }
+    
+    // Fetch category for response
+    const category = await db.category.findUnique({
+      where: { id: product.categoryId },
+      select: { name: true, slug: true, id: true }
+    })
+    
+    return NextResponse.json({ ...product, category })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed'
     if (msg.includes('Unique')) return NextResponse.json({ error: 'Slug ya existe' }, { status: 409 })

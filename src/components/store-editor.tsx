@@ -617,12 +617,13 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
               )}
-              {/* In stayOnEditor mode, show a "Ver Tienda" link */}
+              {/* In stayOnEditor mode, show "Cerrar Editor" button to go back to admin panel */}
               {stayOnEditor && (
-                <Link href={`/${storeSlug}`} target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" size="sm" className="shrink-0 h-8 gap-1.5 text-xs">
-                    <Eye className="w-3.5 h-3.5" />
-                    Ver Tienda
+                <Link href="/admin">
+                  <Button variant="outline" size="sm" className="shrink-0 h-8 gap-1.5 text-xs border-neutral-300">
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Cerrar Editor</span>
+                    <span className="sm:hidden">Cerrar</span>
                   </Button>
                 </Link>
               )}
@@ -636,7 +637,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <a href={`/${storeSlug}`} target="_blank" rel="noopener noreferrer">
+              <a href={`/${storeSlug}`} target="_blank" rel="noopener noreferrer" className="hidden sm:block">
                 <Button variant="outline" size="sm" className="hidden sm:flex text-xs gap-1.5 h-8 rounded-lg">
                   <Eye className="w-3.5 h-3.5" /> Ver Tienda
                 </Button>
