@@ -145,6 +145,105 @@ const demoStores = [
   },
 ]
 
+// Run database migrations (add missing columns)
+async function runMigrations(db: Awaited<ReturnType<typeof getDb>>) {
+  const migrationResults: { table: string; added: string[]; errors: string[] }[] = []
+
+  // Migrate Product table
+  const productColumns = await db.$queryRawUnsafe<{ name: string }[]>(
+    `PRAGMA table_info("Product")`
+  )
+  const productColNames = productColumns.map(c => c.name)
+
+  const productRequired: { name: string; sql: string }[] = [
+    { name: 'images', sql: `ALTER TABLE "Product" ADD COLUMN "images" TEXT DEFAULT '[]'` },
+    { name: 'sizes', sql: `ALTER TABLE "Product" ADD COLUMN "sizes" TEXT DEFAULT '[]'` },
+    { name: 'colors', sql: `ALTER TABLE "Product" ADD COLUMN "colors" TEXT DEFAULT '[]'` },
+    { name: 'comparePrice', sql: `ALTER TABLE "Product" ADD COLUMN "comparePrice" REAL` },
+  ]
+
+  const productAdded: string[] = []
+  const productErrors: string[] = []
+
+  for (const col of productRequired) {
+    if (productColNames.includes(col.name)) continue
+    try {
+      await db.$executeRawUnsafe(col.sql)
+      productAdded.push(col.name)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      productErrors.push(`${col.name}: ${msg}`)
+    }
+  }
+
+  migrationResults.push({ table: 'Product', added: productAdded, errors: productErrors })
+
+  // Migrate StoreUser table
+  const storeUserColumns = await db.$queryRawUnsafe<{ name: string }[]>(
+    `PRAGMA table_info("StoreUser")`
+  )
+  const storeUserColNames = storeUserColumns.map(c => c.name)
+
+  const storeUserRequired: { name: string; sql: string }[] = [
+    { name: 'googleId', sql: `ALTER TABLE "StoreUser" ADD COLUMN "googleId" TEXT` },
+    { name: 'avatar', sql: `ALTER TABLE "StoreUser" ADD COLUMN "avatar" TEXT DEFAULT ''` },
+  ]
+
+  const storeUserAdded: string[] = []
+  const storeUserErrors: string[] = []
+
+  for (const col of storeUserRequired) {
+    if (storeUserColNames.includes(col.name)) continue
+    try {
+      await db.$executeRawUnsafe(col.sql)
+      storeUserAdded.push(col.name)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      storeUserErrors.push(`${col.name}: ${msg}`)
+    }
+  }
+
+  // Create unique index for googleId
+  if (storeUserAdded.includes('googleId')) {
+    try {
+      await db.$executeRawUnsafe(
+        `CREATE UNIQUE INDEX IF NOT EXISTS "StoreUser_googleId_key" ON "StoreUser"("googleId") WHERE "googleId" IS NOT NULL`
+      )
+    } catch { /* ignore */ }
+  }
+
+  migrationResults.push({ table: 'StoreUser', added: storeUserAdded, errors: storeUserErrors })
+
+  // Migrate Store table
+  const storeColumns = await db.$queryRawUnsafe<{ name: string }[]>(
+    `PRAGMA table_info("Store")`
+  )
+  const storeColNames = storeColumns.map(c => c.name)
+
+  const storeRequired: { name: string; sql: string }[] = [
+    { name: 'subscriptionExpiresAt', sql: `ALTER TABLE "Store" ADD COLUMN "subscriptionExpiresAt" DATETIME` },
+    { name: 'trialDays', sql: `ALTER TABLE "Store" ADD COLUMN "trialDays" INTEGER DEFAULT 0` },
+  ]
+
+  const storeAdded: string[] = []
+  const storeErrors: string[] = []
+
+  for (const col of storeRequired) {
+    if (storeColNames.includes(col.name)) continue
+    try {
+      await db.$executeRawUnsafe(col.sql)
+      storeAdded.push(col.name)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      storeErrors.push(`${col.name}: ${msg}`)
+    }
+  }
+
+  migrationResults.push({ table: 'Store', added: storeAdded, errors: storeErrors })
+
+  return migrationResults
+}
+
 export async function POST(request: Request) {
   try {
     // Rate limit protection
@@ -179,6 +278,16 @@ export async function POST(request: Request) {
     console.log('[api/init-db] Database seeding initiated', body?.DATABASE_URL ? '(remote URL provided)' : '(using default connection)')
 
     const db = await getDb()
+
+    // ═══ Run migrations FIRST to ensure all columns exist ═══
+    console.log('[api/init-db] Running database migrations...')
+    const migrationResults = await runMigrations(db)
+    const totalMigrated = migrationResults.reduce((sum, r) => sum + r.added.length, 0)
+    if (totalMigrated > 0) {
+      console.log('[api/init-db] Migrations completed:', migrationResults)
+    } else {
+      console.log('[api/init-db] No migrations needed - all columns present')
+    }
 
     // 1. Upsert original Store (Urban Store)
     const store = await db.store.upsert({
@@ -517,6 +626,7 @@ export async function POST(request: Request) {
         products: seedProducts.length,
         testimonials: seedTestimonials.length,
         demoStores: seededStores,
+        migrations: migrationResults,
       },
     })
   } catch (error) {
