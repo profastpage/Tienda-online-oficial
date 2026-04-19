@@ -15,6 +15,24 @@ type CategoryData = {
   productCount?: number
 }
 
+// Helper to ensure Category table has required columns
+async function ensureCategoryColumns(db: Awaited<ReturnType<typeof getDb>>) {
+  try {
+    const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Category")`)
+    const colNames = columns.map(c => c.name)
+    
+    // Ensure image column exists
+    if (!colNames.includes('image')) {
+      try {
+        await db.$executeRawUnsafe(`ALTER TABLE "Category" ADD COLUMN "image" TEXT DEFAULT ''`)
+        console.log('[categories] Added missing column: image')
+      } catch { /* ignore duplicate column errors */ }
+    }
+  } catch (err) {
+    console.warn('[categories] Column check failed:', err)
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await requireStoreOwner(request)
@@ -52,6 +70,10 @@ export async function POST(request: Request) {
     if (auth.error) return auth.error
 
     const db = await getDb()
+    
+    // Ensure database has required columns before creating category
+    await ensureCategoryColumns(db)
+    
     const body = await request.json()
     const { name, slug, image, sortOrder } = body
     if (!name || !slug) {

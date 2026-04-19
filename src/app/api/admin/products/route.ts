@@ -5,6 +5,32 @@ import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 import { getProductsByStore, createProduct, updateProduct } from '@/lib/product-helpers'
 
+// Helper to ensure database has required columns
+async function ensureProductColumns(db: Awaited<ReturnType<typeof getDb>>) {
+  try {
+    const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Product")`)
+    const colNames = columns.map(c => c.name)
+    
+    const required = [
+      { name: 'images', sql: `ALTER TABLE "Product" ADD COLUMN "images" TEXT DEFAULT '[]'` },
+      { name: 'sizes', sql: `ALTER TABLE "Product" ADD COLUMN "sizes" TEXT DEFAULT '[]'` },
+      { name: 'colors', sql: `ALTER TABLE "Product" ADD COLUMN "colors" TEXT DEFAULT '[]'` },
+      { name: 'comparePrice', sql: `ALTER TABLE "Product" ADD COLUMN "comparePrice" REAL` },
+    ]
+    
+    for (const col of required) {
+      if (!colNames.includes(col.name)) {
+        try {
+          await db.$executeRawUnsafe(col.sql)
+          console.log(`[products] Added missing column: ${col.name}`)
+        } catch { /* ignore duplicate column errors */ }
+      }
+    }
+  } catch (err) {
+    console.warn('[products] Column check failed:', err)
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await requireStoreOwner(request)
@@ -50,6 +76,10 @@ export async function POST(request: Request) {
     if (auth.error) return auth.error
 
     const db = await getDb()
+    
+    // Ensure database has required columns before creating product
+    await ensureProductColumns(db)
+    
     const body = await request.json()
     const { name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, inStock } = body
     
