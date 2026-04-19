@@ -132,9 +132,14 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         ? `/api/store/info?slug=${storeSlug}&storeId=${user.storeId}`
         : `/api/store/info?slug=${storeSlug}`
       
+      // Use authenticated admin endpoints for categories to avoid seed data fallback
+      const catsUrl = user?.storeId
+        ? `/api/admin/categories?storeId=${user.storeId}`
+        : `/api/admin/categories`
+
       const [storeRes, catsRes, prodsRes] = await Promise.all([
         fetch(storeUrl),
-        fetch(`/api/categories?store=${storeSlug}`),
+        fetch(catsUrl, { headers: getAuthHeaders() }),
         fetch(`/api/products?store=${storeSlug}`),
       ])
 
@@ -944,21 +949,30 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-neutral-600">Categoria</Label>
-                        <div className="flex gap-2 flex-wrap">
-                          {categories.map(cat => (
-                            <button
-                              key={cat.id}
-                              onClick={() => setNewProduct({ ...newProduct, categoryId: cat.id })}
-                              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                                newProduct.categoryId === cat.id
-                                  ? 'bg-neutral-900 text-white'
-                                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                              }`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
-                        </div>
+                        {categories.length === 0 ? (
+                          <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                            <p className="text-xs text-amber-700">
+                              Primero debes crear una categoria. Ve a la pestana <strong>Categorias</strong> para agregar una.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 flex-wrap">
+                            {categories.map(cat => (
+                              <button
+                                key={cat.id}
+                                onClick={() => setNewProduct({ ...newProduct, categoryId: cat.id })}
+                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                                  newProduct.categoryId === cat.id
+                                    ? 'bg-neutral-900 text-white'
+                                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                }`}
+                              >
+                                {cat.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1.5">
