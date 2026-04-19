@@ -154,6 +154,8 @@ export function getPlanLimits(plan: string): PlanLimits {
 /**
  * Check if a store has reached a plan limit for a specific resource.
  * Returns { allowed, current, limit, plan }
+ * 
+ * Uses RAW SQL to avoid schema mismatch issues with Prisma ORM.
  */
 export async function checkPlanLimit(
   db: PrismaClient,
@@ -166,28 +168,53 @@ export async function checkPlanLimit(
 
   let current = 0
 
-  switch (resource) {
-    case 'products':
-      current = await db.product.count({ where: { storeId } })
-      break
-    case 'categories':
-      current = await db.category.count({ where: { storeId } })
-      break
-    case 'orders': {
-      // Count orders from the 1st of the current month
-      const now = new Date()
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      current = await db.order.count({
-        where: {
-          storeId,
-          createdAt: { gte: firstOfMonth },
-        },
-      })
-      break
+  try {
+    switch (resource) {
+      case 'products': {
+        const result = await db.$queryRawUnsafe<{ count: number }[]>(
+          `SELECT COUNT(*) as count FROM Product WHERE storeId = ?`,
+          [storeId]
+        )
+        current = result[0]?.count || 0
+        break
+      }
+      case 'categories': {
+        const result = await db.$queryRawUnsafe<{ count: number }[]>(
+          `SELECT COUNT(*) as count FROM Category WHERE storeId = ?`,
+          [storeId]
+        )
+        current = result[0]?.count || 0
+        break
+      }
+      case 'orders': {
+        // Count orders from the 1st of the current month
+        const now = new Date()
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+        const result = await db.$queryRawUnsafe<{ count: number }[]>(
+          `SELECT COUNT(*) as count FROM "Order" WHERE storeId = ? AND createdAt >= ?`,
+          [storeId, firstOfMonth]
+        )
+        current = result[0]?.count || 0
+        break
+      }
+      case 'users': {
+        const result = await db.$queryRawUnsafe<{ count: number }[]>(
+          `SELECT COUNT(*) as count FROM StoreUser WHERE storeId = ?`,
+          [storeId]
+        )
+        current = result[0]?.count || 0
+        break
+      }
     }
-    case 'users':
-      current = await db.storeUser.count({ where: { storeId } })
-      break
+  } catch (error) {
+    console.error('[plan-limits] Error counting:', resource, error instanceof Error ? error.message : error)
+    // If count fails, allow the action (fail open)
+    return {
+      allowed: true,
+      current: 0,
+      limit: limits[resource],
+      plan,
+    }
   }
 
   return {

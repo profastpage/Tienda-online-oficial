@@ -135,6 +135,34 @@ export async function POST(request: Request) {
     // Ensure store exists (critical for demo/seed accounts)
     await ensureStoreExists(db, storeId)
 
+    // ═══════════════════════════════════════════════════════════
+    // CRITICAL: Verify category belongs to the SAME store
+    // This is the most common cause of foreign key errors!
+    // ═══════════════════════════════════════════════════════════
+    const categoryCheck = await db.$queryRaw<{ id: string; storeId: string }[]>`
+      SELECT id, storeId FROM Category WHERE id = ${categoryId}
+    `
+    
+    if (!categoryCheck || categoryCheck.length === 0) {
+      console.log('[admin/products POST] Category not found:', categoryId)
+      return NextResponse.json({ 
+        error: 'La categoría seleccionada no existe',
+        categoryId,
+        hint: 'Selecciona una categoría válida de tu tienda'
+      }, { status: 400 })
+    }
+    
+    if (categoryCheck[0].storeId !== storeId) {
+      console.log('[admin/products POST] Category belongs to different store:', {
+        categoryStoreId: categoryCheck[0].storeId,
+        userStoreId: storeId
+      })
+      return NextResponse.json({ 
+        error: 'La categoría seleccionada no pertenece a tu tienda',
+        hint: 'Solo puedes usar categorías de tu propia tienda'
+      }, { status: 400 })
+    }
+
     // Check plan limits
     const store = await findStoreById(db, storeId)
     const plan = store?.plan || 'basico'
@@ -221,11 +249,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ 
         error: 'Error de base de datos: falta una columna', 
         details: msg,
-        hint: 'Ejecuta /api/diagnostic con POST para migrar la base de datos'
+        hint: 'Ejecuta POST /api/diagnostic para migrar la base de datos'
+      }, { status: 500 })
+    }
+    if (msg.includes('FOREIGN KEY') || msg.includes('foreign key')) {
+      return NextResponse.json({ 
+        error: 'Error de integridad: la categoría o tienda no existe', 
+        details: msg,
+        hint: 'Asegúrate de que la categoría pertenezca a tu tienda. Usa GET /api/debug-product-create?email=TU_EMAIL para diagnosticar'
       }, { status: 500 })
     }
     
-    return NextResponse.json({ error: 'Error al crear producto', details: msg }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Error al crear producto', 
+      details: msg,
+      hint: 'Usa GET /api/debug-product-create?email=TU_EMAIL para diagnosticar el problema'
+    }, { status: 500 })
   }
 }
 
