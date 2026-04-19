@@ -114,13 +114,25 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
     return {}
   }, [token])
 
+  // Get the effective store ID - always prefer user.storeId for authenticated operations
+  const getEffectiveStoreId = useCallback(() => {
+    // Always use the authenticated user's storeId for operations
+    // This is more reliable than storeInfo.id from API which might be stale
+    return user?.storeId || storeInfo?.id || ''
+  }, [user?.storeId, storeInfo?.id])
+
   // Fetch all data
   const fetchStoreData = useCallback(async () => {
     setLoading(true)
     setFetchError(false)
     try {
+      // First try to fetch store by slug, but also pass storeId if available
+      const storeUrl = user?.storeId 
+        ? `/api/store/info?slug=${storeSlug}&storeId=${user.storeId}`
+        : `/api/store/info?slug=${storeSlug}`
+      
       const [storeRes, catsRes, prodsRes] = await Promise.all([
-        fetch(`/api/store/info?slug=${storeSlug}`),
+        fetch(storeUrl),
         fetch(`/api/categories?store=${storeSlug}`),
         fetch(`/api/products?store=${storeSlug}`),
       ])
@@ -208,7 +220,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
   // Save store settings
   const saveStoreSettings = async () => {
-    if (!storeInfo?.id) {
+    const effectiveStoreId = getEffectiveStoreId()
+    if (!effectiveStoreId) {
       toast({
         title: 'Tienda no inicializada',
         description: 'No se encontro el ID de la tienda. Intenta recargar la pagina.',
@@ -221,7 +234,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ id: storeInfo.id, ...storeForm }),
+        body: JSON.stringify({ id: effectiveStoreId, ...storeForm }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -303,13 +316,18 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       toast({ title: 'Error', description: 'Nombre, precio y categoria son obligatorios', variant: 'destructive' })
       return
     }
+    const effectiveStoreId = getEffectiveStoreId()
+    if (!effectiveStoreId) {
+      toast({ title: 'Error', description: 'No se pudo determinar la tienda. Recarga la pagina.', variant: 'destructive' })
+      return
+    }
     setNewProductUploading(true)
     try {
       const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           name: newProduct.name,
           price: parseFloat(newProduct.price),
           description: newProduct.description,
@@ -342,8 +360,9 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   // Delete product
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm('Eliminar este producto?')) return
+    const effectiveStoreId = getEffectiveStoreId()
     try {
-      const res = await fetch(`/api/admin/products?id=${productId}&storeId=${storeInfo?.id}`, {
+      const res = await fetch(`/api/admin/products?id=${productId}&storeId=${effectiveStoreId}`,
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
@@ -375,6 +394,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       toast({ title: 'Error', description: 'Nombre y precio son obligatorios', variant: 'destructive' })
       return
     }
+    const effectiveStoreId = getEffectiveStoreId()
     setSavingProductId(productId)
     try {
       const res = await fetch('/api/admin/products', {
@@ -382,7 +402,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           id: productId,
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           name: editProductForm.name,
           price: parseFloat(editProductForm.price),
           description: editProductForm.description,
@@ -409,6 +429,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
   // Toggle product stock status (quick action)
   const handleToggleStock = async (product: Product) => {
+    const effectiveStoreId = getEffectiveStoreId()
     try {
       const newStock = !product.inStock
       const res = await fetch('/api/admin/products', {
@@ -416,7 +437,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           id: product.id,
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           inStock: newStock,
         }),
       })
@@ -431,13 +452,14 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
   // Update product image
   const handleProductImageChange = async (productId: string, newUrl: string) => {
+    const effectiveStoreId = getEffectiveStoreId()
     try {
       const res = await fetch(`/api/admin/products`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           id: productId,
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           image: newUrl,
         }),
       })
@@ -458,13 +480,14 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       toast({ title: 'Error', description: 'El nombre es obligatorio', variant: 'destructive' })
       return
     }
+    const effectiveStoreId = getEffectiveStoreId()
     setNewCategoryUploading(true)
     try {
       const res = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           name: newCategory.name,
           slug: newCategory.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           image: newCategory.image || '',
@@ -491,8 +514,9 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   // Delete category
   const handleDeleteCategory = async (catId: string) => {
     if (!confirm('Eliminar esta categoria?')) return
+    const effectiveStoreId = getEffectiveStoreId()
     try {
-      const res = await fetch(`/api/admin/categories?id=${catId}&storeId=${storeInfo?.id}`, {
+      const res = await fetch(`/api/admin/categories?id=${catId}&storeId=${effectiveStoreId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
@@ -511,6 +535,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       toast({ title: 'Error', description: 'El nombre no puede estar vacio', variant: 'destructive' })
       return
     }
+    const effectiveStoreId = getEffectiveStoreId()
     setSavingCatId(catId)
     try {
       const res = await fetch('/api/admin/categories', {
@@ -518,7 +543,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           id: catId,
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           name: editCatName.trim(),
           slug: editCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         }),
@@ -542,13 +567,14 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
   // Update category image
   const handleCategoryImageChange = async (catId: string, newUrl: string) => {
+    const effectiveStoreId = getEffectiveStoreId()
     try {
       const res = await fetch('/api/admin/categories', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           id: catId,
-          storeId: storeInfo?.id,
+          storeId: effectiveStoreId,
           image: newUrl,
         }),
       })

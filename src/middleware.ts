@@ -18,6 +18,13 @@ function checkRateLimit(ip: string, max: number = 60, windowMs: number = 60000):
   return true
 }
 
+// Check if path matches /:slug/editordetienda pattern
+function isEditorDeTiendaPath(pathname: string): boolean {
+  // Match /something/editordetienda but not at root level static files
+  const segments = pathname.split('/').filter(Boolean)
+  return segments.length === 2 && segments[1] === 'editordetienda'
+}
+
 // Routes that should be public (no auth required)
 const PUBLIC_PATHS = [
   '/api/auth/login',
@@ -79,6 +86,21 @@ export function middleware(request: NextRequest) {
 
   // Super admin page is now protected — requires auth-token from main login
   if (pathname.startsWith('/super-admin')) {
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const jwtToken = token || cookieToken
+
+    if (!jwtToken) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    return NextResponse.next()
+  }
+
+  // Protect /[slug]/editordetienda pages — require authentication
+  if (isEditorDeTiendaPath(pathname)) {
     const cookieToken = request.cookies.get('auth-token')?.value
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
@@ -187,5 +209,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/admin/:path*', '/cliente/:path*', '/super-admin/:path*'],
+  matcher: [
+    '/api/:path*', 
+    '/admin/:path*', 
+    '/cliente/:path*', 
+    '/super-admin/:path*',
+    '/:slug/editordetienda',
+  ],
 }
