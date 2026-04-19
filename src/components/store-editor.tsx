@@ -362,7 +362,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
     if (!confirm('Eliminar este producto?')) return
     const effectiveStoreId = getEffectiveStoreId()
     try {
-      const res = await fetch(`/api/admin/products?id=${productId}&storeId=${effectiveStoreId}`,
+      const res = await fetch(`/api/admin/products?id=${productId}&storeId=${effectiveStoreId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
