@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   X, Save, Loader2, Camera, Plus, Trash2, Pencil,
   Store, Image as ImageIcon, Upload, ChevronDown, ChevronUp,
@@ -53,7 +54,7 @@ interface Product {
   category: { name: string; slug: string; id: string }
 }
 
-export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; onExit?: () => void }) {
+export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { storeSlug: string; onExit?: () => void; stayOnEditor?: boolean }) {
   const user = useAuthStore((s) => s.user)
   const { toast } = useToast()
   const token = useAuthStore((s) => s.token)
@@ -225,8 +226,21 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
       if (res.ok) {
         const data = await res.json()
         setStoreInfo(prev => prev ? { ...prev, ...data } : null)
+        // Update form with saved data to ensure consistency
+        setStoreForm({
+          name: data.name || '',
+          description: data.description || '',
+          whatsappNumber: data.whatsappNumber || '',
+          address: data.address || '',
+          logo: data.logo || '',
+        })
         setHasChanges(false)
         toast({ title: 'Tienda actualizada', description: 'Los cambios se guardaron correctamente' })
+        // In stayOnEditor mode, refresh all data from server to ensure persistence
+        if (stayOnEditor) {
+          // Re-fetch store data to ensure everything is in sync
+          setTimeout(() => fetchStoreData(), 500)
+        }
       } else {
         const err = await res.json().catch(() => ({ error: 'Error' }))
         toast({ title: 'Error', description: err.error || 'No se pudo guardar', variant: 'destructive' })
@@ -597,10 +611,20 @@ export default function StoreEditor({ storeSlug, onExit }: { storeSlug: string; 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {onExit && (
+              {/* Show back button when onExit is provided and not in stayOnEditor mode */}
+              {onExit && !stayOnEditor && (
                 <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={onExit}>
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
+              )}
+              {/* In stayOnEditor mode, show a "Ver Tienda" link */}
+              {stayOnEditor && (
+                <Link href={`/${storeSlug}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" className="shrink-0 h-8 gap-1.5 text-xs">
+                    <Eye className="w-3.5 h-3.5" />
+                    Ver Tienda
+                  </Button>
+                </Link>
               )}
               <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center shrink-0">
                 <Edit3 className="w-4 h-4 text-white" />
