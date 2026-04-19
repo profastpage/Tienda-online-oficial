@@ -3,7 +3,27 @@ import { NextResponse } from 'next/server'
 import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
-import { getProductsByStore, createProduct, updateProduct } from '@/lib/product-helpers'
+
+type ProductData = {
+  id: string
+  name: string
+  slug: string
+  description: string
+  price: number
+  comparePrice: number | null
+  image: string
+  categoryId: string
+  storeId: string
+  isFeatured: boolean
+  isNew: boolean
+  discount: number | null
+  rating: number
+  reviewCount: number
+  inStock: boolean
+  createdAt: Date
+  updatedAt: Date
+  category?: { id: string; name: string; slug: string } | null
+}
 
 // Helper to ensure database has required columns
 async function ensureProductColumns(db: Awaited<ReturnType<typeof getDb>>) {
@@ -46,10 +66,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    // Use safe product query
-    const products = await getProductsByStore(db, storeId)
+    // Use raw SQL to get products
+    const products = await db.$queryRaw<ProductData[]>`
+      SELECT 
+        id, name, slug, description, price, comparePrice, image, 
+        categoryId, storeId, isFeatured, isNew, discount, 
+        rating, reviewCount, inStock, createdAt, updatedAt
+      FROM Product
+      WHERE storeId = ${storeId}
+      ORDER BY createdAt DESC
+    `
     
-    // Fetch categories separately for each product using raw query
+    // Fetch categories separately for each product
     const productsWithCategories = await Promise.all(
       products.map(async (product) => {
         try {
@@ -72,8 +100,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    console.log('[admin/products POST] Starting product creation...')
+    
     const auth = await requireStoreOwner(request)
-    if (auth.error) return auth.error
+    if (auth.error) {
+      console.log('[admin/products POST] Auth error:', auth.error)
+      return auth.error
+    }
 
     const db = await getDb()
     
@@ -81,17 +114,23 @@ export async function POST(request: Request) {
     await ensureProductColumns(db)
     
     const body = await request.json()
+    console.log('[admin/products POST] Request body:', { ...body, image: body.image ? '[IMAGE]' : 'none' })
+    
     const { name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, inStock } = body
     
     if (!name || !slug || price === undefined || !categoryId) {
+      console.log('[admin/products POST] Missing required fields')
       return NextResponse.json({ error: 'Faltan campos requeridos: nombre, slug, precio, categoria' }, { status: 400 })
     }
 
     // Use storeId from JWT token
     const storeId = auth.user.storeId
     if (!storeId) {
+      console.log('[admin/products POST] No storeId in token')
       return NextResponse.json({ error: 'No tienes una tienda asociada' }, { status: 400 })
     }
+
+    console.log('[admin/products POST] StoreId:', storeId)
 
     // Ensure store exists (critical for demo/seed accounts)
     await ensureStoreExists(db, storeId)
@@ -114,24 +153,55 @@ export async function POST(request: Request) {
       )
     }
 
-    // Use safe product creation (raw SQL)
-    const product = await createProduct(db, {
-      storeId,
-      name,
-      slug,
-      description: description || '',
-      price: parseFloat(price),
-      comparePrice: comparePrice ? parseFloat(comparePrice) : null,
-      image: image || '',
-      categoryId,
-      isFeatured: isFeatured || false,
-      isNew: isNew || false,
-      discount: discount || null,
-      inStock: inStock !== false,
-    })
+    // Generate ID and timestamps
+    const id = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const now = new Date().toISOString()
     
-    if (!product) {
-      return NextResponse.json({ error: 'Error al crear producto', details: 'No se pudo guardar en la base de datos' }, { status: 500 })
+    // Insert product using raw SQL
+    try {
+      await db.$executeRaw`
+        INSERT INTO Product (
+          id, name, slug, description, price, comparePrice, image,
+          categoryId, storeId, isFeatured, isNew, discount,
+          rating, reviewCount, inStock, createdAt, updatedAt
+        ) VALUES (
+          ${id},
+          ${name},
+          ${slug},
+          ${description || ''},
+          ${parseFloat(price)},
+          ${comparePrice ? parseFloat(comparePrice) : null},
+          ${image || ''},
+          ${categoryId},
+          ${storeId},
+          ${isFeatured ? 1 : 0},
+          ${isNew ? 1 : 0},
+          ${discount || null},
+          4.5,
+          0,
+          ${inStock !== false ? 1 : 0},
+          ${now},
+          ${now}
+        )
+      `
+      console.log('[admin/products POST] Product inserted successfully:', id)
+    } catch (insertError) {
+      console.error('[admin/products POST] Insert error:', insertError)
+      throw insertError
+    }
+    
+    // Fetch the created product
+    const products = await db.$queryRaw<ProductData[]>`
+      SELECT 
+        id, name, slug, description, price, comparePrice, image, 
+        categoryId, storeId, isFeatured, isNew, discount, 
+        rating, reviewCount, inStock, createdAt, updatedAt
+      FROM Product
+      WHERE id = ${id}
+    `
+    
+    if (!products[0]) {
+      return NextResponse.json({ error: 'Error al crear producto', details: 'No se pudo recuperar el producto creado' }, { status: 500 })
     }
     
     // Fetch category for response
@@ -139,13 +209,22 @@ export async function POST(request: Request) {
       SELECT id, name, slug FROM Category WHERE id = ${categoryId}
     `
     
-    return NextResponse.json({ ...product, category: categories[0] || null }, { status: 201 })
+    return NextResponse.json({ ...products[0], category: categories[0] || null }, { status: 201 })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed'
+    console.error('[admin/products POST] Full error:', error)
+    
     if (msg.includes('Unique') || msg.includes('UNIQUE')) {
       return NextResponse.json({ error: 'Ya existe un producto con ese slug' }, { status: 409 })
     }
-    console.error('[admin/products POST]', msg)
+    if (msg.includes('no such column')) {
+      return NextResponse.json({ 
+        error: 'Error de base de datos: falta una columna', 
+        details: msg,
+        hint: 'Ejecuta /api/diagnostic con POST para migrar la base de datos'
+      }, { status: 500 })
+    }
+    
     return NextResponse.json({ error: 'Error al crear producto', details: msg }, { status: 500 })
   }
 }
@@ -161,39 +240,86 @@ export async function PUT(request: Request) {
     const ownership = await verifyStoreOwnershipAny(request, 'product', id)
     if (!ownership.authorized) return ownership.error
 
-    // Build update data (only safe fields)
-    const updateData: Record<string, unknown> = {}
-    if (data.name !== undefined) updateData.name = data.name
-    if (data.slug !== undefined) updateData.slug = data.slug
-    if (data.description !== undefined) updateData.description = data.description
-    if (data.price !== undefined) updateData.price = parseFloat(data.price)
-    if (data.comparePrice !== undefined) updateData.comparePrice = data.comparePrice ? parseFloat(data.comparePrice) : null
-    if (data.image !== undefined) updateData.image = data.image
-    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId
-    if (data.isFeatured !== undefined) updateData.isFeatured = data.isFeatured
-    if (data.isNew !== undefined) updateData.isNew = data.isNew
-    if (data.discount !== undefined) updateData.discount = data.discount || null
-    if (data.inStock !== undefined) updateData.inStock = data.inStock
-
-    // Use safe product update
-    const product = await updateProduct(db, id, updateData)
+    // Build update query
+    const updates: string[] = []
+    const values: unknown[] = []
     
-    if (!product) {
-      return NextResponse.json({ error: 'Error al actualizar producto' }, { status: 500 })
+    if (data.name !== undefined) {
+      updates.push('name = ?')
+      values.push(data.name)
     }
+    if (data.slug !== undefined) {
+      updates.push('slug = ?')
+      values.push(data.slug)
+    }
+    if (data.description !== undefined) {
+      updates.push('description = ?')
+      values.push(data.description)
+    }
+    if (data.price !== undefined) {
+      updates.push('price = ?')
+      values.push(parseFloat(data.price))
+    }
+    if (data.comparePrice !== undefined) {
+      updates.push('comparePrice = ?')
+      values.push(data.comparePrice ? parseFloat(data.comparePrice) : null)
+    }
+    if (data.image !== undefined) {
+      updates.push('image = ?')
+      values.push(data.image)
+    }
+    if (data.categoryId !== undefined) {
+      updates.push('categoryId = ?')
+      values.push(data.categoryId)
+    }
+    if (data.isFeatured !== undefined) {
+      updates.push('isFeatured = ?')
+      values.push(data.isFeatured ? 1 : 0)
+    }
+    if (data.isNew !== undefined) {
+      updates.push('isNew = ?')
+      values.push(data.isNew ? 1 : 0)
+    }
+    if (data.discount !== undefined) {
+      updates.push('discount = ?')
+      values.push(data.discount || null)
+    }
+    if (data.inStock !== undefined) {
+      updates.push('inStock = ?')
+      values.push(data.inStock ? 1 : 0)
+    }
+    
+    if (updates.length > 0) {
+      updates.push('updatedAt = ?')
+      values.push(new Date().toISOString())
+      values.push(id)
+      
+      const query = `UPDATE Product SET ${updates.join(', ')} WHERE id = ?`
+      await db.$executeRawUnsafe(query, ...values)
+    }
+    
+    // Fetch updated product
+    const products = await db.$queryRaw<ProductData[]>`
+      SELECT 
+        id, name, slug, description, price, comparePrice, image, 
+        categoryId, storeId, isFeatured, isNew, discount, 
+        rating, reviewCount, inStock, createdAt, updatedAt
+      FROM Product
+      WHERE id = ${id}
+    `
     
     // Fetch category for response
     const categories = await db.$queryRaw<{ id: string; name: string; slug: string }[]>`
-      SELECT id, name, slug FROM Category WHERE id = ${product.categoryId}
+      SELECT id, name, slug FROM Category WHERE id = ${products[0]?.categoryId}
     `
     
-    return NextResponse.json({ ...product, category: categories[0] || null })
+    return NextResponse.json({ ...products[0], category: categories[0] || null })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed'
+    console.error('[admin/products PUT]', msg)
     if (msg.includes('Unique') || msg.includes('UNIQUE')) {
       return NextResponse.json({ error: 'Ya existe un producto con ese slug' }, { status: 409 })
     }
-    console.error('[admin/products PUT]', msg)
     return NextResponse.json({ error: 'Error al actualizar producto', details: msg }, { status: 500 })
   }
 }
