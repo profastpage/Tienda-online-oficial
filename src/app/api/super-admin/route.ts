@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
 import { verifyToken, signToken } from '@/lib/auth'
+import { STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
 async function verifySuperAdmin(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('authorization')
@@ -24,6 +25,21 @@ async function verifySuperAdmin(request: Request): Promise<boolean> {
   } catch { /* not a JWT */ }
 
   return false
+}
+
+// Safe store fields for select (excludes columns that may not exist in older DBs)
+const STORE_SELECT_FIELDS = {
+  id: true,
+  name: true,
+  slug: true,
+  logo: true,
+  whatsappNumber: true,
+  address: true,
+  description: true,
+  isActive: true,
+  plan: true,
+  createdAt: true,
+  updatedAt: true,
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -52,10 +68,11 @@ export async function GET(request: Request) {
     let totalLeads = 0
     const errors: string[] = []
 
-    // 1. Stores with full details
+    // 1. Stores with full details - use explicit select
     try {
       stores = await db.store.findMany({
-        include: {
+        select: {
+          ...STORE_SELECT_FIELDS,
           _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } },
           users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
           coupons: { orderBy: { createdAt: 'desc' } },
@@ -67,7 +84,18 @@ export async function GET(request: Request) {
     // 2. All users
     try {
       allUsers = await db.storeUser.findMany({
-        include: { store: { select: { id: true, name: true, slug: true, plan: true, isActive: true } } },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          address: true,
+          role: true,
+          avatar: true,
+          createdAt: true,
+          storeId: true,
+          store: { select: { id: true, name: true, slug: true, plan: true, isActive: true } },
+        },
         orderBy: { createdAt: 'desc' },
       })
     } catch (err) { errors.push('Usuarios'); console.error(err) }
@@ -81,7 +109,20 @@ export async function GET(request: Request) {
     // 4. Coupons
     try {
       coupons = await db.coupon.findMany({
-        include: { store: { select: { id: true, name: true, slug: true } } },
+        select: {
+          id: true,
+          code: true,
+          type: true,
+          value: true,
+          minPurchase: true,
+          maxUses: true,
+          usedCount: true,
+          isActive: true,
+          expiresAt: true,
+          createdAt: true,
+          storeId: true,
+          store: { select: { id: true, name: true, slug: true } },
+        },
         orderBy: { createdAt: 'desc' },
       })
     } catch (err) { errors.push('Coupons'); console.error(err) }
@@ -100,11 +141,6 @@ export async function GET(request: Request) {
       planDistribution[plan] = (planDistribution[plan] || 0) + 1
     }
 
-    // Subscription status
-    const now = new Date()
-    const expiringStores = stores.filter(s => s.subscriptionExpiresAt && new Date(s.subscriptionExpiresAt) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) && new Date(s.subscriptionExpiresAt) >= now).length
-    const expiredStores = stores.filter(s => s.subscriptionExpiresAt && new Date(s.subscriptionExpiresAt) < now).length
-
     // Recent activity
     const recentActivity = allUsers.slice(0, 15).map((u) => ({
       type: 'registration',
@@ -115,7 +151,7 @@ export async function GET(request: Request) {
     }))
 
     const response: any = {
-      stats: { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalLeads, totalCoupons, planDistribution, expiringStores, expiredStores },
+      stats: { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalLeads, totalCoupons, planDistribution, expiringStores: 0, expiredStores: 0 },
       stores, users: allUsers, leads, coupons, recentActivity,
     }
     if (errors.length > 0) response._partialErrors = errors
@@ -149,7 +185,11 @@ export async function PATCH(request: Request) {
       const store = await db.store.update({
         where: { id: storeId },
         data: { isActive },
-        include: { _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } }, users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true } } },
+        select: {
+          ...STORE_SELECT_FIELDS,
+          _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } },
+          users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true } },
+        },
       })
       return NextResponse.json({ success: true, message: `Tienda ${isActive ? 'activada' : 'suspendida'}`, store })
     }
@@ -171,54 +211,23 @@ export async function PATCH(request: Request) {
       const store = await db.store.update({
         where: { id: storeId },
         data: { plan },
-        include: { _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } }, users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true } } },
+        select: {
+          ...STORE_SELECT_FIELDS,
+          _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } },
+          users: { select: { id: true, email: true, name: true, phone: true, role: true, avatar: true, createdAt: true } },
+        },
       })
       return NextResponse.json({ success: true, message: `Plan cambiado a ${plan}`, store })
-    }
-
-    // ── Set Subscription Expiry / Extend Time ──
-    if (action === 'set-subscription') {
-      const { storeId, days } = body
-      if (!storeId || !days || days <= 0) return NextResponse.json({ error: 'Datos requeridos' }, { status: 400 })
-      const store = await db.store.findUnique({ where: { id: storeId } })
-      if (!store) return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
-
-      const baseDate = store.subscriptionExpiresAt && new Date(store.subscriptionExpiresAt) > new Date()
-        ? new Date(store.subscriptionExpiresAt)
-        : new Date()
-      const newExpiry = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000)
-
-      const updated = await db.store.update({
-        where: { id: storeId },
-        data: { subscriptionExpiresAt: newExpiry },
-        include: { _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } } },
-      })
-      return NextResponse.json({ success: true, message: `Suscripcion extendida ${days} dias (expira: ${newExpiry.toLocaleDateString('es-PE')})`, store: updated })
-    }
-
-    // ── Grant Trial Days ──
-    if (action === 'grant-trial') {
-      const { storeId, days } = body
-      if (!storeId || !days || days <= 0) return NextResponse.json({ error: 'Datos requeridos' }, { status: 400 })
-      const store = await db.store.findUnique({ where: { id: storeId } })
-      if (!store) return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
-
-      const currentTrial = store.trialDays || 0
-      const newExpiry = new Date(Date.now() + (currentTrial + days) * 24 * 60 * 60 * 1000)
-
-      const updated = await db.store.update({
-        where: { id: storeId },
-        data: { trialDays: currentTrial + days, subscriptionExpiresAt: newExpiry },
-        include: { _count: { select: { users: true, products: true, orders: true, categories: true, coupons: true } } },
-      })
-      return NextResponse.json({ success: true, message: `${days} dias de prueba otorgados (total: ${currentTrial + days} dias)`, store: updated })
     }
 
     // ── Store Impersonation Token ──
     if (action === 'store-token') {
       const { storeId } = body
       if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
-      const store = await db.store.findUnique({ where: { id: storeId } })
+      const store = await db.store.findUnique({ 
+        where: { id: storeId },
+        select: { id: true, name: true, slug: true },
+      })
       if (!store) return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
 
       const tempToken = await signToken({
@@ -310,6 +319,13 @@ export async function PATCH(request: Request) {
       if (!leadId) return NextResponse.json({ error: 'leadId requerido' }, { status: 400 })
       await db.lead.delete({ where: { id: leadId } })
       return NextResponse.json({ success: true, message: 'Lead eliminado' })
+    }
+
+    // ── Set Subscription Expiry / Extend Time (disabled if column doesn't exist) ──
+    if (action === 'set-subscription' || action === 'grant-trial') {
+      return NextResponse.json({ 
+        error: 'Esta funcionalidad requiere una actualización de base de datos. Las columnas subscriptionExpiresAt y trialDays no están disponibles.' 
+      }, { status: 400 })
     }
 
     return NextResponse.json({ error: `Accion no valida: ${action}` }, { status: 400 })

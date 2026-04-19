@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAuthUser, signToken } from '@/lib/auth'
 import { getDb } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
+import { ensureStoreExists, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
 /**
  * AUTO-REPAIR: Create user in DB from JWT data if they don't exist.
@@ -11,19 +12,8 @@ async function ensureUserFromJwt(jwtPayload: { userId: string; email: string; ro
   try {
     const db = await getDb()
 
-    // Ensure store exists
-    await db.store.upsert({
-      where: { id: jwtPayload.storeId },
-      update: {},
-      create: {
-        id: jwtPayload.storeId,
-        name: jwtPayload.email.split('@')[0] || 'Mi Tienda',
-        slug: jwtPayload.email.split('@')[0]?.toLowerCase()?.replace(/s+/g, '-') || 'tienda',
-      },
-    }).catch(async () => {
-      const store = await db.store.findUnique({ where: { id: jwtPayload.storeId } })
-      if (!store) console.error(`[auth/me] Could not create store ${jwtPayload.storeId}`)
-    })
+    // Ensure store exists using the safe helper
+    await ensureStoreExists(db, jwtPayload.storeId)
 
     // Ensure user exists
     const user = await db.storeUser.upsert({

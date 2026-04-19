@@ -2,7 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
-import { ensureStoreExists } from '@/lib/store-helpers'
+import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     await ensureStoreExists(db, storeId)
 
     // Check plan limits before creating category
-    const store = await db.store.findUnique({ where: { id: storeId }, select: { plan: true } })
+    const store = await findStoreById(db, storeId)
     const plan = store?.plan || 'basico'
     const limitCheck = await checkPlanLimit(db, storeId, 'categories', plan)
     if (!limitCheck.allowed) {

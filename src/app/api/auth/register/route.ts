@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { signToken, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
+import { ensureStoreExists, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
 // Default seed store for fallback when DB is empty
 const SEED_STORE = {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
 
     let storeId = ''
     let storeNameStr = ''
-    let dbAvailable = true
+    let storeSlugStr = ''
 
     try {
       const db = await getDb()
@@ -53,45 +54,41 @@ export async function POST(request: Request) {
         let slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
         // Ensure slug is unique (append random suffix if needed)
-        const existingSlug = await db.store.findUnique({ where: { slug } })
+        const existingSlug = await db.store.findUnique({ where: { slug }, select: { id: true } })
         if (existingSlug) {
           slug = `${slug}-${Date.now().toString(36)}`
         }
+        storeSlugStr = slug
 
         const store = await db.store.create({
           data: { name: storeName, slug, whatsappNumber: phone || '', plan: plan || 'basico' },
+          select: { id: true, name: true, slug: true },
         })
         storeId = store.id
       } else {
-        const store = await db.store.findFirst({ where: { isActive: true } })
+        const store = await db.store.findFirst({ 
+          where: { isActive: true },
+          select: { id: true, name: true, slug: true },
+        })
         if (!store) {
           // Auto-create the default store if none exists
           console.log('[register] No store found, creating default store...')
-          try {
-            const store = await db.store.upsert({
-              where: { slug: SEED_STORE.slug },
-              update: { isActive: true },
-              create: {
-                id: SEED_STORE.id,
-                name: SEED_STORE.name,
-                slug: SEED_STORE.slug,
-                whatsappNumber: SEED_STORE.whatsappNumber,
-                plan: SEED_STORE.plan,
-                isActive: true,
-              },
-            })
-            storeId = store.id
-          } catch (upsertError) {
-            console.warn('[register] Store upsert failed:', upsertError)
-            storeId = SEED_STORE.id
-          }
+          await ensureStoreExists(db, SEED_STORE.id)
+          storeId = SEED_STORE.id
+          storeNameStr = SEED_STORE.name
+          storeSlugStr = SEED_STORE.slug
         } else {
           storeId = store.id
+          storeNameStr = store.name
+          storeSlugStr = store.slug
         }
       }
 
       // Check if user already exists
-      const existing = await db.storeUser.findUnique({ where: { email_storeId: { email, storeId } } })
+      const existing = await db.storeUser.findUnique({ 
+        where: { email_storeId: { email, storeId } },
+        select: { id: true },
+      })
       if (existing) {
         return NextResponse.json({ error: 'Este email ya está registrado' }, { status: 409 })
       }
@@ -100,6 +97,7 @@ export async function POST(request: Request) {
 
       const user = await db.storeUser.create({
         data: { email, password: hashedPassword, name, phone: phone || '', address: address || '', role, storeId },
+        select: { id: true, email: true, name: true, phone: true, address: true, role: true, storeId: true },
       })
 
       // Generate JWT token
@@ -110,10 +108,15 @@ export async function POST(request: Request) {
         storeId: user.storeId,
       })
 
-      // Get store data for response
-      const storeData = await db.store.findUnique({ where: { id: storeId } })
-      const responseStoreName = storeNameStr || storeData?.name || 'Tienda'
-      const responseStoreSlug = storeData?.slug || storeNameStr?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tienda'
+      // Get store data for response if not already fetched
+      if (!storeNameStr || !storeSlugStr) {
+        const storeData = await db.store.findUnique({ 
+          where: { id: storeId },
+          select: { name: true, slug: true },
+        })
+        storeNameStr = storeNameStr || storeData?.name || 'Tienda'
+        storeSlugStr = storeSlugStr || storeData?.slug || 'tienda'
+      }
 
       const response = NextResponse.json({
         id: user.id,
@@ -123,8 +126,8 @@ export async function POST(request: Request) {
         address: user.address || '',
         role: user.role,
         storeId: user.storeId,
-        storeName: responseStoreName,
-        storeSlug: responseStoreSlug,
+        storeName: storeNameStr,
+        storeSlug: storeSlugStr,
         avatar: '',
         token,
       })

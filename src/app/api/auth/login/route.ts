@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { signToken, comparePassword, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
+import { ensureStoreExists, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
 // Bcrypt hash for admin123 (ALL seed users use the same password)
 const ADMIN_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
@@ -123,22 +124,8 @@ async function syncSeedUserToDb(seedUser: typeof SEED_USERS[number]): Promise<{
   try {
     const db = await getDb()
 
-    // Ensure the store exists
-    await db.store.upsert({
-      where: { id: seedUser.storeId },
-      update: {},
-      create: {
-        id: seedUser.storeId,
-        name: seedUser.storeName,
-        slug: seedUser.storeSlug,
-      },
-    }).catch(async () => {
-      // If upsert fails (e.g., slug conflict), just try to find existing
-      const existing = await db.store.findUnique({ where: { id: seedUser.storeId } })
-      if (!existing) {
-        console.warn(`[login] Could not create store ${seedUser.storeId}`)
-      }
-    })
+    // Ensure the store exists using the safe helper
+    await ensureStoreExists(db, seedUser.storeId)
 
     // Upsert the user: create if not exists, or just ensure they exist
     const dbUser = await db.storeUser.upsert({
@@ -159,7 +146,7 @@ async function syncSeedUserToDb(seedUser: typeof SEED_USERS[number]): Promise<{
         storeId: seedUser.storeId,
         avatar: '',
       },
-      include: { store: true },
+      include: { store: { select: { name: true, slug: true } } },
     })
 
     console.log(`[login] Synced seed user ${seedUser.email} to DB (id: ${dbUser.id})`)
@@ -295,7 +282,10 @@ export async function POST(request: Request) {
     try {
       const db = await getDb()
 
-      const users = await db.storeUser.findMany({ where: { email }, include: { store: true } })
+      const users = await db.storeUser.findMany({ 
+        where: { email }, 
+        include: { store: { select: { name: true, slug: true } } } 
+      })
 
       for (const user of users) {
         const isBcryptHash = user.password.startsWith('$2')
@@ -389,22 +379,17 @@ export async function POST(request: Request) {
     }
 
     // Ensure store data exists (auto-repair if store was deleted)
-    if (matchedUser && matchedUser.store) {
-      // Store exists - use it
-    } else if (matchedUser) {
+    if (matchedUser && !matchedUser.store) {
       console.warn(`[login] User ${matchedUser.id} has no store, auto-creating...`)
       try {
-        const db3 = await getDb()
-        const autoStore = await db3.store.upsert({
+        const db = await getDb()
+        await ensureStoreExists(db, matchedUser.storeId)
+        // Get the store info
+        const store = await db.store.findUnique({
           where: { id: matchedUser.storeId },
-          update: {},
-          create: {
-            id: matchedUser.storeId,
-            name: matchedUser.name ? `${matchedUser.name}'s Tienda` : 'Mi Tienda',
-            slug: matchedUser.email.split('@')[0]?.toLowerCase()?.replace(/[^a-z0-9]+/g, '-') || `tienda-${Date.now().toString(36)}`,
-          },
+          select: { name: true, slug: true },
         })
-        matchedUser = { ...matchedUser, store: { name: autoStore.name, slug: autoStore.slug } }
+        matchedUser = { ...matchedUser, store: store || { name: 'Mi Tienda', slug: 'tienda' } }
       } catch (repairErr) {
         console.error('[login] Auto-repair store failed:', repairErr)
         matchedUser = { ...matchedUser, store: { name: 'Mi Tienda', slug: 'tienda' } }

@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireStoreOwner } from '@/lib/api-auth'
-import { ensureStoreExists, SEED_STORES } from '@/lib/store-helpers'
+import { ensureStoreExists, findStoreById, updateStore, SEED_STORES, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -68,49 +68,50 @@ export async function PUT(request: Request) {
 
     const { name, description, whatsappNumber, address, logo } = body
 
-    const updateData: Record<string, unknown> = {}
+    const updateData: {
+      name?: string
+      description?: string
+      whatsappNumber?: string
+      address?: string
+      logo?: string
+    } = {}
+    
     if (name) updateData.name = name
     if (description !== undefined) updateData.description = description
     if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber
     if (address !== undefined) updateData.address = address
     if (logo !== undefined) updateData.logo = logo
 
-    try {
-      const store = await db.store.update({ 
-        where: { id: storeId }, 
-        data: updateData 
-      })
+    // Try to update using the safe helper
+    const updatedStore = await updateStore(db, storeId, updateData)
+    
+    if (updatedStore) {
       console.log('[admin/settings PUT] Store updated:', storeId, 'fields:', Object.keys(updateData))
-      return NextResponse.json(store)
-    } catch (updateError: unknown) {
-      const msg = updateError instanceof Error ? updateError.message : String(updateError)
-      
-      // If store still doesn't exist after ensureStoreExists, try one more time to create
-      if (msg.includes('Record to update not found') || msg.includes('not found')) {
-        console.warn(`[admin/settings] Store ${storeId} still not found, force creating...`)
-        
-        // Force create with the update data
-        const seedData = SEED_STORES[storeId]
-        try {
-          const store = await db.store.create({
-            data: {
-              id: storeId,
-              name: name || seedData?.name || 'Mi Tienda',
-              slug: seedData?.slug || `tienda-${storeId.slice(0, 8)}`,
-              description: description || '',
-              whatsappNumber: whatsappNumber || '',
-              address: address || '',
-              logo: logo || '',
-            },
-          })
-          console.log(`[admin/settings] Force created store ${storeId}`)
-          return NextResponse.json(store)
-        } catch (createError) {
-          console.error('[admin/settings] Force create failed:', createError instanceof Error ? createError.message : createError)
-          return NextResponse.json({ error: 'Tienda no encontrada y no se pudo crear' }, { status: 404 })
-        }
-      }
-      throw updateError
+      return NextResponse.json(updatedStore)
+    }
+
+    // If update failed, try to create the store
+    console.warn(`[admin/settings] Store ${storeId} update failed, force creating...`)
+    
+    const seedData = SEED_STORES[storeId]
+    try {
+      const newStore = await db.store.create({
+        data: {
+          id: storeId,
+          name: name || seedData?.name || 'Mi Tienda',
+          slug: seedData?.slug || `tienda-${storeId.slice(0, 8)}`,
+          description: description || '',
+          whatsappNumber: whatsappNumber || '',
+          address: address || '',
+          logo: logo || '',
+        },
+        select: STORE_SAFE_FIELDS,
+      })
+      console.log(`[admin/settings] Force created store ${storeId}`)
+      return NextResponse.json(newStore)
+    } catch (createError) {
+      console.error('[admin/settings] Force create failed:', createError instanceof Error ? createError.message : createError)
+      return NextResponse.json({ error: 'Tienda no encontrada y no se pudo crear' }, { status: 404 })
     }
   } catch (error) {
     console.error('[admin/settings PUT]', error instanceof Error ? error.message : error)

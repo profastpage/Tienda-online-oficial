@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { checkPlanLimit, canUseFeature, getPlanConfig, canUpgradeTo } from '@/lib/plan-limits'
+import { ensureStoreExists } from '@/lib/store-helpers'
 
 const VALID_PLANS = ['basico', 'pro', 'premium', 'empresarial']
 
@@ -12,6 +13,9 @@ export async function GET(request: Request) {
 
     const db = await getDb()
     const storeId = auth.user.storeId
+
+    // Ensure store exists
+    await ensureStoreExists(db, storeId)
 
     // Get store plan
     const store = await db.store.findUnique({
@@ -80,6 +84,10 @@ export async function POST(request: Request) {
 
     // Get current store plan
     const storeId = auth.user.storeId
+    
+    // Ensure store exists
+    await ensureStoreExists(db, storeId)
+    
     const store = await db.store.findUnique({
       where: { id: storeId },
       select: { plan: true },
