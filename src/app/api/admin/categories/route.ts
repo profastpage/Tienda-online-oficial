@@ -4,6 +4,17 @@ import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 
+type CategoryData = {
+  id: string
+  name: string
+  slug: string
+  image: string
+  sortOrder: number
+  storeId: string
+  createdAt: Date
+  productCount?: number
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await requireStoreOwner(request)
@@ -15,16 +26,19 @@ export async function GET(request: Request) {
     if (!storeId) return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })
 
     // Verify the user can only access their own store's data
-    // Super-admin bypasses store ownership check
     if (auth.user.role !== 'super-admin' && storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    const categories = await db.category.findMany({
-      where: { storeId },
-      include: { _count: { select: { products: true } } },
-      orderBy: { sortOrder: 'asc' },
-    })
+    // Use raw SQL to get categories with product counts
+    const categories = await db.$queryRaw<CategoryData[]>`
+      SELECT c.id, c.name, c.slug, c.image, c.sortOrder, c.storeId, c.createdAt,
+        (SELECT COUNT(*) FROM Product p WHERE p.categoryId = c.id) as productCount
+      FROM Category c
+      WHERE c.storeId = ${storeId}
+      ORDER BY c.sortOrder ASC
+    `
+    
     return NextResponse.json(categories)
   } catch (error) {
     console.error('[admin/categories GET]', error instanceof Error ? error.message : error)
@@ -41,16 +55,19 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, slug, image, sortOrder } = body
     if (!name || !slug) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+      return NextResponse.json({ error: 'Faltan campos requeridos: nombre y slug' }, { status: 400 })
     }
 
-    // Use storeId from JWT token, not from request body
+    // Use storeId from JWT token
     const storeId = auth.user.storeId
+    if (!storeId) {
+      return NextResponse.json({ error: 'No tienes una tienda asociada' }, { status: 400 })
+    }
 
     // Ensure store exists (critical for demo/seed accounts)
     await ensureStoreExists(db, storeId)
 
-    // Check plan limits before creating category
+    // Check plan limits
     const store = await findStoreById(db, storeId)
     const plan = store?.plan || 'basico'
     const limitCheck = await checkPlanLimit(db, storeId, 'categories', plan)
@@ -67,11 +84,24 @@ export async function POST(request: Request) {
       )
     }
 
-    const category = await db.category.create({
-      data: { storeId, name, slug, image: image || '', sortOrder: sortOrder || 0 },
-      include: { _count: { select: { products: true } } },
-    })
-    return NextResponse.json(category, { status: 201 })
+    // Generate ID and create category using raw SQL
+    const id = `cat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const now = new Date().toISOString()
+    
+    await db.$executeRaw`
+      INSERT INTO Category (id, name, slug, image, sortOrder, storeId, createdAt)
+      VALUES (${id}, ${name}, ${slug}, ${image || ''}, ${sortOrder || 0}, ${storeId}, ${now})
+    `
+    
+    // Fetch the created category
+    const categories = await db.$queryRaw<CategoryData[]>`
+      SELECT c.id, c.name, c.slug, c.image, c.sortOrder, c.storeId, c.createdAt,
+        (SELECT COUNT(*) FROM Product p WHERE p.categoryId = c.id) as productCount
+      FROM Category c
+      WHERE c.id = ${id}
+    `
+    
+    return NextResponse.json(categories[0], { status: 201 })
   } catch (error) {
     console.error('[admin/categories POST]', error instanceof Error ? error.message : error)
     return NextResponse.json({ error: 'Error al crear categoria', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
@@ -83,20 +113,48 @@ export async function PUT(request: Request) {
     const db = await getDb()
     const body = await request.json()
     const { id, name, slug, image, sortOrder } = body
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+    if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
 
     // Verify store ownership before update
     const ownership = await verifyStoreOwnershipAny(request, 'category', id)
     if (!ownership.authorized) return ownership.error
 
-    const updateData: Record<string, unknown> = {}
-    if (name !== undefined) updateData.name = name
-    if (slug !== undefined) updateData.slug = slug
-    if (image !== undefined) updateData.image = image
-    if (sortOrder !== undefined) updateData.sortOrder = sortOrder
-
-    const category = await db.category.update({ where: { id }, data: updateData, include: { _count: { select: { products: true } } } })
-    return NextResponse.json(category)
+    // Build update query
+    const updates: string[] = []
+    const values: unknown[] = []
+    
+    if (name !== undefined) {
+      updates.push('name = ?')
+      values.push(name)
+    }
+    if (slug !== undefined) {
+      updates.push('slug = ?')
+      values.push(slug)
+    }
+    if (image !== undefined) {
+      updates.push('image = ?')
+      values.push(image)
+    }
+    if (sortOrder !== undefined) {
+      updates.push('sortOrder = ?')
+      values.push(sortOrder)
+    }
+    
+    if (updates.length > 0) {
+      values.push(id)
+      const query = `UPDATE Category SET ${updates.join(', ')} WHERE id = ?`
+      await db.$executeRawUnsafe(query, ...values)
+    }
+    
+    // Fetch updated category
+    const categories = await db.$queryRaw<CategoryData[]>`
+      SELECT c.id, c.name, c.slug, c.image, c.sortOrder, c.storeId, c.createdAt,
+        (SELECT COUNT(*) FROM Product p WHERE p.categoryId = c.id) as productCount
+      FROM Category c
+      WHERE c.id = ${id}
+    `
+    
+    return NextResponse.json(categories[0])
   } catch (error) {
     console.error('[admin/categories PUT]', error instanceof Error ? error.message : error)
     return NextResponse.json({ error: 'Error al actualizar categoria', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
@@ -107,14 +165,17 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+    if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
 
     // Verify store ownership before delete
     const ownership = await verifyStoreOwnershipAny(request, 'category', id)
     if (!ownership.authorized) return ownership.error
 
     const db = await getDb()
-    await db.category.delete({ where: { id } })
+    
+    // Use raw SQL delete
+    await db.$executeRaw`DELETE FROM Category WHERE id = ${id}`
+    
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[admin/categories DELETE]', error instanceof Error ? error.message : error)

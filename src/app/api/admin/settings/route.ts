@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireStoreOwner } from '@/lib/api-auth'
-import { ensureStoreExists, findStoreById, updateStore, SEED_STORES, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
+import { ensureStoreExists, findStoreById, updateStore, SEED_STORES } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +17,6 @@ export async function GET(request: Request) {
     }
 
     // Verify the user can only access their own store's data
-    // Super-admin bypasses store ownership check
     if (auth.user.role !== 'super-admin' && storeId !== auth.user.storeId) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
@@ -48,14 +47,11 @@ export async function PUT(request: Request) {
     const body = await request.json()
     
     // CRITICAL FIX: Always use storeId from JWT token for security
-    // The 'id' in body is ignored for non-super-admin users
     let storeId: string
     
     if (auth.user.role === 'super-admin' && body.id) {
-      // Super-admin can specify any store id
       storeId = body.id
     } else {
-      // Regular users can only update their own store
       storeId = auth.user.storeId
     }
     
@@ -63,7 +59,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })
     }
 
-    // Ensure store exists before updating (critical for demo/seed accounts)
+    // Ensure store exists before updating
     await ensureStoreExists(db, storeId)
 
     const { name, description, whatsappNumber, address, logo } = body
@@ -82,7 +78,7 @@ export async function PUT(request: Request) {
     if (address !== undefined) updateData.address = address
     if (logo !== undefined) updateData.logo = logo
 
-    // Try to update using the safe helper
+    // Update using the safe helper (uses raw SQL)
     const updatedStore = await updateStore(db, storeId, updateData)
     
     if (updatedStore) {
@@ -90,25 +86,23 @@ export async function PUT(request: Request) {
       return NextResponse.json(updatedStore)
     }
 
-    // If update failed, try to create the store
+    // If update failed, try to create the store using raw SQL
     console.warn(`[admin/settings] Store ${storeId} update failed, force creating...`)
     
     const seedData = SEED_STORES[storeId]
+    const newName = name || seedData?.name || 'Mi Tienda'
+    const newSlug = seedData?.slug || `tienda-${storeId.slice(0, 8)}`
+    const now = new Date().toISOString()
+    
     try {
-      const newStore = await db.store.create({
-        data: {
-          id: storeId,
-          name: name || seedData?.name || 'Mi Tienda',
-          slug: seedData?.slug || `tienda-${storeId.slice(0, 8)}`,
-          description: description || '',
-          whatsappNumber: whatsappNumber || '',
-          address: address || '',
-          logo: logo || '',
-        },
-        select: STORE_SAFE_FIELDS,
-      })
+      await db.$executeRaw`
+        INSERT INTO Store (id, name, slug, description, whatsappNumber, address, logo, isActive, plan, createdAt, updatedAt)
+        VALUES (${storeId}, ${newName}, ${newSlug}, ${description || ''}, ${whatsappNumber || ''}, ${address || ''}, ${logo || ''}, 1, 'basico', ${now}, ${now})
+      `
+      
+      const store = await findStoreById(db, storeId)
       console.log(`[admin/settings] Force created store ${storeId}`)
-      return NextResponse.json(newStore)
+      return NextResponse.json(store)
     } catch (createError) {
       console.error('[admin/settings] Force create failed:', createError instanceof Error ? createError.message : createError)
       return NextResponse.json({ error: 'Tienda no encontrada y no se pudo crear' }, { status: 404 })
