@@ -110,6 +110,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   const [savingCatId, setSavingCatId] = useState<string | null>(null)
 
   const getAuthHeaders = useCallback((): Record<string, string> => {
+    // Only return auth header, let each fetch call set Content-Type as needed
     if (token) return { Authorization: `Bearer ${token}` }
     return {}
   }, [token])
@@ -321,6 +322,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       toast({ title: 'Error', description: 'No se pudo determinar la tienda. Recarga la pagina.', variant: 'destructive' })
       return
     }
+    console.log('[StoreEditor] Adding product:', { name: newProduct.name, storeId: effectiveStoreId, categoryId: newProduct.categoryId, hasToken: !!token })
     setNewProductUploading(true)
     try {
       const res = await fetch('/api/admin/products', {
@@ -340,6 +342,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
           slug: newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         }),
       })
+      console.log('[StoreEditor] Add product response:', res.status, res.statusText)
       if (res.ok) {
         const created = await res.json()
         setProducts(prev => [created, ...prev])
@@ -347,10 +350,12 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         setShowNewProduct(false)
         toast({ title: 'Producto agregado', description: newProduct.name })
       } else {
-        const err = await res.json().catch(() => ({ error: 'Error' }))
+        const err = await res.json().catch(() => ({ error: `Error HTTP ${res.status}` }))
+        console.error('[StoreEditor] Add product error:', err)
         toast({ title: 'Error', description: err.error || 'No se pudo agregar', variant: 'destructive' })
       }
-    } catch {
+    } catch (err) {
+      console.error('[StoreEditor] Add product network error:', err)
       toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setNewProductUploading(false)
@@ -481,6 +486,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       return
     }
     const effectiveStoreId = getEffectiveStoreId()
+    console.log('[StoreEditor] Adding category:', { name: newCategory.name, storeId: effectiveStoreId, hasToken: !!token })
     setNewCategoryUploading(true)
     try {
       const res = await fetch('/api/admin/categories', {
@@ -494,6 +500,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
           sortOrder: categories.length,
         }),
       })
+      console.log('[StoreEditor] Add category response:', res.status, res.statusText)
       if (res.ok) {
         const created = await res.json()
         setCategories(prev => [...prev, created])
@@ -501,10 +508,12 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         setShowNewCategory(false)
         toast({ title: 'Categoria agregada' })
       } else {
-        const err = await res.json().catch(() => ({ error: 'Error' }))
+        const err = await res.json().catch(() => ({ error: `Error HTTP ${res.status}` }))
+        console.error('[StoreEditor] Add category error:', err)
         toast({ title: 'Error', description: err.error || 'No se pudo agregar', variant: 'destructive' })
       }
-    } catch {
+    } catch (err) {
+      console.error('[StoreEditor] Add category network error:', err)
       toast({ title: 'Error', description: 'Error de conexion', variant: 'destructive' })
     } finally {
       setNewCategoryUploading(false)

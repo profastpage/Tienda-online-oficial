@@ -4,8 +4,12 @@ import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 
-// Version marker for debugging
-console.log('[admin/categories] Route loaded - v2026.04.19.2')
+// Version marker for debugging - FORCE REBUILD v3
+console.log('[admin/categories] Route loaded - v2026.04.19.3 - ALL METHODS EXPORTED')
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 type CategoryData = {
   id: string

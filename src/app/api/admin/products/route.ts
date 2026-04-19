@@ -4,6 +4,12 @@ import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 
+// Force dynamic rendering - v2026.04.19.3
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+console.log('[admin/products] Route loaded - v2026.04.19.3 - ALL METHODS EXPORTED')
+
 type ProductData = {
   id: string
   name: string
