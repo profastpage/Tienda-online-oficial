@@ -18,66 +18,133 @@ export async function POST(request: Request) {
 
   try {
     const db = await getDb()
+    const results: { table: string; added: string[]; alreadyExisted: string[]; errors: string[] }[] = []
 
-    const columns = await db.$queryRawUnsafe<{ name: string }[]>(
+    // ═══════════════════════════════════════════════════════════
+    // MIGRATE StoreUser TABLE
+    // ═══════════════════════════════════════════════════════════
+    const storeUserColumns = await db.$queryRawUnsafe<{ name: string }[]>(
       `PRAGMA table_info("StoreUser")`
     )
-    const existingColNames = columns.map(c => c.name)
+    const storeUserColNames = storeUserColumns.map(c => c.name)
 
-    // Columns from Prisma schema that might be missing in Turso
-    const requiredColumns: { name: string; sql: string }[] = [
-      {
-        name: 'googleId',
-        sql: `ALTER TABLE "StoreUser" ADD COLUMN "googleId" TEXT`,
-      },
-      {
-        name: 'avatar',
-        sql: `ALTER TABLE "StoreUser" ADD COLUMN "avatar" TEXT DEFAULT ''`,
-      },
+    const storeUserRequired: { name: string; sql: string }[] = [
+      { name: 'googleId', sql: `ALTER TABLE "StoreUser" ADD COLUMN "googleId" TEXT` },
+      { name: 'avatar', sql: `ALTER TABLE "StoreUser" ADD COLUMN "avatar" TEXT DEFAULT ''` },
     ]
 
-    const addedColumns: string[] = []
-    const alreadyExisted: string[] = []
+    const storeUserAdded: string[] = []
+    const storeUserExisted: string[] = []
+    const storeUserErrors: string[] = []
 
-    for (const col of requiredColumns) {
-      if (existingColNames.includes(col.name)) {
-        alreadyExisted.push(col.name)
+    for (const col of storeUserRequired) {
+      if (storeUserColNames.includes(col.name)) {
+        storeUserExisted.push(col.name)
         continue
       }
       try {
         await db.$executeRawUnsafe(col.sql)
-        addedColumns.push(col.name)
+        storeUserAdded.push(col.name)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        console.error(`[migrate-db] Failed to add ${col.name}:`, msg)
-        addedColumns.push(`${col.name} (FAILED: ${msg})`)
+        storeUserErrors.push(`${col.name}: ${msg}`)
       }
     }
 
-    // Create unique index for googleId if it was just added
-    if (addedColumns.some(c => c.startsWith('googleId'))) {
+    // Create unique index for googleId
+    if (storeUserAdded.some(c => c === 'googleId')) {
       try {
         await db.$executeRawUnsafe(
           `CREATE UNIQUE INDEX IF NOT EXISTS "StoreUser_googleId_key" ON "StoreUser"("googleId") WHERE "googleId" IS NOT NULL`
         )
-      } catch {
-        // Ignore index creation errors
+      } catch { /* ignore */ }
+    }
+
+    results.push({ table: 'StoreUser', added: storeUserAdded, alreadyExisted: storeUserExisted, errors: storeUserErrors })
+
+    // ═══════════════════════════════════════════════════════════
+    // MIGRATE Product TABLE
+    // ═══════════════════════════════════════════════════════════
+    const productColumns = await db.$queryRawUnsafe<{ name: string }[]>(
+      `PRAGMA table_info("Product")`
+    )
+    const productColNames = productColumns.map(c => c.name)
+
+    const productRequired: { name: string; sql: string }[] = [
+      { name: 'images', sql: `ALTER TABLE "Product" ADD COLUMN "images" TEXT DEFAULT '[]'` },
+      { name: 'sizes', sql: `ALTER TABLE "Product" ADD COLUMN "sizes" TEXT DEFAULT '[]'` },
+      { name: 'colors', sql: `ALTER TABLE "Product" ADD COLUMN "colors" TEXT DEFAULT '[]'` },
+      { name: 'comparePrice', sql: `ALTER TABLE "Product" ADD COLUMN "comparePrice" REAL` },
+    ]
+
+    const productAdded: string[] = []
+    const productExisted: string[] = []
+    const productErrors: string[] = []
+
+    for (const col of productRequired) {
+      if (productColNames.includes(col.name)) {
+        productExisted.push(col.name)
+        continue
+      }
+      try {
+        await db.$executeRawUnsafe(col.sql)
+        productAdded.push(col.name)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        productErrors.push(`${col.name}: ${msg}`)
       }
     }
 
-    // Verify final state
-    const finalColumns = await db.$queryRawUnsafe<{ name: string }[]>(
-      `PRAGMA table_info("StoreUser")`
+    results.push({ table: 'Product', added: productAdded, alreadyExisted: productExisted, errors: productErrors })
+
+    // ═══════════════════════════════════════════════════════════
+    // MIGRATE Store TABLE
+    // ═══════════════════════════════════════════════════════════
+    const storeColumns = await db.$queryRawUnsafe<{ name: string }[]>(
+      `PRAGMA table_info("Store")`
     )
+    const storeColNames = storeColumns.map(c => c.name)
+
+    const storeRequired: { name: string; sql: string }[] = [
+      { name: 'subscriptionExpiresAt', sql: `ALTER TABLE "Store" ADD COLUMN "subscriptionExpiresAt" DATETIME` },
+      { name: 'trialDays', sql: `ALTER TABLE "Store" ADD COLUMN "trialDays" INTEGER DEFAULT 0` },
+    ]
+
+    const storeAdded: string[] = []
+    const storeExisted: string[] = []
+    const storeErrors: string[] = []
+
+    for (const col of storeRequired) {
+      if (storeColNames.includes(col.name)) {
+        storeExisted.push(col.name)
+        continue
+      }
+      try {
+        await db.$executeRawUnsafe(col.sql)
+        storeAdded.push(col.name)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        storeErrors.push(`${col.name}: ${msg}`)
+      }
+    }
+
+    results.push({ table: 'Store', added: storeAdded, alreadyExisted: storeExisted, errors: storeErrors })
+
+    // Summary
+    const totalAdded = results.reduce((sum, r) => sum + r.added.length, 0)
+    const totalErrors = results.reduce((sum, r) => sum + r.errors.length, 0)
 
     return NextResponse.json({
-      success: true,
-      message: addedColumns.length > 0
-        ? `Added ${addedColumns.length} column(s) to StoreUser`
+      success: totalErrors === 0,
+      message: totalAdded > 0
+        ? `Added ${totalAdded} column(s) across ${results.length} table(s)`
         : 'All columns already present — no migration needed',
-      added: addedColumns,
-      alreadyExisted,
-      finalColumns: finalColumns.map(c => c.name),
+      results,
+      summary: {
+        tablesMigrated: results.length,
+        totalColumnsAdded: totalAdded,
+        totalErrors,
+      },
     })
   } catch (error) {
     console.error('[migrate-db] Error:', error)
@@ -106,19 +173,29 @@ export async function GET(request: Request) {
   try {
     const db = await getDb()
 
-    const columns = await db.$queryRawUnsafe<{ name: string; type: string; notnull: number }[]>(
-      `PRAGMA table_info("StoreUser")`
-    )
+    // Check all tables
+    const tables = ['StoreUser', 'Product', 'Store']
+    const tableInfo: Record<string, { columns: string[]; missing: string[] }> = {}
 
-    const prismaCols = ['id', 'email', 'password', 'name', 'phone', 'address', 'role', 'storeId', 'twoFactorSecret', 'twoFactorEnabled', 'googleId', 'avatar', 'createdAt', 'updatedAt']
-    const missingCols = prismaCols.filter(pc => !columns.some(c => c.name === pc))
+    const prismaColumns: Record<string, string[]> = {
+      StoreUser: ['id', 'email', 'password', 'name', 'phone', 'address', 'role', 'storeId', 'twoFactorSecret', 'twoFactorEnabled', 'googleId', 'avatar', 'createdAt', 'updatedAt'],
+      Product: ['id', 'name', 'slug', 'description', 'price', 'comparePrice', 'image', 'images', 'categoryId', 'storeId', 'isFeatured', 'isNew', 'discount', 'sizes', 'colors', 'rating', 'reviewCount', 'inStock', 'createdAt', 'updatedAt'],
+      Store: ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt'],
+    }
+
+    for (const table of tables) {
+      const columns = await db.$queryRawUnsafe<{ name: string }[]>(
+        `PRAGMA table_info("${table}")`
+      )
+      const colNames = columns.map(c => c.name)
+      const missing = prismaColumns[table]?.filter(pc => !colNames.includes(pc)) || []
+      tableInfo[table] = { columns: colNames, missing }
+    }
 
     return NextResponse.json({
-      table: 'StoreUser',
-      columnCount: columns.length,
-      missingColumns: missingCols.length > 0 ? missingCols : [],
-      allColumns: columns.map(c => c.name),
       provider: process.env.TURSO_URL ? 'turso' : 'local-sqlite',
+      tables: tableInfo,
+      needsMigration: Object.values(tableInfo).some(t => t.missing.length > 0),
     })
   } catch (error) {
     return NextResponse.json(

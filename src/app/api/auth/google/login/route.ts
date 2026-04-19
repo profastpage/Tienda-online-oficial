@@ -177,69 +177,72 @@ export async function POST(request: NextRequest) {
       return response
     }
 
-    // Default: create customer user in first active store
-    let targetStore = await db.store.findFirst({ where: { isActive: true } })
+    // Default: create customer user (register-customer action or no action specified)
+    if (action === 'register-customer' || action === 'login') {
+      // Find first active store for customer
+      let targetStore = await db.store.findFirst({ where: { isActive: true } })
 
-    if (!targetStore) {
-      // Create default store if none exists
-      targetStore = await db.store.create({
+      if (!targetStore) {
+        // Create default store if none exists
+        targetStore = await db.store.create({
+          data: {
+            name: 'Mi Tienda',
+            slug: 'mi-tienda',
+            whatsappNumber: '',
+            plan: 'basico',
+          },
+        })
+      }
+
+      const randomPassword = Math.random().toString(36).slice(2) + Date.now().toString(36)
+      const hashedPassword = await hashPassword(randomPassword)
+
+      const user = await db.storeUser.create({
         data: {
-          name: 'Mi Tienda',
-          slug: 'mi-tienda',
-          whatsappNumber: '',
-          plan: 'basico',
+          email,
+          password: hashedPassword,
+          name: name || email.split('@')[0],
+          phone: '',
+          address: '',
+          role: 'customer',
+          storeId: targetStore.id,
+          googleId,
+          avatar: picture || '',
         },
       })
+
+      const token = await signToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        storeId: user.storeId,
+      })
+
+      const response = NextResponse.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        address: user.address,
+        role: user.role,
+        storeId: user.storeId,
+        storeName: targetStore.name,
+        storeSlug: targetStore.slug,
+        avatar: user.avatar || picture || '',
+        token,
+        isNewUser: true,
+      })
+
+      response.cookies.set('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      })
+
+      return response
     }
-
-    const randomPassword = Math.random().toString(36).slice(2) + Date.now().toString(36)
-    const hashedPassword = await hashPassword(randomPassword)
-
-    const user = await db.storeUser.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name: name || email.split('@')[0],
-        phone: '',
-        address: '',
-        role: 'customer',
-        storeId: targetStore.id,
-        googleId,
-        avatar: picture || '',
-      },
-    })
-
-    const token = await signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      storeId: user.storeId,
-    })
-
-    const response = NextResponse.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      phone: user.phone,
-      address: user.address,
-      role: user.role,
-      storeId: user.storeId,
-      storeName: targetStore.name,
-      storeSlug: targetStore.slug,
-      avatar: user.avatar || picture || '',
-      token,
-      isNewUser: true,
-    })
-
-    response.cookies.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    return response
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('[google/login] Error:', message, error)

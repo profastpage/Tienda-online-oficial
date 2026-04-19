@@ -31,6 +31,17 @@ function GoogleCallbackContent() {
 
     const action = searchParams.get('action') || 'login'
     const storeName = searchParams.get('storeName') || ''
+    const isNewRegistration = action === 'register'
+
+    // If this is a new registration without role selection, redirect to role selection page
+    if (isNewRegistration) {
+      const selectRoleUrl = `/auth/select-role?email=${encodeURIComponent(sessionData.user.email)}&name=${encodeURIComponent(sessionData.user.name || '')}&picture=${encodeURIComponent((sessionData.user as Record<string, unknown>).image as string || '')}&googleId=${encodeURIComponent((sessionData.user as Record<string, unknown>).googleId as string || sessionData.user.email)}`
+      router.push(selectRoleUrl)
+      return
+    }
+
+    // For register-admin, proceed directly with store creation
+    // For login, check if user exists and create if needed
 
     try {
       const res = await fetch('/api/auth/google/login', {

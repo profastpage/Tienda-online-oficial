@@ -627,8 +627,16 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                   </Button>
                 </Link>
               )}
-              <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center shrink-0">
-                <Edit3 className="w-4 h-4 text-white" />
+              {/* User Avatar / Profile */}
+              <div className="relative shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 to-neutral-900 overflow-hidden flex items-center justify-center ring-2 ring-white shadow-sm">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name || 'Usuario'} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-xs font-bold">{(user?.name || storeInfo.name || 'U').charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" title="En línea"></div>
               </div>
               <div className="min-w-0">
                 <h1 className="text-sm sm:text-base font-bold text-neutral-900 truncate">Editor de Tienda</h1>
