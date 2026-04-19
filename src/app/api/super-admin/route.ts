@@ -383,11 +383,38 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: true, message: 'Lead eliminado' })
     }
 
-    // ── Set Subscription Expiry / Extend Time (disabled if column doesn't exist) ──
+    // ── Set Subscription Expiry / Extend Time ──
     if (action === 'set-subscription' || action === 'grant-trial') {
-      return NextResponse.json({ 
-        error: 'Esta funcionalidad requiere una actualización de base de datos. Las columnas subscriptionExpiresAt y trialDays no están disponibles.' 
-      }, { status: 400 })
+      const { storeId, days } = body
+      if (!storeId || !days || typeof days !== 'number' || days <= 0) {
+        return NextResponse.json({ error: 'storeId y days (numero positivo) requeridos' }, { status: 400 })
+      }
+
+      // Calculate expiry date from now
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + days)
+
+      await db.$executeRaw`
+        UPDATE Store
+        SET subscriptionExpiresAt = ${expiresAt.toISOString()}, updatedAt = ${new Date().toISOString()}
+        WHERE id = ${storeId}
+      `
+
+      const stores = await db.$queryRaw<{
+        id: string
+        name: string
+        slug: string
+        subscriptionExpiresAt: string | null
+      }[]>`SELECT id, name, slug, subscriptionExpiresAt FROM Store WHERE id = ${storeId}`
+
+      return NextResponse.json({
+        success: true,
+        message: `Suscripción extendida ${days} días`,
+        store: stores[0] ? {
+          ...stores[0],
+          expiresAt: stores[0].subscriptionExpiresAt
+        } : null
+      })
     }
 
     return NextResponse.json({ error: `Accion no valida: ${action}` }, { status: 400 })

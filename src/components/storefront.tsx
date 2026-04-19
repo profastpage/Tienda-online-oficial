@@ -1360,7 +1360,7 @@ Gracias!`)
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <h3 className="text-white font-bold text-lg">{cat.name}</h3>
-                    <p className="text-white/70 text-sm">{cat._count.products} productos</p>
+                    <p className="text-white/70 text-sm">{cat._count?.products ?? 0} productos</p>
                   </div>
                   {activeCategory === cat.slug && (
                     <div className="absolute top-3 right-3 bg-neutral-900 text-white rounded-full p-1.5">

@@ -123,13 +123,20 @@ export async function GET(request: Request) {
     let orders
     try {
       orders = await fetchOrdersWithPaymentMethod(db, where, orderBy)
-    } catch {
+    } catch (fetchErr) {
+      console.error('[admin/orders GET] Fetch with payment method failed:', fetchErr instanceof Error ? fetchErr.message : fetchErr)
       // MercadoPagoPayment or PaymentMethod table may not exist on fresh deploy
-      orders = await fetchOrdersWithoutPaymentMethod(db, where, orderBy)
+      try {
+        orders = await fetchOrdersWithoutPaymentMethod(db, where, orderBy)
+      } catch (fallbackErr) {
+        console.error('[admin/orders GET] Fallback fetch also failed:', fallbackErr instanceof Error ? fallbackErr.message : fallbackErr)
+        orders = []
+      }
     }
     return NextResponse.json(orders)
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (err) {
+    console.error('[admin/orders GET] Unexpected error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ error: 'Error al obtener pedidos', details: err instanceof Error ? err.message : 'Unknown' }, { status: 500 })
   }
 }
 

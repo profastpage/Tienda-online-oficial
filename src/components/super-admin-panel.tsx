@@ -519,10 +519,10 @@ export default function SuperAdminPanel() {
                         <Badge className={`${planColors[store.plan] || planColors.free} text-[10px] capitalize border-0 shrink-0`}>{store.plan}</Badge>
                       </div>
                       <div className="flex gap-3 mt-2 pt-2 border-t border-neutral-50 text-[10px] text-neutral-500">
-                        <span><strong className="text-neutral-700">{store._count.products}</strong> prod</span>
-                        <span><strong className="text-neutral-700">{store._count.orders}</strong> pedidos</span>
-                        <span><strong className="text-neutral-700">{store.users.length}</strong> users</span>
-                        <span><strong className="text-neutral-700">{store._count.coupons}</strong> cupones</span>
+                        <span><strong className="text-neutral-700">{store._count?.products ?? 0}</strong> prod</span>
+                        <span><strong className="text-neutral-700">{store._count?.orders ?? 0}</strong> pedidos</span>
+                        <span><strong className="text-neutral-700">{store.users?.length ?? 0}</strong> users</span>
+                        <span><strong className="text-neutral-700">{store._count?.coupons ?? 0}</strong> cupones</span>
                       </div>
                     </div>
                   ))}
@@ -564,10 +564,10 @@ export default function SuperAdminPanel() {
                           <div className="border-t border-neutral-100 bg-neutral-50/50 p-3 sm:p-4 space-y-4">
                             {/* Store Info */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.products}</p><p className="text-[10px] text-neutral-500">Productos</p></div>
-                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.orders}</p><p className="text-[10px] text-neutral-500">Pedidos</p></div>
-                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.categories}</p><p className="text-[10px] text-neutral-500">Categorias</p></div>
-                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count.coupons}</p><p className="text-[10px] text-neutral-500">Cupones</p></div>
+                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count?.products ?? 0}</p><p className="text-[10px] text-neutral-500">Productos</p></div>
+                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count?.orders ?? 0}</p><p className="text-[10px] text-neutral-500">Pedidos</p></div>
+                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count?.categories ?? 0}</p><p className="text-[10px] text-neutral-500">Categorias</p></div>
+                              <div className="bg-white p-2.5 rounded-xl border"><p className="text-base font-bold text-neutral-900">{store._count?.coupons ?? 0}</p><p className="text-[10px] text-neutral-500">Cupones</p></div>
                             </div>
 
                             {/* Store Contact Details (WhatsApp, Address) */}
@@ -629,7 +629,7 @@ export default function SuperAdminPanel() {
                                 <Button size="sm" className="text-xs gap-1 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleAction('store-token', store.id)} disabled={actionLoading === store.id}>
                                   {actionLoading === store.id ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><ExternalLink className="w-3.5 h-3.5" /> Gestionar</>}
                                 </Button>
-                                <Button size="sm" variant={store.isActive ? 'outline' : 'default'} className={`text-xs gap-1 h-9 rounded-lg ${!store.isActive ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`} onClick={() => handleAction('toggle-store', store.id, !store.isActive)} disabled={actionLoading === store.id}>
+                                <Button size="sm" variant={store.isActive ? 'outline' : 'default'} className={`text-xs gap-1 h-9 rounded-lg ${!store.isActive ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`} onClick={() => handleAction('toggle-store', store.id, { isActive: !store.isActive })} disabled={actionLoading === store.id}>
                                   {store.isActive ? <><Ban className="w-3.5 h-3.5 text-red-500" /><span className="text-red-600">Suspender</span></> : <><Power className="w-3.5 h-3.5" /> Activar</>}
                                 </Button>
                                 <Button size="sm" variant="outline" className="text-xs gap-1 h-9 rounded-lg bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" onClick={() => { setCouponModal({ open: true, storeId: store.id, storeName: store.name }) }}>

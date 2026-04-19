@@ -48,7 +48,8 @@ interface CategoryItem {
   slug: string
   image: string
   sortOrder: number
-  _count: { products: number }
+  productCount?: number
+  _count?: { products: number }
 }
 
 interface CategoryFormData {
@@ -265,7 +266,7 @@ export function AdminCategories() {
                       </TableCell>
                       <TableCell className="text-center hidden sm:table-cell">
                         <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
-                          {cat._count.products}
+                          {cat.productCount ?? cat._count?.products ?? 0}
                         </span>
                       </TableCell>
                       <TableCell className="text-center hidden lg:table-cell">
