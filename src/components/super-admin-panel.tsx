@@ -192,7 +192,7 @@ export default function SuperAdminPanel() {
       if (json.stats?.totalStores === 0 && !json._dbWarning) {
         try {
           const t2 = token || localStorage.getItem('auth-token')
-          const seedRes = await fetch('/api/init-db', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(t2 ? { Authorization: `Bearer ${t2}` } : {}) }, body: JSON.stringify({ autoSeed: true }) })
+          const seedRes = await fetch('/api/seed-sync', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(t2 ? { Authorization: `Bearer ${t2}` } : {}) } })
           if (seedRes.ok) { const r = await fetch('/api/super-admin', { headers: t ? { Authorization: `Bearer ${t}` } : {} }); if (r.ok) setData(await r.json()) }
         } catch { /* ignore */ }
       }

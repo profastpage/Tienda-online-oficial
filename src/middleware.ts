@@ -52,6 +52,7 @@ const PUBLIC_PATHS = [
   '/api/payments/mercadopago/success',
   '/api/payments/mercadopago/failure',
   '/api/payments/mercadopago/pending',
+  '/api/seed-sync',
 ]
 
 // Paths that require admin role
