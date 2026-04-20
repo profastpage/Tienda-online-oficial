@@ -176,6 +176,7 @@ export default function SuperAdminPanel() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
       body: JSON.stringify(body),
+      cache: 'no-store',
     })
     const json = await res.json()
     console.log('[super-admin-panel] apiCall response:', json)
@@ -186,24 +187,30 @@ export default function SuperAdminPanel() {
     setLoading(true)
     try {
       const t = token || localStorage.getItem('auth-token')
-      const res = await fetch('/api/super-admin', { headers: t ? { Authorization: `Bearer ${t}` } : {} })
+      // Add cache-busting timestamp to prevent any CDN/browser caching
+      const cacheBuster = `?_t=${Date.now()}`
+      const res = await fetch(`/api/super-admin${cacheBuster}`, {
+        headers: t ? { Authorization: `Bearer ${t}` } : {},
+        cache: 'no-store',
+      })
       if (!res.ok) { router.push('/login'); return }
       const json = await res.json()
       if (json.error && !json.stats) throw new Error(json.error)
       setData(json)
-
-      if (json.stats?.totalStores === 0 && !json._dbWarning) {
-        try {
-          const t2 = token || localStorage.getItem('auth-token')
-          const seedRes = await fetch('/api/seed-sync', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(t2 ? { Authorization: `Bearer ${t2}` } : {}) } })
-          if (seedRes.ok) { const r = await fetch('/api/super-admin', { headers: t ? { Authorization: `Bearer ${t}` } : {} }); if (r.ok) setData(await r.json()) }
-        } catch { /* ignore */ }
-      }
     } catch (err) { console.error('Fetch error:', err) }
     finally { setLoading(false) }
   }, [token, router])
 
   useEffect(() => { if (authed && !data) fetchData() }, [authed, data, fetchData])
+
+  // Auto-refresh every 30 seconds for real-time sync
+  useEffect(() => {
+    if (!authed) return
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [authed, fetchData])
 
   const handleLogout = useCallback(async () => {
     localStorage.removeItem('user'); localStorage.removeItem('auth-token')

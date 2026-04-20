@@ -4,6 +4,10 @@ import { checkRateLimit } from '@/lib/api-auth'
 import { verifyToken, signToken } from '@/lib/auth'
 import { STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
+// Force dynamic rendering - prevent Next.js from caching this API response
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function verifySuperAdmin(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('authorization')
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
@@ -52,6 +56,28 @@ export async function GET(request: Request) {
     let stores: any[] = [], allUsers: any[] = [], leads: any[] = [], coupons: any[] = []
     let totalLeads = 0
     const errors: string[] = []
+
+    // 0. Direct COUNT queries for accurate stats (independent of detail queries)
+    let directTotalStores = 0, directActiveStores = 0, directTotalUsers = 0, directTotalProducts = 0, directTotalOrders = 0, directTotalCoupons = 0
+    try {
+      const [storeCount, activeCount, userCount, productCount, orderCount, couponCount] = await Promise.all([
+        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Store`,
+        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Store WHERE isActive = 1`,
+        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM StoreUser`,
+        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Product`,
+        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM \`Order\``,
+        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Coupon`,
+      ])
+      directTotalStores = storeCount[0]?.count || 0
+      directActiveStores = activeCount[0]?.count || 0
+      directTotalUsers = userCount[0]?.count || 0
+      directTotalProducts = productCount[0]?.count || 0
+      directTotalOrders = orderCount[0]?.count || 0
+      directTotalCoupons = couponCount[0]?.count || 0
+      console.log('[super-admin] Direct counts:', { directTotalStores, directActiveStores, directTotalUsers, directTotalProducts, directTotalOrders, directTotalCoupons })
+    } catch (err) {
+      console.error('[super-admin] Direct count queries failed:', err)
+    }
 
     // 1. Stores with full details - use raw SQL for robustness
     try {
@@ -182,13 +208,13 @@ export async function GET(request: Request) {
       }))
     } catch (err) { errors.push('Coupons'); console.error(err) }
 
-    // Aggregate stats
-    const totalStores = stores.length
-    const activeStores = stores.filter(s => s.isActive).length
-    const totalUsers = allUsers.length
-    const totalProducts = stores.reduce((sum, s) => sum + (s._count?.products || 0), 0)
-    const totalOrders = stores.reduce((sum, s) => sum + (s._count?.orders || 0), 0)
-    const totalCoupons = coupons.length
+    // Aggregate stats - use direct counts when available (more reliable)
+    const totalStores = directTotalStores || stores.length
+    const activeStores = directActiveStores || stores.filter(s => s.isActive).length
+    const totalUsers = directTotalUsers || allUsers.length
+    const totalProducts = directTotalProducts || stores.reduce((sum, s) => sum + (s._count?.products || 0), 0)
+    const totalOrders = directTotalOrders || stores.reduce((sum, s) => sum + (s._count?.orders || 0), 0)
+    const totalCoupons = directTotalCoupons || coupons.length
 
     const planDistribution: Record<string, number> = {}
     for (const store of stores) {
@@ -211,7 +237,16 @@ export async function GET(request: Request) {
     }
     if (errors.length > 0) response._partialErrors = errors
 
-    return NextResponse.json(response)
+    // No-cache headers to ensure real-time sync
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    })
   } catch (error) {
     console.error('[super-admin] GET error:', error)
     return NextResponse.json({ error: 'Error al obtener datos' }, { status: 500 })
