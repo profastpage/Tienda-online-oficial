@@ -22,11 +22,14 @@ import {
   ShoppingBag,
   Eye,
   Palette,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/stores/auth-store'
 import { ADMIN_SECTION_URLS, URL_TO_ADMIN_SECTION } from '@/lib/navigation'
 import { AdminGuidePopup } from '@/components/admin/admin-guide-popup'
@@ -93,13 +96,13 @@ function SidebarNav({
             <Store className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h2 className="font-bold text-neutral-900 text-sm truncate">{storeName}</h2>
-            <p className="text-xs text-neutral-400 truncate">Panel de administración</p>
+            <h2 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm truncate">{storeName}</h2>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">Panel de administración</p>
           </div>
         </div>
       </div>
 
-      <Separator className="mx-4 w-auto" />
+      <Separator className="mx-4 w-auto dark:bg-neutral-800" />
 
       {/* Navigation - using Link for prefetch */}
       <ScrollArea className="flex-1 py-4">
@@ -116,10 +119,10 @@ function SidebarNav({
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
                   isActive
                     ? 'bg-neutral-900 text-white shadow-sm'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
                 }`}
               >
-                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-600'}`} />
+                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300'}`} />
                 <span className="flex-1 text-left">{item.label}</span>
                 {isActive && (
                   <ChevronRight className="w-3.5 h-3.5 text-white/60" />
@@ -148,7 +151,7 @@ function SidebarNav({
       </ScrollArea>
 
       {/* User info & logout */}
-      <div className="mt-auto border-t border-neutral-200 p-4">
+      <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800 p-4">
         <div className="flex items-center gap-3 mb-3">
           {userAvatar ? (
             <img
@@ -167,14 +170,14 @@ function SidebarNav({
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-neutral-900 truncate">{userName}</p>
-            <p className="text-xs text-neutral-400 capitalize">{userRole}</p>
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{userName}</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 capitalize">{userRole}</p>
           </div>
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2 text-neutral-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-lg h-9 text-xs font-medium"
+          className="w-full justify-start gap-2 text-neutral-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/50 dark:hover:border-red-800 dark:text-neutral-400 rounded-lg h-9 text-xs font-medium"
           onClick={onLogout}
         >
           <LogOut className="w-3.5 h-3.5" />
@@ -189,6 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, _hydrated: hydrated, logout, hydrate, setUser } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [showGuideManual, setShowGuideManual] = useState(false)
@@ -260,16 +264,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Redirect to login if no user after hydration
   if (!user && !hydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
-        <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100 dark:bg-neutral-900">
+        <div className="w-8 h-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
   if (!user && hydrated) {
     router.push('/login')
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
-        <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100 dark:bg-neutral-900">
+        <div className="w-8 h-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -282,9 +286,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const userName = user.name || 'Admin'
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex overflow-hidden">
+    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 flex overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-[260px] lg:fixed lg:inset-y-0 bg-white border-r border-neutral-200 z-30">
+      <aside className="hidden lg:flex lg:flex-col lg:w-[260px] lg:fixed lg:inset-y-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 z-30">
         <SidebarNav
           items={navItems}
           activeSection={activeSection}
@@ -321,7 +325,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main content */}
       <div className="flex-1 min-w-0 lg:pl-[260px] overflow-x-hidden">
         {/* Top header */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-200">
+        <header className="sticky top-0 z-20 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <Button
@@ -337,10 +341,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
                   <ShoppingBag className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xs font-bold text-neutral-900 max-w-[80px] truncate">{storeName}</span>
+                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 max-w-[80px] truncate">{storeName}</span>
               </Link>
               <div className="hidden lg:block">
-                <h1 className="text-lg font-bold text-neutral-900">
+                <h1 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
                   {sectionTitles[activeSection]}
                 </h1>
               </div>
@@ -351,7 +355,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={`/${storeSlug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors text-xs font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:text-emerald-800 transition-colors text-xs font-medium"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Ver Mi Tienda</span>
@@ -376,9 +380,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <span className="hidden sm:inline">Volver a Super Admin</span>
                 </Button>
               )}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 border border-neutral-200">
-                <Store className="w-3.5 h-3.5 text-neutral-400" />
-                <span className="text-xs font-medium text-neutral-600">{storeName}</span>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                <Store className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{storeName}</span>
                 {isSuperAdminMode && (
                   <span className="text-[9px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded">SUPER</span>
                 )}
@@ -387,13 +391,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-full"
+                className="h-9 w-9 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
                 onClick={() => setShowGuideManual(true)}
                 title="Ayuda"
               >
                 <HelpCircle className="w-4.5 h-4.5" />
               </Button>
-              <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {/* Theme toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+              <div className="w-8 h-8 rounded-full bg-neutral-900 dark:bg-neutral-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -415,7 +429,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content — only this part swaps on navigation */}
-        <main className="p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden dark:bg-neutral-900">
           {children}
         </main>
       </div>

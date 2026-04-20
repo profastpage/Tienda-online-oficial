@@ -7,8 +7,10 @@ import {
   Store, Image as ImageIcon, Upload, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Phone, MapPin, MessageSquare,
   ShoppingBag, ArrowLeft, Package, Tag, Settings, Eye, Edit3,
-  ToggleLeft, ToggleRight
+  ToggleLeft, ToggleRight, Star, MessageSquareQuote, Sparkles,
+  Layout, Type, RefreshCw
 } from 'lucide-react'
+import { AdminContent } from '@/components/admin/admin-content'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -65,7 +67,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
-  const [activeSection, setActiveSection] = useState<'store' | 'products' | 'categories'>('store')
+  const [activeSection, setActiveSection] = useState<'store' | 'products' | 'categories' | 'testimonials' | 'faq' | 'content'>('store')
   const [fetchError, setFetchError] = useState(false)
 
   // Store settings form
@@ -108,6 +110,19 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   const [editingCatId, setEditingCatId] = useState<string | null>(null)
   const [editCatName, setEditCatName] = useState('')
   const [savingCatId, setSavingCatId] = useState<string | null>(null)
+
+  // Testimonials state
+  const [testimonials, setTestimonials] = useState<Array<{id?: string; name: string; role: string; content: string; rating: number; _isNew?: boolean}>>([])
+  const [testimonialsLoading, setTestimonialsLoading] = useState(false)
+
+  // FAQ state (from StoreContent table)
+  const [faqItems, setFaqItems] = useState<Array<{q: string; a: string}>>([])
+  const [faqLoading, setFaqLoading] = useState(false)
+
+  // Store content state (for all sections)
+  const [storeContent, setStoreContent] = useState<Record<string, Record<string, string>>>({})
+  const [contentLoading, setContentLoading] = useState(false)
+  const [contentSaving, setContentSaving] = useState<string | null>(null)
 
   const getAuthHeaders = useCallback((): Record<string, string> => {
     // Only return auth header, let each fetch call set Content-Type as needed
@@ -226,6 +241,164 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   useEffect(() => {
     fetchStoreData()
   }, [fetchStoreData])
+
+  // ═══ TESTIMONIALS & STORE CONTENT FETCHING ═══
+
+  const fetchTestimonials = useCallback(async () => {
+    setTestimonialsLoading(true)
+    try {
+      const res = await fetch('/api/admin/testimonials', { headers: getAuthHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setTestimonials(Array.isArray(data) ? data : [])
+      }
+    } catch {
+      // silently fail
+    }
+    setTestimonialsLoading(false)
+  }, [getAuthHeaders])
+
+  const fetchStoreContent = useCallback(async () => {
+    setContentLoading(true)
+    try {
+      const res = await fetch('/api/admin/store-content', { headers: getAuthHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setStoreContent(data || {})
+        // Parse FAQ items
+        try {
+          const faq = JSON.parse(data?.faq?.items || '[]')
+          setFaqItems(Array.isArray(faq) ? faq : [])
+        } catch { setFaqItems([]) }
+      }
+    } catch {
+      // silently fail
+    }
+    setContentLoading(false)
+  }, [getAuthHeaders])
+
+  // Fetch data when switching to new tabs
+  useEffect(() => {
+    if (activeSection === 'testimonials') {
+      fetchTestimonials()
+    }
+    if (activeSection === 'faq' || activeSection === 'content') {
+      fetchStoreContent()
+    }
+  }, [activeSection, fetchTestimonials, fetchStoreContent])
+
+  // ═══ TESTIMONIAL CRUD ═══
+
+  const addTestimonial = () => {
+    setTestimonials(prev => [...prev, { name: '', role: '', content: '', rating: 5, _isNew: true }])
+  }
+
+  const deleteTestimonial = async (idx: number, id?: string) => {
+    if (id) {
+      try {
+        const res = await fetch(`/api/admin/testimonials?id=${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        })
+        if (res.ok) {
+          setTestimonials(prev => prev.filter((_, i) => i !== idx))
+          toast({ title: 'Testimonio eliminado', duration: 1500 })
+        } else {
+          toast({ title: 'Error al eliminar', variant: 'destructive' })
+        }
+      } catch {
+        toast({ title: 'Error de conexion', variant: 'destructive' })
+      }
+    } else {
+      setTestimonials(prev => prev.filter((_, i) => i !== idx))
+    }
+  }
+
+  const updateTestimonial = (idx: number, field: string, value: string | number) => {
+    setTestimonials(prev => {
+      const next = [...prev]
+      next[idx] = { ...next[idx], [field]: value }
+      return next
+    })
+  }
+
+  const saveTestimonial = async (idx: number) => {
+    const item = testimonials[idx]
+    if (!item.name || !item.content) {
+      toast({ title: 'Completa nombre y contenido', variant: 'destructive' })
+      return
+    }
+    setContentSaving(`testimonial_${idx}`)
+    try {
+      const method = item._isNew || !item.id ? 'POST' : 'PUT'
+      const body = item._isNew || !item.id
+        ? { name: item.name, role: item.role, content: item.content, rating: item.rating }
+        : { id: item.id, name: item.name, role: item.role, content: item.content, rating: item.rating }
+      const res = await fetch('/api/admin/testimonials', {
+        method,
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.id) {
+          setTestimonials(prev => {
+            const next = [...prev]
+            next[idx] = { ...next[idx], id: data.id, _isNew: false }
+            return next
+          })
+        }
+        toast({ title: 'Testimonio guardado', duration: 1500 })
+      } else {
+        toast({ title: 'Error al guardar', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error de conexion', variant: 'destructive' })
+    } finally {
+      setContentSaving(null)
+    }
+  }
+
+  // ═══ FAQ CRUD ═══
+
+  const addFaqItem = () => {
+    setFaqItems(prev => [...prev, { q: '', a: '' }])
+  }
+
+  const removeFaqItem = (idx: number) => {
+    setFaqItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const updateFaqItem = (idx: number, field: 'q' | 'a', value: string) => {
+    setFaqItems(prev => {
+      const next = [...prev]
+      next[idx] = { ...next[idx], [field]: value }
+      return next
+    })
+  }
+
+  const saveFaq = async () => {
+    setContentSaving('faq')
+    try {
+      const items: Array<{ section: string; key: string; value: string }> = []
+      items.push({ section: 'faq', key: 'items', value: JSON.stringify(faqItems) })
+      const res = await fetch('/api/admin/store-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ items }),
+      })
+      if (res.ok) {
+        toast({ title: 'FAQ guardado', description: 'Las preguntas frecuentes se actualizaron correctamente' })
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo guardar', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error de conexion', variant: 'destructive' })
+    } finally {
+      setContentSaving(null)
+    }
+  }
 
   // Mark changes
   const markChanged = () => setHasChanges(true)
@@ -717,6 +890,9 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
               { key: 'store' as const, label: 'Tienda', icon: Store },
               { key: 'products' as const, label: 'Productos', icon: Package },
               { key: 'categories' as const, label: 'Categorias', icon: Tag },
+              { key: 'testimonials' as const, label: 'Testimonios', icon: MessageSquareQuote },
+              { key: 'faq' as const, label: 'FAQ', icon: Sparkles },
+              { key: 'content' as const, label: 'Contenido', icon: Layout },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -1369,6 +1545,213 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
             )}
           </motion.div>
         )}
+
+        {/* ═══ TESTIMONIALS SECTION ═══ */}
+        {activeSection === 'testimonials' && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-neutral-700">{testimonials.length} testimonios</p>
+                <p className="text-[10px] text-neutral-400">Resenas de clientes que se muestran en tu tienda</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={addTestimonial}
+                className="text-xs gap-1.5 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+              >
+                <Plus className="w-3.5 h-3.5" /> Nuevo Testimonio
+              </Button>
+            </div>
+
+            {testimonialsLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+              </div>
+            )}
+
+            {!testimonialsLoading && testimonials.length === 0 && (
+              <Card className="rounded-2xl border">
+                <CardContent className="p-8 text-center">
+                  <MessageSquareQuote className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-neutral-500">Sin testimonios</p>
+                  <p className="text-xs text-neutral-400 mt-1">Agrega testimonios de tus clientes para generar confianza</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!testimonialsLoading && testimonials.map((item, idx) => (
+              <Card key={item.id || `new_${idx}`} className="rounded-2xl border">
+                <CardContent className="p-4 sm:p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-neutral-400 font-medium">
+                      #{idx + 1} {item._isNew ? '(nuevo)' : ''}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => saveTestimonial(idx)}
+                        disabled={contentSaving === `testimonial_${idx}`}
+                        className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        {contentSaving === `testimonial_${idx}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                        Guardar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteTestimonial(idx, item.id)}
+                        className="h-7 w-7 text-neutral-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-neutral-600">Nombre</Label>
+                      <Input
+                        value={item.name}
+                        onChange={(e) => updateTestimonial(idx, 'name', e.target.value)}
+                        placeholder="Nombre del cliente"
+                        className="h-9 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-neutral-600">Rol</Label>
+                      <Input
+                        value={item.role}
+                        onChange={(e) => updateTestimonial(idx, 'role', e.target.value)}
+                        placeholder="Ej: Cliente frecuente"
+                        className="h-9 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-neutral-600">Calificacion</Label>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => updateTestimonial(idx, 'rating', star)}
+                          className="focus:outline-none p-0.5"
+                        >
+                          <Star
+                            className={`w-5 h-5 transition-colors ${star <= item.rating ? 'text-amber-400 fill-amber-400' : 'text-neutral-300 hover:text-amber-300'}`}
+                          />
+                        </button>
+                      ))}
+                      <span className="text-xs text-neutral-400 ml-1">{item.rating}/5</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-neutral-600">Testimonio</Label>
+                    <Textarea
+                      value={item.content}
+                      onChange={(e) => updateTestimonial(idx, 'content', e.target.value)}
+                      placeholder="Escribe aqui lo que dijo el cliente..."
+                      rows={3}
+                      className="rounded-lg text-sm resize-none"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </motion.div>
+        )}
+
+        {/* ═══ FAQ SECTION ═══ */}
+        {activeSection === 'faq' && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-neutral-700">{faqItems.length} preguntas frecuentes</p>
+                <p className="text-[10px] text-neutral-400">Preguntas y respuestas que se muestran en tu tienda</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={saveFaq}
+                  disabled={contentSaving === 'faq'}
+                  className="text-xs gap-1.5 h-8 rounded-lg"
+                >
+                  {contentSaving === 'faq' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Guardar FAQ
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={addFaqItem}
+                  className="text-xs gap-1.5 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Nueva Pregunta
+                </Button>
+              </div>
+            </div>
+
+            {contentLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+              </div>
+            )}
+
+            {!contentLoading && faqItems.length === 0 && (
+              <Card className="rounded-2xl border">
+                <CardContent className="p-8 text-center">
+                  <Sparkles className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-neutral-500">Sin preguntas frecuentes</p>
+                  <p className="text-xs text-neutral-400 mt-1">Agrega preguntas y respuestas para ayudar a tus clientes</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!contentLoading && faqItems.map((item, idx) => (
+              <Card key={`faq_${idx}`} className="rounded-2xl border">
+                <CardContent className="p-4 sm:p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-neutral-400 font-medium">Pregunta #{idx + 1}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFaqItem(idx)}
+                      className="h-7 w-7 text-neutral-400 hover:text-red-500"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-neutral-600">Pregunta</Label>
+                    <Input
+                      value={item.q}
+                      onChange={(e) => updateFaqItem(idx, 'q', e.target.value)}
+                      placeholder="Escribe aqui la pregunta..."
+                      className="h-9 rounded-lg text-sm font-medium"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-neutral-600">Respuesta</Label>
+                    <Textarea
+                      value={item.a}
+                      onChange={(e) => updateFaqItem(idx, 'a', e.target.value)}
+                      placeholder="Escribe aqui la respuesta..."
+                      rows={2}
+                      className="rounded-lg text-sm resize-none"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </motion.div>
+        )}
+
+        {/* ═══ CONTENT SECTION ═══ */}
+        {activeSection === 'content' && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+            <AdminContent />
+          </motion.div>
+        )}
+
       </main>
 
       {/* Unsaved Changes Bar */}
