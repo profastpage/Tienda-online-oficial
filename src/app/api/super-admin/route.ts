@@ -69,8 +69,10 @@ async function ensureStoreColumns(db: Awaited<ReturnType<typeof getDb>>): Promis
 
 // ═══════════════════════════════════════════════════════════════
 // AUTO-SEED: Ensure demo stores exist in the database
+// Uses dynamic column detection to avoid INSERT failures on
+// databases that may not have all expected columns.
 // ═══════════════════════════════════════════════════════════════
-async function ensureDemoStores(db: Awaited<ReturnType<typeof getDb>>): Promise<number> {
+async function ensureDemoStores(db: Awaited<ReturnType<typeof getDb>>): Promise<{ created: number; errors: string[]; dbMode: string }> {
   const DEMO_STORES = [
     { id: 'kmpw0h5ig4o518kg4zsm5huo3', name: 'Urban Style', slug: 'urban-style', plan: 'pro', whatsappNumber: '51999999999', address: 'Av. Arequipa 1234, Lima' },
     { id: 'seed-store-basico', name: 'Mi Tienda Basica', slug: 'mi-tienda-basica', plan: 'basico', whatsappNumber: '51988888888', address: 'Jr. Lima 456, Lima' },
@@ -91,43 +93,84 @@ async function ensureDemoStores(db: Awaited<ReturnType<typeof getDb>>): Promise<
   ]
 
   let created = 0
+  const errors: string[] = []
   const now = new Date().toISOString()
+  let dbMode = 'unknown'
 
+  // ═══ Step 1: Detect available Store columns ═══
+  let storeColNames: string[] = []
+  try {
+    const colInfo = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Store")`)
+    storeColNames = colInfo.map(c => c.name)
+    dbMode = storeColNames.length > 5 ? 'turso' : 'local'
+    console.log(`[super-admin] Store columns available: [${storeColNames.join(', ')}] (mode: ${dbMode})`)
+  } catch (err) {
+    errors.push(`Cannot detect Store columns: ${err instanceof Error ? err.message : String(err)}`)
+    console.error('[super-admin] PRAGMA table_info failed:', err)
+    return { created: 0, errors, dbMode: 'error' }
+  }
+
+  // ═══ Step 2: Create stores using ONLY available columns ═══
   for (const store of DEMO_STORES) {
     try {
-      // Check if store exists using minimal query
       const existing = await db.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM Store WHERE id = '${store.id}'`)
-      if (!existing || existing.length === 0) {
-        await db.$executeRawUnsafe(`
-          INSERT INTO Store (id, name, slug, plan, whatsappNumber, address, isActive, createdAt, updatedAt)
-          VALUES ('${store.id}', '${store.name.replace(/'/g, "''")}', '${store.slug}', '${store.plan}', '${store.whatsappNumber}', '${store.address.replace(/'/g, "''")}', 1, '${now}', '${now}')
-        `)
-        created++
-        console.log(`[super-admin] Auto-created store: ${store.name}`)
+      if (existing && existing.length > 0) {
+        console.log(`[super-admin] Store already exists: ${store.name} (${store.id})`)
+        continue
       }
+
+      // Build INSERT dynamically using only columns that exist
+      const colData: Record<string, string | number> = {
+        id: store.id,
+        name: store.name,
+        slug: store.slug,
+        plan: store.plan,
+        isActive: 1,
+        createdAt: now,
+        updatedAt: now,
+      }
+      // Only add optional columns if they exist in the table
+      if (storeColNames.includes('whatsappNumber')) colData.whatsappNumber = store.whatsappNumber
+      if (storeColNames.includes('address')) colData.address = store.address
+      if (storeColNames.includes('description')) colData.description = ''
+      if (storeColNames.includes('logo')) colData.logo = ''
+
+      const columns = Object.keys(colData).join(', ')
+      const values = Object.values(colData).map(v => {
+        if (typeof v === 'number') return String(v)
+        return `'${String(v).replace(/'/g, "''")}'`
+      }).join(', ')
+
+      await db.$executeRawUnsafe(`INSERT INTO Store (${columns}) VALUES (${values})`)
+      created++
+      console.log(`[super-admin] Auto-created store: ${store.name} (${store.id})`)
     } catch (err) {
-      console.error(`[super-admin] Failed to ensure store ${store.id}:`, err instanceof Error ? err.message : err)
+      const msg = err instanceof Error ? err.message : String(err)
+      errors.push(`Store ${store.name}: ${msg}`)
+      console.error(`[super-admin] Failed to create store ${store.name}:`, msg)
     }
   }
 
-  // Also ensure seed users exist
+  // ═══ Step 3: Create seed users ═══
   for (const user of SEED_USERS) {
     try {
       const existing = await db.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM StoreUser WHERE email = '${user.email}' AND storeId = '${user.storeId}'`)
-      if (!existing || existing.length === 0) {
-        const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-        await db.$executeRawUnsafe(`
-          INSERT INTO StoreUser (id, email, password, name, role, storeId, avatar, createdAt)
-          VALUES ('${userId}', '${user.email}', '${ADMIN_PASSWORD_HASH}', '${user.name}', '${user.role}', '${user.storeId}', '', '${now}')
-        `)
-        console.log(`[super-admin] Auto-created user: ${user.email}`)
-      }
+      if (existing && existing.length > 0) continue
+
+      const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      await db.$executeRawUnsafe(`
+        INSERT INTO StoreUser (id, email, password, name, role, storeId, avatar, createdAt)
+        VALUES ('${userId}', '${user.email}', '${ADMIN_PASSWORD_HASH}', '${user.name}', '${user.role}', '${user.storeId}', '', '${now}')
+      `)
+      console.log(`[super-admin] Auto-created user: ${user.email}`)
     } catch (err) {
-      console.error(`[super-admin] Failed to ensure user ${user.email}:`, err instanceof Error ? err.message : err)
+      const msg = err instanceof Error ? err.message : String(err)
+      errors.push(`User ${user.email}: ${msg}`)
+      console.error(`[super-admin] Failed to create user ${user.email}:`, msg)
     }
   }
 
-  return created
+  return { created, errors, dbMode }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -154,14 +197,44 @@ export async function GET(request: Request) {
 
     // ═══ STEP 0: Auto-migrate and auto-seed ═══
     const migratedCols = await ensureStoreColumns(db)
-    const seededStores = await ensureDemoStores(db)
-    if (migratedCols.length > 0 || seededStores > 0) {
-      console.log(`[super-admin] Auto-repair: migrated ${migratedCols.length} cols, seeded ${seededStores} stores`)
+    const seedResult = await ensureDemoStores(db)
+    if (migratedCols.length > 0 || seedResult.created > 0) {
+      console.log(`[super-admin] Auto-repair: migrated ${migratedCols.length} cols, seeded ${seedResult.created} stores`)
+    }
+    if (seedResult.errors.length > 0) {
+      console.warn(`[super-admin] Seed errors:`, seedResult.errors)
     }
 
-    let stores: any[] = [], allUsers: any[] = [], leads: any[] = [], coupons: any[] = []
+    // ═══ STEP 0.5: If still 0 stores, try auto init-db ═══
+    let autoInitResult: any = null
     let totalLeads = 0
     const errors: string[] = []
+
+    // Quick check: how many stores exist after seeding?
+    try {
+      const quickCount = await db.$queryRawUnsafe<[{ count: number }]>('SELECT COUNT(*) as count FROM Store')
+      const storeCountAfterSeed = quickCount[0]?.count || 0
+      console.log(`[super-admin] Store count after auto-seed: ${storeCountAfterSeed}`)
+
+      if (storeCountAfterSeed === 0) {
+        console.log('[super-admin] DB is empty after auto-seed, attempting auto init-db...')
+        try {
+          // Dynamically import and call the init-db logic
+          const initUrl = new URL('/api/init-db', request.url)
+          const initRes = await fetch(initUrl.toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: request.headers.get('authorization') || '' },
+            body: JSON.stringify({}),
+          })
+          autoInitResult = await initRes.json().catch(() => ({ error: 'init-db fetch failed' }))
+          console.log('[super-admin] Auto init-db result:', autoInitResult.success ? 'SUCCESS' : autoInitResult.error)
+        } catch (initErr) {
+          console.warn('[super-admin] Auto init-db failed (non-critical):', initErr instanceof Error ? initErr.message : initErr)
+        }
+      }
+    } catch (countErr) {
+      console.warn('[super-admin] Quick store count failed:', countErr instanceof Error ? countErr.message : countErr)
+    }
 
     // 0. Direct COUNT queries for accurate stats (independent of detail queries)
     let directTotalStores = 0, directActiveStores = 0, directTotalUsers = 0, directTotalProducts = 0, directTotalOrders = 0, directTotalCoupons = 0
@@ -378,6 +451,14 @@ export async function GET(request: Request) {
       stores, users: allUsers, leads, coupons, recentActivity,
     }
     if (errors.length > 0) response._partialErrors = errors
+    // Include diagnostic info for debugging
+    response._diagnostic = {
+      dbMode: seedResult.dbMode,
+      seedErrors: seedResult.errors.length > 0 ? seedResult.errors : undefined,
+      columnsMigrated: migratedCols.length > 0 ? migratedCols : undefined,
+      storesSeeded: seedResult.created,
+      autoInit: autoInitResult ? { success: autoInitResult.success, error: autoInitResult.error } : undefined,
+    }
 
     // No-cache headers to ensure real-time sync
     return NextResponse.json(response, {
