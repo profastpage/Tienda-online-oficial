@@ -2,7 +2,6 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
 import { verifyToken, signToken } from '@/lib/auth'
-import { STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 
 // Force dynamic rendering - prevent Next.js from caching this API response
 export const dynamic = 'force-dynamic'
@@ -59,24 +58,26 @@ export async function GET(request: Request) {
 
     // 0. Direct COUNT queries for accurate stats (independent of detail queries)
     let directTotalStores = 0, directActiveStores = 0, directTotalUsers = 0, directTotalProducts = 0, directTotalOrders = 0, directTotalCoupons = 0
+    let countQueriesSucceeded = false
     try {
       const [storeCount, activeCount, userCount, productCount, orderCount, couponCount] = await Promise.all([
-        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Store`,
-        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Store WHERE isActive = 1`,
-        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM StoreUser`,
-        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Product`,
-        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM \`Order\``,
-        db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Coupon`,
-      ])
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Store`),
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Store WHERE isActive = 1`),
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM StoreUser`),
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Product`),
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM \"Order\"`),
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Coupon`),
+      ]) as [{count: number}][],
       directTotalStores = storeCount[0]?.count || 0
       directActiveStores = activeCount[0]?.count || 0
       directTotalUsers = userCount[0]?.count || 0
       directTotalProducts = productCount[0]?.count || 0
       directTotalOrders = orderCount[0]?.count || 0
       directTotalCoupons = couponCount[0]?.count || 0
-      console.log('[super-admin] Direct counts:', { directTotalStores, directActiveStores, directTotalUsers, directTotalProducts, directTotalOrders, directTotalCoupons })
+      countQueriesSucceeded = true
+      console.log('[super-admin] Direct counts OK:', { directTotalStores, directActiveStores, directTotalUsers, directTotalProducts, directTotalOrders, directTotalCoupons })
     } catch (err) {
-      console.error('[super-admin] Direct count queries failed:', err)
+      console.error('[super-admin] Direct count queries failed, will use fallback from detail queries:', err)
     }
 
     // 1. Stores with full details - use raw SQL for robustness
@@ -208,13 +209,28 @@ export async function GET(request: Request) {
       }))
     } catch (err) { errors.push('Coupons'); console.error(err) }
 
-    // Aggregate stats - use direct counts when available (more reliable)
-    const totalStores = directTotalStores || stores.length
-    const activeStores = directActiveStores || stores.filter(s => s.isActive).length
-    const totalUsers = directTotalUsers || allUsers.length
-    const totalProducts = directTotalProducts || stores.reduce((sum, s) => sum + (s._count?.products || 0), 0)
-    const totalOrders = directTotalOrders || stores.reduce((sum, s) => sum + (s._count?.orders || 0), 0)
-    const totalCoupons = directTotalCoupons || coupons.length
+    // Aggregate stats - use direct counts when available, otherwise compute from detail queries
+    const totalStores = countQueriesSucceeded ? directTotalStores : (stores.length || directTotalStores)
+    const activeStores = countQueriesSucceeded ? directActiveStores : (stores.filter(s => s.isActive).length || directActiveStores)
+    const totalUsers = countQueriesSucceeded ? directTotalUsers : (allUsers.length || directTotalUsers)
+    const totalProducts = countQueriesSucceeded ? directTotalProducts : (stores.reduce((sum, s) => sum + (s._count?.products || 0), 0) || directTotalProducts)
+    const totalOrders = countQueriesSucceeded ? directTotalOrders : (stores.reduce((sum, s) => sum + (s._count?.orders || 0), 0) || directTotalOrders)
+    const totalCoupons = countQueriesSucceeded ? directTotalCoupons : (coupons.length || directTotalCoupons)
+
+    // Calculate expiring stores from stores array
+    const now = new Date()
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const expiringStores = stores.filter(s => {
+      if (!s.subscriptionExpiresAt) return false
+      const exp = new Date(s.subscriptionExpiresAt)
+      return exp > now && exp <= thirtyDaysFromNow
+    }).length
+    const expiredStores = stores.filter(s => {
+      if (!s.subscriptionExpiresAt) return false
+      return new Date(s.subscriptionExpiresAt) <= now
+    }).length
+
+    console.log('[super-admin] Final stats:', { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalCoupons, expiringStores, expiredStores })
 
     const planDistribution: Record<string, number> = {}
     for (const store of stores) {
@@ -232,7 +248,7 @@ export async function GET(request: Request) {
     }))
 
     const response: any = {
-      stats: { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalLeads, totalCoupons, planDistribution, expiringStores: 0, expiredStores: 0 },
+      stats: { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalLeads, totalCoupons, planDistribution, expiringStores, expiredStores },
       stores, users: allUsers, leads, coupons, recentActivity,
     }
     if (errors.length > 0) response._partialErrors = errors

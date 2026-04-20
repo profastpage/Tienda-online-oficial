@@ -144,10 +144,18 @@ export function AdminProducts() {
   const fetchProducts = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/products?storeId=${storeId}`, { headers: authHeaders })
-      if (res.ok) setProducts(await res.json())
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          setProducts(await res.json())
+        } else {
+          console.error('[AdminProducts] fetchProducts: Response is not JSON:', contentType)
+        }
+      } else {
+        console.error('[AdminProducts] fetchProducts HTTP error:', res.status)
+      }
     } catch (err) {
       console.error('[AdminProducts] fetchProducts error:', err)
-      toast({ title: 'Error', description: 'No se pudieron cargar los productos', variant: 'destructive' })
     }
   }, [storeId, authHeaders, toast])
 
@@ -155,12 +163,18 @@ export function AdminProducts() {
     try {
       const res = await fetch(`/api/admin/categories?storeId=${storeId}`, { headers: authHeaders })
       if (res.ok) {
-        const data = await res.json()
-        setCategories(data.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })))
+        const contentType = res.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const data = await res.json()
+          setCategories(data.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })))
+        } else {
+          console.error('[AdminProducts] fetchCategories: Response is not JSON:', contentType)
+        }
+      } else {
+        console.error('[AdminProducts] fetchCategories HTTP error:', res.status)
       }
     } catch (err) {
       console.error('[AdminProducts] fetchCategories error:', err)
-      toast({ title: 'Error', description: 'No se pudieron cargar las categorias', variant: 'destructive' })
     }
   }, [storeId, authHeaders, toast])
 

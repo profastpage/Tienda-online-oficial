@@ -22,8 +22,9 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    // Build where conditions
-    const conditions: string[] = [`storeId = '${store.id}'`, `inStock = 1`]
+    // Build where conditions using parameterized queries
+    let whereClause = 'storeId = ? AND inStock = 1'
+    let queryParams: any[] = [store.id]
     let categoryIdFilter: string | null = null
     
     if (categorySlug) {
@@ -33,21 +34,23 @@ export async function GET(request: Request) {
       `
       if (category.length > 0) {
         categoryIdFilter = category[0].id
-        conditions.push(`categoryId = '${categoryIdFilter}'`)
+        whereClause += ' AND categoryId = ?'
+        queryParams.push(categoryIdFilter)
       }
     }
     
     if (featured === 'true') {
-      conditions.push(`isFeatured = 1`)
+      whereClause += ' AND isFeatured = 1'
     }
     
     if (search) {
-      const sanitizedSearch = search.replace(/'/g, "''")
-      conditions.push(`(name LIKE '%${sanitizedSearch}%' OR description LIKE '%${sanitizedSearch}%')`)
+      const sanitizedSearch = `%${search.replace(/'/g, "''")}%`
+      whereClause += ' AND (name LIKE ? OR description LIKE ?)'
+      queryParams.push(sanitizedSearch, sanitizedSearch)
     }
 
-    // Get products using raw SQL with unsafe for dynamic conditions
-    const query = `SELECT id, name, slug, description, price, comparePrice, image, images, sizes, colors, discount, isNew, rating, reviewCount, inStock, categoryId FROM Product WHERE ${conditions.join(' AND ')} ORDER BY createdAt DESC`
+    // Get products using parameterized query
+    const query = `SELECT id, name, slug, description, price, comparePrice, image, images, sizes, colors, discount, isNew, rating, reviewCount, inStock, categoryId FROM Product WHERE ${whereClause} ORDER BY createdAt DESC`
     
     const products = await db.$queryRawUnsafe<{
       id: string
@@ -66,7 +69,7 @@ export async function GET(request: Request) {
       reviewCount: number
       inStock: boolean
       categoryId: string
-    }[]>(query)
+    }[]>(query, ...queryParams)
 
     // Fetch category info for each product
     const productsWithCategories = await Promise.all(

@@ -94,10 +94,18 @@ export function AdminCategories() {
   const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/categories?storeId=${storeId}`, { headers: authHeaders })
-      if (res.ok) setCategories(await res.json())
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          setCategories(await res.json())
+        } else {
+          console.error('[AdminCategories] fetch: Response is not JSON:', contentType)
+        }
+      } else {
+        console.error('[AdminCategories] fetch HTTP error:', res.status)
+      }
     } catch (err) {
       console.error('[AdminCategories] fetch error:', err)
-      toast({ title: 'Error', description: 'No se pudieron cargar las categorias', variant: 'destructive' })
     }
   }, [storeId, authHeaders, toast])
 

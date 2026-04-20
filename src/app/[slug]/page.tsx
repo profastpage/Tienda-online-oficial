@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
-import { ShoppingBag, Edit3, ExternalLink, Loader2 } from 'lucide-react'
+import { ShoppingBag, Edit3, ExternalLink, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth-store'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,6 +18,7 @@ export default function StorePage() {
   const [mounted, setMounted] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
   const [checkingOwner, setCheckingOwner] = useState(true)
+  const [ownerBannerDismissed, setOwnerBannerDismissed] = useState(false)
   const user = useAuthStore((s) => s.user)
   const hydrate = useAuthStore((s) => s.hydrate)
 
@@ -27,7 +28,10 @@ export default function StorePage() {
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    // Check if owner banner was dismissed for this store
+    const dismissed = sessionStorage.getItem(`owner-banner-dismissed-${slug}`)
+    if (dismissed) setOwnerBannerDismissed(true)
+  }, [slug])
 
   // Check if current user owns this store (or is an admin)
   useEffect(() => {
@@ -103,26 +107,38 @@ export default function StorePage() {
               <p className="text-center text-[10px] font-medium text-neutral-500 mt-1.5">Editar Tienda</p>
             </motion.div>
 
-            {/* Owner Banner */}
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              transition={{ delay: 0.3 }}
-              className="fixed top-0 left-0 right-0 z-50"
-            >
-              <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-center py-1.5 px-4 text-xs font-medium">
-                <div className="flex items-center justify-center gap-2">
-                  <span>Eres el propietario de esta tienda</span>
-                  <Link 
-                    href={`/${slug}/editordetienda`}
-                    className="bg-white/20 hover:bg-white/30 px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 transition-colors"
-                  >
-                    <Edit3 className="w-3 h-3" /> Editar
-                  </Link>
+            {/* Owner Banner - dismissible */}
+            {!ownerBannerDismissed && (
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -50, opacity: 0 }}
+                transition={{ delay: 0.3 }}
+                className="fixed top-0 left-0 right-0 z-50"
+              >
+                <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-center py-1.5 px-4 text-xs font-medium">
+                  <div className="flex items-center justify-center gap-2">
+                    <span>Eres el propietario de esta tienda</span>
+                    <Link 
+                      href={`/${slug}/editordetienda`}
+                      className="bg-white/20 hover:bg-white/30 px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      <Edit3 className="w-3 h-3" /> Editar
+                    </Link>
+                    <button 
+                      onClick={() => {
+                        setOwnerBannerDismissed(true)
+                        sessionStorage.setItem(`owner-banner-dismissed-${slug}`, '1')
+                      }}
+                      className="ml-2 bg-white/20 hover:bg-white/30 p-0.5 rounded-full transition-colors"
+                      title="Cerrar"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
           </>
         )}
       </AnimatePresence>

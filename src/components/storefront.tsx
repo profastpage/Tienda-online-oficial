@@ -501,6 +501,10 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
         try {
           const res = await fetch(url)
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const contentType = res.headers.get('content-type') || ''
+          if (!contentType.includes('application/json')) {
+            throw new Error(`Response is not JSON: ${contentType}`)
+          }
           const data = await res.json()
           return data
         } catch (err) {
@@ -528,6 +532,10 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
         }
       } catch (error) {
         console.error('[Storefront] Error fetching data:', error)
+        // Set empty arrays on error so the UI doesn't show infinite loading
+        setProducts([])
+        setCategories([])
+        setTestimonials([])
       } finally {
         if (!cancelled) setLoading(false)
       }
