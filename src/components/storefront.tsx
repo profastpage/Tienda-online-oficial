@@ -377,8 +377,21 @@ interface StorefrontProps {
   storeSlug?: string
 }
 
+interface StoreInfo {
+  id: string
+  name: string
+  slug: string
+  logo: string
+  description: string
+  whatsappNumber: string
+  address: string
+  plan: string
+  isActive: boolean
+}
+
 export default function Storefront({ storeSlug: initialSlug }: StorefrontProps = {}) {
   const effectiveSlug = initialSlug || 'urban-style'
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -395,6 +408,9 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [selectedImageView, setSelectedImageView] = useState(0)
   const [storeWhatsApp, setStoreWhatsApp] = useState(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414')
+  const [storeName, setStoreName] = useState('')
+  const [storeLogo, setStoreLogo] = useState('')
+  const [storeDescription, setStoreDescription] = useState('')
   const [canInstallPwa, setCanInstallPwa] = useState(false)
   const [showInstallDialog, setShowInstallDialog] = useState(false)
   const galleryRef = useRef<HTMLDivElement>(null)
@@ -521,13 +537,28 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
 
     async function fetchData() {
       try {
-        const [productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
+        const [storeInfoData, productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
+          fetchWithRetry(`/api/store/info?slug=${effectiveSlug}`).catch(() => null),
           fetchWithRetry(`/api/products?store=${effectiveSlug}`),
           fetchWithRetry(`/api/categories?store=${effectiveSlug}`),
           fetchWithRetry(`/api/testimonials?store=${effectiveSlug}`),
           fetchWithRetry(`/api/store/payment-methods?storeId=${user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3'}`),
         ])
         if (cancelled) return
+        // Load store info into state
+        if (storeInfoData && !storeInfoData.error) {
+          setStoreInfo(storeInfoData)
+          setStoreName(storeInfoData.name || '')
+          setStoreLogo(storeInfoData.logo || '')
+          setStoreDescription(storeInfoData.description || '')
+          if (storeInfoData.whatsappNumber) {
+            const digits = storeInfoData.whatsappNumber.replace(/[^0-9]/g, '')
+            if (digits) setStoreWhatsApp(digits)
+          }
+        } else {
+          // Fallback defaults
+          setStoreName('Mi Tienda')
+        }
         setProducts(Array.isArray(productsData) ? productsData : [])
         setCategories(Array.isArray(categoriesData) ? categoriesData : [])
         setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : [])
@@ -567,7 +598,7 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
       const shipping = cart.totalPrice() > 199 ? '✅ Envío gratis' : '🚚 Envío: S/ 15.00'
       const total = cart.totalPrice() > 199 ? cart.totalPrice() : cart.totalPrice() + 15
       const fullMessage = encodeURIComponent(
-        `🛒 *PEDIDO - URBAN STYLE*\n` +
+        `🛒 *PEDIDO - ${storeName || 'Mi Tienda'}*\n` +
         `━━━━━━━━━━━━━━━━━\n\n` +
         `${items}\n\n` +
         `━━━━━━━━━━━━━━━━━\n` +
@@ -837,15 +868,19 @@ Gracias!`)
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
               <a href="#" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-neutral-900 rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-white" />
+                <div className="w-9 h-9 bg-neutral-900 rounded-xl overflow-hidden flex items-center justify-center">
+                  {storeLogo ? (
+                    <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
+                  ) : (
+                    <ShoppingBag className="w-5 h-5 text-white" />
+                  )}
                 </div>
                 <div>
                   <h1 className="text-xl font-bold tracking-tight text-foreground leading-none">
-                    URBAN STYLE
+                    {storeName || 'Mi Tienda'}
                   </h1>
                   <p className="text-[10px] text-muted-foreground/70 tracking-widest uppercase hidden sm:block">
-                    Premium Streetwear
+                    {storeDescription ? (storeDescription.length > 30 ? storeDescription.slice(0, 30) + '...' : storeDescription) : 'Tienda Online'}
                   </p>
                 </div>
               </a>
@@ -1802,13 +1837,17 @@ Gracias!`)
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 bg-white dark:bg-neutral-800 rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-neutral-900 dark:text-white" />
+                <div className="w-9 h-9 bg-white dark:bg-neutral-800 rounded-xl overflow-hidden flex items-center justify-center">
+                  {storeLogo ? (
+                    <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
+                  ) : (
+                    <ShoppingBag className="w-5 h-5 text-neutral-900 dark:text-white" />
+                  )}
                 </div>
-                <span className="text-xl font-bold tracking-tight">URBAN STYLE</span>
+                <span className="text-xl font-bold tracking-tight">{storeName || 'Mi Tienda'}</span>
               </div>
               <p className="text-neutral-400 text-sm leading-relaxed mb-4">
-                Tu tienda de streetwear de confianza. Moda urbana premium con pedidos fáciles por WhatsApp.
+                {storeDescription || 'Tu tienda online de confianza. Compra fácil y seguro desde cualquier lugar.'}
               </p>
               <div className="flex gap-3">
                 {['facebook', 'instagram', 'tiktok'].map((social) => (
