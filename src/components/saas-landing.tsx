@@ -175,9 +175,9 @@ function CountdownBanner() {
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 animate-pulse-subtle">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-center gap-3">
         <Clock className="w-4 h-4 text-amber-900 shrink-0" />
-        <p className="text-sm font-semibold text-amber-900 text-center">
+        <p className="text-xs sm:text-sm font-semibold text-amber-900 text-center">
           <span className="hidden sm:inline">OFERTA ESPECIAL: 30% de descuento en todos los planes. Termina en: </span>
           <span className="sm:hidden">30% OFF en todos los planes — Termina en </span>
           <span className="inline-flex items-center gap-1 ml-1">
@@ -203,12 +203,12 @@ function CountdownBanner() {
 function TrustBanner() {
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-center gap-6 sm:gap-10 text-sm text-neutral-600 dark:text-neutral-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:gap-10 text-sm text-neutral-600 dark:text-neutral-300">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-green-500" />
           <span className="font-medium">Pagos seguros</span>
         </div>
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-amber-500" />
           <span className="font-medium">Activación inmediata</span>
         </div>
@@ -216,7 +216,7 @@ function TrustBanner() {
           <Headphones className="w-4 h-4 text-blue-500" />
           <span className="font-medium">Soporte 24/7</span>
         </div>
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 text-purple-500" />
           <span className="font-medium">Sin tarjeta requerida</span>
         </div>
@@ -584,7 +584,7 @@ export default function SaasLanding() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900 selection:bg-amber-500/30">
       {/* ═══ Countdown Timer Banner ═══ */}
       <CountdownBanner />
 
@@ -717,7 +717,7 @@ export default function SaasLanding() {
       </AnimatePresence>
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
-      <section className="relative h-screen min-h-[100dvh] flex items-center justify-center">
+      <section className="relative min-h-[85svh] sm:min-h-[90svh] md:h-screen flex items-center">
         {/* Full-bleed background image using <img> tag */}
         <img
           src={HERO_IMAGE}
@@ -737,7 +737,7 @@ export default function SaasLanding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
-            <Badge className="mb-6 px-4 py-1.5 bg-white/15 text-white hover:bg-white/15 border-white/20 text-sm backdrop-blur-sm">
+            <Badge className="mb-4 sm:mb-6 px-4 py-1.5 bg-white/15 text-white hover:bg-white/15 border-white/20 text-sm backdrop-blur-sm animate-pulse-subtle">
               ✨ Plataforma #1 en Perú
             </Badge>
           </motion.div>
@@ -746,14 +746,14 @@ export default function SaasLanding() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight tracking-tight"
+            className="text-[2.5rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight"
           >
             Tu Tienda Online{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500">
               Profesional
             </span>
             <br />
-            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-neutral-200 font-semibold">
+            <span className="text-[1.75rem] sm:text-4xl md:text-5xl lg:text-6xl text-neutral-200 font-semibold">
               en Minutos
             </span>
           </motion.h1>
@@ -762,7 +762,7 @@ export default function SaasLanding() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-            className="mt-6 text-lg sm:text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed"
+            className="mt-4 sm:mt-6 text-base sm:text-lg text-neutral-300 max-w-2xl mx-auto leading-relaxed"
           >
             Crea tu tienda online profesional sin conocimientos técnicos.
             Gestiona pedidos por WhatsApp, acepta pagos y haz crecer tu negocio.
@@ -772,11 +772,11 @@ export default function SaasLanding() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.45, ease: 'easeOut' }}
-            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Button
               size="lg"
-              className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/30"
+              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-12 sm:h-13 text-base font-semibold shadow-lg shadow-amber-500/30"
               onClick={() => router.push('/registro')}
             >
               Crear Tienda
@@ -785,7 +785,7 @@ export default function SaasLanding() {
             <Button
               size="lg"
               variant="outline"
-              className="rounded-full px-8 h-13 text-base font-semibold border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+              className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-13 text-base font-semibold border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
               onClick={() => router.push('/demo')}
             >
               Ver Demo
@@ -798,7 +798,7 @@ export default function SaasLanding() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-6"
+            className="mt-4 sm:mt-6"
           >
             <a
               href={whatsappUrl}
@@ -811,12 +811,12 @@ export default function SaasLanding() {
             </a>
           </motion.div>
 
-          {/* Stats row - desktop only */}
+          {/* Stats row - visible on all screens */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.75 }}
-            className="hidden lg:flex items-center justify-center gap-10 mt-12"
+            className="flex lg:flex items-center justify-center gap-6 lg:gap-10 text-center pt-6 sm:pt-0 border-t border-white/10 sm:border-0 mt-8 sm:mt-12"
           >
             {[
               { value: '10+', label: 'Tiendas Activas' },
@@ -824,7 +824,7 @@ export default function SaasLanding() {
               { value: '24/7', label: 'Soporte' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="text-2xl font-bold text-white">
+                <p className="text-xl sm:text-2xl font-bold text-white">
                   <AnimatedCounter target={stat.value} />
                 </p>
                 <p className="text-sm text-neutral-400 mt-1">{stat.label}</p>
@@ -834,20 +834,24 @@ export default function SaasLanding() {
         </div>
 
         {/* Bottom fade to white */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-neutral-900 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-white dark:from-neutral-900 to-transparent" />
 
         {/* Top nav bar (mobile + desktop) */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-4 sm:p-6">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/20"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="w-6 h-6" />
-            </Button>
-            <div className="flex items-center gap-1">
+        <div className="absolute top-0 left-0 right-0 z-10 bg-black/20 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 p-3 sm:p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <Menu className="w-6 h-6" />
+              </Button>
+              <span className="hidden sm:inline text-white font-semibold text-sm tracking-tight">Tienda Online Oficial</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ThemeToggle size="sm" className="!text-white hover:!bg-white/20 md:hidden" />
               <Button
                 variant="ghost"
                 size="icon"
@@ -859,14 +863,14 @@ export default function SaasLanding() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20"
+                className="hidden sm:inline-flex text-white hover:bg-white/20"
                 onClick={() => router.push('/registro')}
               >
                 <UserPlus className="w-5 h-5" />
               </Button>
               <Button
                 size="sm"
-                className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-4 font-semibold"
+                className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5 py-2 sm:px-6 font-semibold"
                 onClick={() => router.push('/registro')}
               >
                 Crear Tienda
@@ -905,7 +909,7 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ FEATURES SECTION ═══════════════════ */}
-      <section id="features" className="py-20 bg-white dark:bg-neutral-900">
+      <section id="features" className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
             <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
@@ -938,7 +942,7 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ HOW IT WORKS ═══════════════════ */}
-      <section id="how-it-works" className="py-20 bg-neutral-50 dark:bg-neutral-950">
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 bg-neutral-50 dark:bg-neutral-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
             <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
@@ -952,12 +956,12 @@ export default function SaasLanding() {
             </p>
           </FadeInUp>
 
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {steps.map((step, index) => (
               <StaggerItem key={step.title}>
                 <div className="text-center">
                   <div className="relative inline-flex">
-                    <div className="w-20 h-20 bg-white dark:bg-neutral-800 rounded-3xl flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10 border border-neutral-100 dark:border-neutral-800">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-neutral-800 rounded-3xl flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10 border border-neutral-100 dark:border-neutral-800">
                       {step.icon}
                     </div>
                     <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -992,9 +996,9 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ STATS / NUMBERS SECTION ═══════════════════ */}
-      <section className="py-16 bg-neutral-900">
+      <section className="py-10 sm:py-16 bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {[
               { value: '238+', label: 'Tiendas Activas en Perú', icon: <Store className="w-6 h-6" /> },
               { value: 'S/350000', label: 'Ventas Procesadas', icon: <BarChart3 className="w-6 h-6" /> },
@@ -1006,7 +1010,7 @@ export default function SaasLanding() {
                   <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 rounded-2xl text-amber-400 mb-4">
                     {stat.icon}
                   </div>
-                  <p className="text-3xl sm:text-4xl font-bold text-white">
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                     <AnimatedCounter target={stat.value} />
                   </p>
                   <p className="text-sm text-neutral-400 mt-2">{stat.label}</p>
@@ -1018,7 +1022,7 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ PRICING SECTION ═══════════════════ */}
-      <section id="pricing" className="py-20 bg-white dark:bg-neutral-900">
+      <section id="pricing" className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
             <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
@@ -1032,9 +1036,9 @@ export default function SaasLanding() {
             </p>
           </FadeInUp>
 
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             {plans.map((plan) => (
-              <StaggerItem key={plan.name}>
+              <StaggerItem key={plan.name} className="max-w-sm mx-auto sm:max-w-none">
                 <div
                   className="relative"
                   onMouseEnter={() => setExpandedPlan(plan.name)}
@@ -1197,7 +1201,7 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ TESTIMONIALS SECTION ═══════════════════ */}
-      <section id="testimonials" className="py-20 bg-neutral-50 dark:bg-neutral-950">
+      <section id="testimonials" className="py-12 sm:py-16 lg:py-20 bg-neutral-50 dark:bg-neutral-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
             <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
@@ -1211,9 +1215,9 @@ export default function SaasLanding() {
             </p>
           </FadeInUp>
 
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             {testimonials.map((testimonial) => (
-              <StaggerItem key={testimonial.name}>
+              <StaggerItem key={testimonial.name} className="max-w-sm mx-auto sm:max-w-none">
                 <Card className="h-full border-neutral-100 dark:border-neutral-800 hover:shadow-md transition-shadow duration-300 py-0 gap-0">
                   <CardContent className="p-6">
                     <StarRating rating={testimonial.rating} />
@@ -1250,7 +1254,7 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ FAQ SECTION ═══════════════════ */}
-      <section id="faq" className="py-20 bg-white dark:bg-neutral-900">
+      <section id="faq" className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-neutral-900">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
             <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
@@ -1282,7 +1286,7 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ CONTACT / LEAD FORM SECTION ═══════════════════ */}
-      <section id="contact" className="py-20 bg-neutral-50 dark:bg-neutral-950">
+      <section id="contact" className="py-12 sm:py-16 lg:py-20 bg-neutral-50 dark:bg-neutral-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
             {/* Left - CTA */}
@@ -1299,10 +1303,10 @@ export default function SaasLanding() {
                   Invierte en tu negocio hoy y escala sin límites.
                 </p>
 
-                <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                   <Button
                     size="lg"
-                    className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/20"
+                    className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-13 text-base font-semibold shadow-lg shadow-amber-500/20"
                     onClick={() => router.push('/registro')}
                   >
                     Crear mi Tienda
@@ -1312,7 +1316,7 @@ export default function SaasLanding() {
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 h-13 rounded-full border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-900 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors text-base font-medium"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 h-13 rounded-full border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-900 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors text-base font-medium"
                   >
                     <WhatsAppIcon className="w-5 h-5" />
                     Hablar con Ventas
@@ -1336,7 +1340,7 @@ export default function SaasLanding() {
                 </div>
 
                 {/* Trust badges */}
-                <div className="mt-10 flex flex-wrap items-center gap-4">
+                <div className="mt-10 flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 bg-white dark:bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-200 dark:border-neutral-700">
                     <Lock className="w-3.5 h-3.5 text-green-500" />
                     SSL Seguro
@@ -1455,13 +1459,13 @@ export default function SaasLanding() {
                 <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2" />
               </div>
 
-              <div className="relative z-10 px-6 py-14 sm:px-12 text-center">
+              <div className="relative z-10 px-5 py-10 sm:px-12 sm:py-14 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-white/70 text-sm mb-6 backdrop-blur-sm border border-white/10">
                   <Shield className="w-4 h-4" />
                   Setup incluido en todos los planes
                 </div>
 
-                <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight max-w-2xl mx-auto">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight max-w-2xl mx-auto">
                   Empieza a vender online hoy
                 </h2>
                 <p className="mt-4 text-neutral-400 text-lg max-w-xl mx-auto">
@@ -1488,7 +1492,7 @@ export default function SaasLanding() {
       <footer className="bg-neutral-900 text-neutral-300 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main footer content */}
-          <div className="py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="py-10 sm:py-12 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
@@ -1500,7 +1504,7 @@ export default function SaasLanding() {
               <p className="text-sm text-neutral-300 leading-relaxed mb-4">
                 La plataforma #1 en Perú para crear tu tienda online profesional. Simple, rápida y poderosa.
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <a href="#" className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
                   <Facebook className="w-4 h-4" />
                 </a>
@@ -1549,7 +1553,7 @@ export default function SaasLanding() {
 
           {/* Bottom bar */}
           <Separator className="bg-white/10" />
-          <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-500 dark:text-neutral-400">
+          <div className="py-5 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-500 dark:text-neutral-400">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
               <p>&copy; {new Date().getFullYear()} Tienda Online Oficial. Todos los derechos reservados.</p>
               <span className="hidden sm:inline text-neutral-600 dark:text-neutral-300">·</span>
