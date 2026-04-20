@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuthStore } from '@/stores/auth-store'
 import { URL_TO_CUSTOMER_SECTION } from '@/lib/navigation'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export type CustomerSection = 'dashboard' | 'orders' | 'profile'
 
@@ -70,8 +71,8 @@ function SidebarNav({
             <Store className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h2 className="font-bold text-neutral-900 text-sm truncate">{storeName}</h2>
-            <p className="text-xs text-neutral-400 truncate">Mi cuenta</p>
+            <h2 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm truncate">{storeName}</h2>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">Mi cuenta</p>
           </div>
         </div>
       </div>
@@ -93,10 +94,10 @@ function SidebarNav({
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
                   isActive
                     ? 'bg-neutral-900 text-white shadow-sm'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100'
                 }`}
               >
-                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-600'}`} />
+                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-600 dark:group-hover:text-neutral-300'}`} />
                 <span className="flex-1 text-left">{item.label}</span>
                 {isActive && (
                   <ChevronRight className="w-3.5 h-3.5 text-white/60" />
@@ -108,7 +109,7 @@ function SidebarNav({
       </ScrollArea>
 
       {/* User info & logout */}
-      <div className="mt-auto border-t border-neutral-200 p-4">
+      <div className="mt-auto border-t border-neutral-200 dark:border-neutral-700 p-4">
         <div className="flex items-center gap-3 mb-3">
           {userAvatar ? (
             <img
@@ -121,20 +122,20 @@ function SidebarNav({
               }}
             />
           ) : null}
-          <div className={`w-9 h-9 rounded-full bg-neutral-200 flex items-center justify-center flex-shrink-0 ${userAvatar ? 'hidden' : ''}`}>
-            <span className="text-xs font-bold text-neutral-600">
+          <div className={`w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0 ${userAvatar ? 'hidden' : ''}`}>
+            <span className="text-xs font-bold text-neutral-600 dark:text-neutral-400">
               {userName.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-neutral-900 truncate">{userName}</p>
-            <p className="text-xs text-neutral-400 truncate">{userEmail}</p>
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{userName}</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">{userEmail}</p>
           </div>
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2 text-neutral-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-lg h-9 text-xs font-medium"
+          className="w-full justify-start gap-2 text-neutral-500 dark:text-neutral-400 hover:text-red-600 hover:border-red-200 dark:hover:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg h-9 text-xs font-medium"
           onClick={onLogout}
         >
           <LogOut className="w-3.5 h-3.5" />
@@ -215,16 +216,16 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
   // Redirect to login if no user after hydration
   if (!user && !hydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
-        <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100 dark:bg-neutral-950">
+        <div className="w-8 h-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
   if (!user && hydrated) {
     router.push('/login')
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
-        <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100 dark:bg-neutral-950">
+        <div className="w-8 h-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -234,9 +235,9 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
   const userEmail = user.email || ''
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex overflow-x-hidden">
+    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-950 flex overflow-x-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-[260px] lg:fixed lg:inset-y-0 bg-white border-r border-neutral-200 z-30">
+      <aside className="hidden lg:flex lg:flex-col lg:w-[260px] lg:fixed lg:inset-y-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700 z-30">
         <SidebarNav
           items={navItems}
           activeSection={activeSection}
@@ -271,7 +272,7 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
       {/* Main content */}
       <div className="flex-1 lg:pl-[260px]">
         {/* Top header */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-200">
+        <header className="sticky top-0 z-20 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <Button
@@ -287,19 +288,20 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
                 <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
                   <ShoppingBag className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xs font-bold text-neutral-900 max-w-[80px] truncate">{storeName}</span>
+                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 max-w-[80px] truncate">{storeName}</span>
               </Link>
               <div className="hidden lg:block">
-                <h1 className="text-lg font-bold text-neutral-900">
+                <h1 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
                   {sectionTitles[activeSection]}
                 </h1>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 border border-neutral-200">
-                <Store className="w-3.5 h-3.5 text-neutral-400" />
-                <span className="text-xs font-medium text-neutral-600">{storeName}</span>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                <Store className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">{storeName}</span>
               </div>
+              <ThemeToggle size="sm" />
               <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {user.avatar ? (
                   <img

@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ImageUpload } from '@/components/image-upload'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface StoreInfo {
   id: string
@@ -784,10 +785,10 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
-          <p className="text-sm text-neutral-500">Cargando editor...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-neutral-400 dark:text-neutral-500" />
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Cargando editor...</p>
         </div>
       </div>
     )
@@ -796,13 +797,13 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   if (!storeInfo) {
     const hasStoreId = !!user?.storeId
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
         <div className="text-center p-8 max-w-sm">
-          <Store className={`w-12 h-12 mx-auto mb-3 ${hasStoreId ? 'text-amber-400' : 'text-neutral-300'}`} />
-          <p className="text-sm font-medium text-neutral-700 mb-1">
+          <Store className={`w-12 h-12 mx-auto mb-3 ${hasStoreId ? 'text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`} />
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
             {hasStoreId ? 'Datos de tienda no disponibles' : 'Tienda no encontrada'}
           </p>
-          <p className="text-xs text-neutral-400 mb-4">
+          <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-4">
             {hasStoreId
               ? 'No se pudieron cargar los datos completos de la tienda. Puedes continuar editando con los datos basicos o reintentar la conexion.'
               : 'No se encontro informacion de la tienda. Verifica que estes autenticado correctamente.'}
@@ -824,9 +825,9 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
   // ═══ MAIN RENDER ═══
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col">
       {/* Editor Header */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+      <header className="sticky top-0 z-50 bg-white dark:bg-neutral-900 border-b dark:border-neutral-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -839,7 +840,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
               {/* In stayOnEditor mode, show "Cerrar Editor" button to go back to admin panel */}
               {stayOnEditor && (
                 <Link href="/admin">
-                  <Button variant="outline" size="sm" className="shrink-0 h-8 gap-1.5 text-xs border-neutral-300">
+                  <Button variant="outline" size="sm" className="shrink-0 h-8 gap-1.5 text-xs border-neutral-300 dark:border-neutral-700">
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Cerrar Editor</span>
                     <span className="sm:hidden">Cerrar</span>
@@ -848,22 +849,23 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
               )}
               {/* User Avatar / Profile */}
               <div className="relative shrink-0">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 to-neutral-900 overflow-hidden flex items-center justify-center ring-2 ring-white shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 to-neutral-900 overflow-hidden flex items-center justify-center ring-2 ring-white dark:ring-neutral-900 shadow-sm">
                   {user?.avatar ? (
                     <img src={user.avatar} alt={user.name || 'Usuario'} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-white text-xs font-bold">{(user?.name || storeInfo.name || 'U').charAt(0).toUpperCase()}</span>
                   )}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" title="En línea"></div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-neutral-900" title="En línea"></div>
               </div>
               <div className="min-w-0">
-                <h1 className="text-sm sm:text-base font-bold text-neutral-900 truncate">Editor de Tienda</h1>
-                <p className="text-[10px] sm:text-xs text-neutral-400 truncate">{storeInfo.name} · {storeInfo.slug}</p>
+                <h1 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 truncate">Editor de Tienda</h1>
+                <p className="text-[10px] sm:text-xs text-neutral-400 dark:text-neutral-500 truncate">{storeInfo.name} · {storeInfo.slug}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <ThemeToggle size="sm" />
               <a href={`/${storeSlug}`} target="_blank" rel="noopener noreferrer" className="hidden sm:block">
                 <Button variant="outline" size="sm" className="hidden sm:flex text-xs gap-1.5 h-8 rounded-lg">
                   <Eye className="w-3.5 h-3.5" /> Ver Tienda
@@ -873,7 +875,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                 size="sm"
                 onClick={handleSaveAll}
                 disabled={saving || !hasChanges}
-                className={`text-xs gap-1.5 h-8 rounded-lg ${hasChanges ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-neutral-200 text-neutral-400'}`}
+                className={`text-xs gap-1.5 h-8 rounded-lg ${hasChanges ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500'}`}
               >
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : hasChanges ? <><CheckCircle2 className="w-3.5 h-3.5" /> Guardar</> : <><CheckCircle2 className="w-3.5 h-3.5" /> Guardado</>}
               </Button>
@@ -883,7 +885,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
       </header>
 
       {/* Section Tabs */}
-      <div className="sticky top-14 sm:top-16 z-40 bg-white border-b">
+      <div className="sticky top-14 sm:top-16 z-40 bg-white dark:bg-neutral-900 border-b dark:border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-1 py-2 overflow-x-auto">
             {[
@@ -900,13 +902,13 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                 className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all ${
                   activeSection === tab.key
                     ? 'bg-neutral-900 text-white shadow-sm'
-                    : 'text-neutral-600 hover:bg-neutral-100'
+                    : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
                 }`}
               >
                 <tab.icon className="w-3.5 h-3.5" />
                 {tab.label}
-                {tab.key === 'products' && <Badge className="ml-1 bg-neutral-200 text-neutral-600 text-[9px] px-1.5 h-4">{products.length}</Badge>}
-                {tab.key === 'categories' && <Badge className="ml-1 bg-neutral-200 text-neutral-600 text-[9px] px-1.5 h-4">{categories.length}</Badge>}
+                {tab.key === 'products' && <Badge className="ml-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 text-[9px] px-1.5 h-4">{products.length}</Badge>}
+                {tab.key === 'categories' && <Badge className="ml-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 text-[9px] px-1.5 h-4">{categories.length}</Badge>}
               </button>
             ))}
           </div>
@@ -915,11 +917,11 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
       {/* Fetch Error Warning Banner */}
       {fetchError && (
-        <div className="bg-amber-50 border-b border-amber-200">
+        <div className="bg-amber-50 dark:bg-amber-950 border-b border-amber-200 dark:border-amber-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-              <p className="text-xs text-amber-700 truncate">
+              <p className="text-xs text-amber-700 dark:text-amber-400 truncate">
                 Los datos de la tienda se cargaron desde tu cuenta. Algunos datos pueden estar incompletos.
               </p>
             </div>
@@ -927,7 +929,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
               variant="outline"
               size="sm"
               onClick={() => fetchStoreData()}
-              className="shrink-0 text-xs gap-1.5 h-7 rounded-lg border-amber-300 text-amber-700 hover:bg-amber-100"
+              className="shrink-0 text-xs gap-1.5 h-7 rounded-lg border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900"
             >
               Reintentar
             </Button>
@@ -942,7 +944,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         {activeSection === 'store' && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
             {/* Store Header Preview */}
-            <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border dark:border-neutral-800 shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-neutral-900 to-neutral-700 p-4 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-4">
                   {/* Editable Logo */}
@@ -976,8 +978,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-neutral-700 flex items-center gap-1.5">
-                    <Settings className="w-3.5 h-3.5 text-neutral-400" />
+                  <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <Settings className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                     Descripcion de la Tienda
                   </Label>
                   <Textarea
@@ -985,16 +987,16 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                     onChange={(e) => { setStoreForm({ ...storeForm, description: e.target.value }); markChanged() }}
                     placeholder="Describe tu tienda, que vendes, tu historia..."
                     rows={3}
-                    className="rounded-lg text-sm border-neutral-200 resize-none"
+                    className="rounded-lg text-sm border-neutral-200 dark:border-neutral-700 resize-none"
                   />
                 </div>
 
-                <Separator className="bg-neutral-100" />
+                <Separator className="bg-neutral-100 dark:bg-neutral-800" />
 
                 {/* Contact Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-neutral-700 flex items-center gap-1.5">
+                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-green-500" />
                       WhatsApp
                     </Label>
@@ -1002,13 +1004,13 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                       value={storeForm.whatsappNumber}
                       onChange={(e) => { setStoreForm({ ...storeForm, whatsappNumber: e.target.value }); markChanged() }}
                       placeholder="+51 999 888 777"
-                      className="h-10 rounded-lg text-sm border-neutral-200"
+                      className="h-10 rounded-lg text-sm border-neutral-200 dark:border-neutral-700"
                     />
-                    <p className="text-[10px] text-neutral-400">Incluye codigo de pais</p>
+                    <p className="text-[10px] text-neutral-400 dark:text-neutral-500">Incluye codigo de pais</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-neutral-700 flex items-center gap-1.5">
+                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-red-400" />
                       Direccion
                     </Label>
@@ -1016,14 +1018,14 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                       value={storeForm.address}
                       onChange={(e) => { setStoreForm({ ...storeForm, address: e.target.value }); markChanged() }}
                       placeholder="Av. Principal 123, Lima"
-                      className="h-10 rounded-lg text-sm border-neutral-200"
+                      className="h-10 rounded-lg text-sm border-neutral-200 dark:border-neutral-700"
                     />
                   </div>
                 </div>
 
                 {/* Logo Upload Area */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-neutral-700">Logo de la Tienda</Label>
+                  <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Logo de la Tienda</Label>
                   <div className="max-w-xs">
                     <ImageUpload
                       value={storeForm.logo}
@@ -1046,8 +1048,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                     <ShoppingBag className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-neutral-900">URL de tu Tienda</p>
-                    <p className="text-xs text-neutral-400 truncate">
+                    <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">URL de tu Tienda</p>
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
                       {typeof window !== 'undefined' ? `${window.location.origin}/${storeInfo.slug}` : `/${storeInfo.slug}`}
                     </p>
                   </div>
@@ -1055,7 +1057,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                     href={`/${storeSlug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
                   >
                     Ver Tienda
                   </a>
@@ -1070,7 +1072,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
             {/* Add Product Button */}
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-neutral-700">{products.length} productos</p>
+              <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{products.length} productos</p>
               <Button
                 size="sm"
                 onClick={() => setShowNewProduct(!showNewProduct)}
@@ -1090,12 +1092,12 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden"
                 >
-                  <Card className="rounded-2xl border-2 border-dashed border-neutral-300">
+                  <Card className="rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-600">
                     <CardContent className="p-4 sm:p-5 space-y-4">
-                      <h3 className="text-sm font-bold text-neutral-900">Agregar Nuevo Producto</h3>
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Agregar Nuevo Producto</h3>
 
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium text-neutral-600">Imagen del Producto</Label>
+                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Imagen del Producto</Label>
                         <ImageUpload
                           value={newProduct.image}
                           onChange={(url) => setNewProduct({ ...newProduct, image: url })}
@@ -1108,7 +1110,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-neutral-600">Nombre</Label>
+                          <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Nombre</Label>
                           <Input
                             value={newProduct.name}
                             onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
@@ -1117,7 +1119,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-neutral-600">Precio (S/)</Label>
+                          <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Precio (S/)</Label>
                           <Input
                             value={newProduct.price}
                             onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
@@ -1130,11 +1132,11 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-neutral-600">Categoria</Label>
+                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Categoria</Label>
                         {categories.length === 0 ? (
-                          <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                          <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                             <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                            <p className="text-xs text-amber-700">
+                            <p className="text-xs text-amber-700 dark:text-amber-400">
                               Primero debes crear una categoria. Ve a la pestana <strong>Categorias</strong> para agregar una.
                             </p>
                           </div>
@@ -1147,7 +1149,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                                 className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
                                   newProduct.categoryId === cat.id
                                     ? 'bg-neutral-900 text-white'
-                                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
                                 }`}
                               >
                                 {cat.name}
@@ -1158,7 +1160,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-neutral-600">Descripcion</Label>
+                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Descripcion</Label>
                         <Textarea
                           value={newProduct.description}
                           onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
@@ -1183,33 +1185,33 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
             {/* Products Grid */}
             {products.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 sm:p-12 text-center">
-                <Package className="w-12 h-12 mx-auto mb-3 text-neutral-200" />
-                <p className="text-sm font-medium text-neutral-500">Sin productos</p>
-                <p className="text-xs text-neutral-400 mt-1">Agrega tu primer producto para comenzar</p>
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl border dark:border-neutral-800 p-8 sm:p-12 text-center">
+                <Package className="w-12 h-12 mx-auto mb-3 text-neutral-200 dark:text-neutral-700" />
+                <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Sin productos</p>
+                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Agrega tu primer producto para comenzar</p>
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
                 {products.map(product => (
-                  <Card key={product.id} className="rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <Card key={product.id} className="rounded-2xl border dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <CardContent className="p-0">
                       <div className="flex flex-col sm:flex-row">
                         {/* Product Image - Clickable to change */}
                         <div
-                          className="relative w-full sm:w-32 h-40 sm:h-auto bg-neutral-100 cursor-pointer shrink-0"
+                          className="relative w-full sm:w-32 h-40 sm:h-auto bg-neutral-100 dark:bg-neutral-800 cursor-pointer shrink-0"
                           onClick={() => handleFileInput('image/jpeg,image/png,image/webp', 'products', (url) => handleProductImageChange(product.id, url))}
                         >
                           {product.image ? (
                             <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="w-8 h-8 text-neutral-300" />
+                              <ImageIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                             </div>
                           )}
                           {/* Hover overlay for camera */}
                           <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <div className="bg-white rounded-full p-2 shadow-lg">
-                              <Camera className="w-4 h-4 text-neutral-700" />
+                            <div className="bg-white dark:bg-neutral-800 rounded-full p-2 shadow-lg">
+                              <Camera className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
                             </div>
                           </div>
                           {/* Stock indicator */}
@@ -1219,8 +1221,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                             </Badge>
                           </div>
                           {/* Price badge */}
-                          <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-lg">
-                            <span className="text-xs font-bold text-neutral-900">S/ {product.price?.toFixed(2)}</span>
+                          <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-0.5 rounded-lg">
+                            <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">S/ {product.price?.toFixed(2)}</span>
                           </div>
                         </div>
 
@@ -1230,15 +1232,15 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                             /* ═══ INLINE EDIT FORM ═══ */
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
-                                <p className="text-xs font-bold text-neutral-900">Editando producto</p>
-                                <button onClick={() => setEditingProductId(null)} className="text-neutral-400 hover:text-neutral-600">
+                                <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">Editando producto</p>
+                                <button onClick={() => setEditingProductId(null)} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
                                   <X className="w-4 h-4" />
                                 </button>
                               </div>
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="space-y-1">
-                                  <Label className="text-[10px] font-medium text-neutral-500">Nombre</Label>
+                                  <Label className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Nombre</Label>
                                   <Input
                                     value={editProductForm.name}
                                     onChange={(e) => setEditProductForm({ ...editProductForm, name: e.target.value })}
@@ -1246,7 +1248,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <Label className="text-[10px] font-medium text-neutral-500">Precio (S/)</Label>
+                                  <Label className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Precio (S/)</Label>
                                   <Input
                                     value={editProductForm.price}
                                     onChange={(e) => setEditProductForm({ ...editProductForm, price: e.target.value })}
@@ -1258,7 +1260,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                               </div>
 
                               <div className="space-y-1">
-                                <Label className="text-[10px] font-medium text-neutral-500">Descripcion</Label>
+                                <Label className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Descripcion</Label>
                                 <Textarea
                                   value={editProductForm.description}
                                   onChange={(e) => setEditProductForm({ ...editProductForm, description: e.target.value })}
@@ -1268,7 +1270,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                               </div>
 
                               <div className="space-y-1">
-                                <Label className="text-[10px] font-medium text-neutral-500">Categoria</Label>
+                                <Label className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Categoria</Label>
                                 <div className="flex gap-1.5 flex-wrap">
                                   {categories.map(cat => (
                                     <button
@@ -1277,7 +1279,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                                       className={`text-[10px] px-2.5 py-1 rounded-lg font-medium transition-colors ${
                                         editProductForm.categoryId === cat.id
                                           ? 'bg-neutral-900 text-white'
-                                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
                                       }`}
                                     >
                                       {cat.name}
@@ -1295,9 +1297,9 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                                   {editProductForm.inStock ? (
                                     <ToggleRight className="w-5 h-5 text-green-600" />
                                   ) : (
-                                    <ToggleLeft className="w-5 h-5 text-neutral-400" />
+                                    <ToggleLeft className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
                                   )}
-                                  <span className={editProductForm.inStock ? 'text-green-700 font-medium' : 'text-neutral-400'}>
+                                  <span className={editProductForm.inStock ? 'text-green-700 dark:text-green-400 font-medium' : 'text-neutral-400 dark:text-neutral-500'}>
                                     {editProductForm.inStock ? 'En stock' : 'Sin stock'}
                                   </span>
                                 </button>
@@ -1332,18 +1334,18 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                             <div>
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-semibold text-neutral-900 truncate">{product.name}</p>
-                                  <p className="text-[10px] text-neutral-400 mt-0.5">{product.category?.name || 'Sin categoria'}</p>
+                                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">{product.name}</p>
+                                  <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">{product.category?.name || 'Sin categoria'}</p>
                                 </div>
-                                <p className="text-sm font-bold text-neutral-900 shrink-0">S/ {product.price?.toFixed(2)}</p>
+                                <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 shrink-0">S/ {product.price?.toFixed(2)}</p>
                               </div>
 
                               {product.description && (
-                                <p className="text-[11px] text-neutral-500 mt-1.5 line-clamp-2">{product.description}</p>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1.5 line-clamp-2">{product.description}</p>
                               )}
 
                               {/* Actions row */}
-                              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-neutral-100">
+                              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1357,8 +1359,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                                   onClick={() => handleToggleStock(product)}
                                   className={`text-[10px] h-6 px-2 rounded-md flex items-center gap-1 transition-colors ${
                                     product.inStock
-                                      ? 'text-amber-600 hover:bg-amber-50'
-                                      : 'text-green-600 hover:bg-green-50'
+                                      ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950'
+                                      : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-950'
                                   }`}
                                 >
                                   {product.inStock ? (
@@ -1372,7 +1374,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
                                 <button
                                   onClick={() => handleDeleteProduct(product.id)}
-                                  className="text-[10px] h-6 px-2 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors"
+                                  className="text-[10px] h-6 px-2 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-1 transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" /> Eliminar
                                 </button>
@@ -1393,7 +1395,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
         {activeSection === 'categories' && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-neutral-700">{categories.length} categorias</p>
+              <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{categories.length} categorias</p>
               <Button
                 size="sm"
                 onClick={() => setShowNewCategory(!showNewCategory)}
@@ -1413,11 +1415,11 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden"
                 >
-                  <Card className="rounded-2xl border-2 border-dashed border-neutral-300">
+                  <Card className="rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-600">
                     <CardContent className="p-4 sm:p-5 space-y-4">
-                      <h3 className="text-sm font-bold text-neutral-900">Nueva Categoria</h3>
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Nueva Categoria</h3>
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium text-neutral-600">Imagen</Label>
+                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Imagen</Label>
                         <ImageUpload
                           value={newCategory.image}
                           onChange={(url) => setNewCategory({ ...newCategory, image: url })}
@@ -1428,7 +1430,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-neutral-600">Nombre</Label>
+                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Nombre</Label>
                         <Input
                           value={newCategory.name}
                           onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
@@ -1451,31 +1453,31 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
             {/* Categories Grid - now with inline name editing */}
             {categories.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 sm:p-12 text-center">
-                <Tag className="w-12 h-12 mx-auto mb-3 text-neutral-200" />
-                <p className="text-sm font-medium text-neutral-500">Sin categorias</p>
-                <p className="text-xs text-neutral-400 mt-1">Crea categorias para organizar tus productos</p>
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl border dark:border-neutral-800 p-8 sm:p-12 text-center">
+                <Tag className="w-12 h-12 mx-auto mb-3 text-neutral-200 dark:text-neutral-700" />
+                <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Sin categorias</p>
+                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Crea categorias para organizar tus productos</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {categories.map(cat => (
-                  <Card key={cat.id} className="rounded-xl border overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
+                  <Card key={cat.id} className="rounded-xl border dark:border-neutral-800 overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
                     <CardContent className="p-0">
                       {/* Category Image */}
                       <div
-                        className="relative aspect-video bg-neutral-100 cursor-pointer"
+                        className="relative aspect-video bg-neutral-100 dark:bg-neutral-800 cursor-pointer"
                         onClick={() => handleFileInput('image/jpeg,image/png,image/webp', 'categories', (url) => handleCategoryImageChange(cat.id, url))}
                       >
                         {cat.image ? (
                           <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="w-8 h-8 text-neutral-300" />
+                            <ImageIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <div className="bg-white rounded-full p-2 shadow-lg">
-                            <Camera className="w-4 h-4 text-neutral-700" />
+                          <div className="bg-white dark:bg-neutral-800 rounded-full p-2 shadow-lg">
+                            <Camera className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
                           </div>
                         </div>
                       </div>
@@ -1520,17 +1522,17 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                           </div>
                         ) : (
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-neutral-900 truncate">{cat.name}</p>
+                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{cat.name}</p>
                             <div className="flex items-center gap-1 shrink-0">
                               <button
                                 onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name) }}
-                                className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                                className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-500 dark:hover:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteCategory(cat.id)}
-                                className="p-1.5 rounded-md text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                className="p-1.5 rounded-md text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:text-neutral-500 dark:hover:bg-red-950 transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1551,8 +1553,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-700">{testimonials.length} testimonios</p>
-                <p className="text-[10px] text-neutral-400">Resenas de clientes que se muestran en tu tienda</p>
+                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{testimonials.length} testimonios</p>
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500">Resenas de clientes que se muestran en tu tienda</p>
               </div>
               <Button
                 size="sm"
@@ -1565,25 +1567,25 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
             {testimonialsLoading && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-neutral-400 dark:text-neutral-500" />
               </div>
             )}
 
             {!testimonialsLoading && testimonials.length === 0 && (
-              <Card className="rounded-2xl border">
+              <Card className="rounded-2xl border dark:border-neutral-800">
                 <CardContent className="p-8 text-center">
-                  <MessageSquareQuote className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-neutral-500">Sin testimonios</p>
-                  <p className="text-xs text-neutral-400 mt-1">Agrega testimonios de tus clientes para generar confianza</p>
+                  <MessageSquareQuote className="w-10 h-10 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Sin testimonios</p>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Agrega testimonios de tus clientes para generar confianza</p>
                 </CardContent>
               </Card>
             )}
 
             {!testimonialsLoading && testimonials.map((item, idx) => (
-              <Card key={item.id || `new_${idx}`} className="rounded-2xl border">
+              <Card key={item.id || `new_${idx}`} className="rounded-2xl border dark:border-neutral-800">
                 <CardContent className="p-4 sm:p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-neutral-400 font-medium">
+                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">
                       #{idx + 1} {item._isNew ? '(nuevo)' : ''}
                     </span>
                     <div className="flex items-center gap-1">
@@ -1592,7 +1594,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                         size="sm"
                         onClick={() => saveTestimonial(idx)}
                         disabled={contentSaving === `testimonial_${idx}`}
-                        className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                        className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
                       >
                         {contentSaving === `testimonial_${idx}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         Guardar
@@ -1601,7 +1603,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteTestimonial(idx, item.id)}
-                        className="h-7 w-7 text-neutral-400 hover:text-red-500"
+                        className="h-7 w-7 text-neutral-400 hover:text-red-500 dark:text-neutral-500"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -1609,7 +1611,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-neutral-600">Nombre</Label>
+                      <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Nombre</Label>
                       <Input
                         value={item.name}
                         onChange={(e) => updateTestimonial(idx, 'name', e.target.value)}
@@ -1618,7 +1620,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-neutral-600">Rol</Label>
+                      <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Rol</Label>
                       <Input
                         value={item.role}
                         onChange={(e) => updateTestimonial(idx, 'role', e.target.value)}
@@ -1628,7 +1630,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-neutral-600">Calificacion</Label>
+                    <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Calificacion</Label>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -1638,15 +1640,15 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                           className="focus:outline-none p-0.5"
                         >
                           <Star
-                            className={`w-5 h-5 transition-colors ${star <= item.rating ? 'text-amber-400 fill-amber-400' : 'text-neutral-300 hover:text-amber-300'}`}
+                            className={`w-5 h-5 transition-colors ${star <= item.rating ? 'text-amber-400 fill-amber-400' : 'text-neutral-300 dark:text-neutral-600 hover:text-amber-300'}`}
                           />
                         </button>
                       ))}
-                      <span className="text-xs text-neutral-400 ml-1">{item.rating}/5</span>
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-1">{item.rating}/5</span>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-neutral-600">Testimonio</Label>
+                    <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Testimonio</Label>
                     <Textarea
                       value={item.content}
                       onChange={(e) => updateTestimonial(idx, 'content', e.target.value)}
@@ -1666,8 +1668,8 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-700">{faqItems.length} preguntas frecuentes</p>
-                <p className="text-[10px] text-neutral-400">Preguntas y respuestas que se muestran en tu tienda</p>
+                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{faqItems.length} preguntas frecuentes</p>
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500">Preguntas y respuestas que se muestran en tu tienda</p>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1692,36 +1694,36 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
 
             {contentLoading && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-neutral-400 dark:text-neutral-500" />
               </div>
             )}
 
             {!contentLoading && faqItems.length === 0 && (
-              <Card className="rounded-2xl border">
+              <Card className="rounded-2xl border dark:border-neutral-800">
                 <CardContent className="p-8 text-center">
-                  <Sparkles className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-neutral-500">Sin preguntas frecuentes</p>
-                  <p className="text-xs text-neutral-400 mt-1">Agrega preguntas y respuestas para ayudar a tus clientes</p>
+                  <Sparkles className="w-10 h-10 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Sin preguntas frecuentes</p>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Agrega preguntas y respuestas para ayudar a tus clientes</p>
                 </CardContent>
               </Card>
             )}
 
             {!contentLoading && faqItems.map((item, idx) => (
-              <Card key={`faq_${idx}`} className="rounded-2xl border">
+              <Card key={`faq_${idx}`} className="rounded-2xl border dark:border-neutral-800">
                 <CardContent className="p-4 sm:p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-neutral-400 font-medium">Pregunta #{idx + 1}</span>
+                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">Pregunta #{idx + 1}</span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => removeFaqItem(idx)}
-                      className="h-7 w-7 text-neutral-400 hover:text-red-500"
+                      className="h-7 w-7 text-neutral-400 hover:text-red-500 dark:text-neutral-500"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-neutral-600">Pregunta</Label>
+                    <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Pregunta</Label>
                     <Input
                       value={item.q}
                       onChange={(e) => updateFaqItem(idx, 'q', e.target.value)}
@@ -1730,7 +1732,7 @@ export default function StoreEditor({ storeSlug, onExit, stayOnEditor }: { store
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-neutral-600">Respuesta</Label>
+                    <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Respuesta</Label>
                     <Textarea
                       value={item.a}
                       onChange={(e) => updateFaqItem(idx, 'a', e.target.value)}

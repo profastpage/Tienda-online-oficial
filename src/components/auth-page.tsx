@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 function AuthPageContent() {
   const [showPassword, setShowPassword] = useState(false)
@@ -200,18 +201,21 @@ function AuthPageContent() {
   // 2FA Verification Screen
   if (pending2FA) {
     return (
-      <div className="min-h-screen flex flex-col bg-neutral-50">
-        <header className="bg-white border-b">
+      <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
+        <header className="bg-white dark:bg-neutral-900 border-b dark:border-neutral-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
             <a href="/" className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-neutral-900 rounded-xl flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-neutral-900">URBAN STYLE</span>
+              <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">URBAN STYLE</span>
             </a>
-            <Button variant="ghost" onClick={() => router.push('/demo')}>
-              ← Volver a la tienda
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              <Button variant="ghost" onClick={() => router.push('/demo')}>
+                ← Volver a la tienda
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -223,8 +227,8 @@ function AuthPageContent() {
           >
             <Card>
               <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-8 h-8 text-neutral-900" />
+                <div className="mx-auto w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-2xl flex items-center justify-center mb-4">
+                  <ShieldCheck className="w-8 h-8 text-neutral-900 dark:text-neutral-100" />
                 </div>
                 <CardTitle className="text-2xl">Verificación en Dos Pasos</CardTitle>
                 <CardDescription className="text-base mt-1">
@@ -233,8 +237,8 @@ function AuthPageContent() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center">
-                  <p className="text-sm text-neutral-500">
-                    Verificando cuenta: <span className="font-semibold text-neutral-700">{pending2FA.email}</span>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Verificando cuenta: <span className="font-semibold text-neutral-700 dark:text-neutral-300">{pending2FA.email}</span>
                   </p>
                 </div>
 
@@ -255,7 +259,7 @@ function AuthPageContent() {
                         value={digit}
                         onChange={(e) => handleDigitChange(index, e.target.value)}
                         onKeyDown={(e) => handleDigitKeyDown(index, e)}
-                        className="w-12 h-14 text-center text-xl font-bold text-neutral-900 border-neutral-300 focus:border-neutral-900 focus:ring-neutral-900 rounded-xl"
+                        className="w-12 h-14 text-center text-xl font-bold text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-600 focus:border-neutral-900 focus:ring-neutral-900 rounded-xl"
                         disabled={twoFactorLoading}
                       />
                     </motion.div>
@@ -276,7 +280,7 @@ function AuthPageContent() {
                   <button
                     type="button"
                     onClick={resetTwoFactor}
-                    className="text-sm text-neutral-500 hover:text-neutral-700 underline underline-offset-4 transition-colors"
+                    className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 underline underline-offset-4 transition-colors"
                   >
                     ← Volver al inicio de sesión
                   </button>
@@ -290,19 +294,22 @@ function AuthPageContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-50">
+    <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="bg-white dark:bg-neutral-900 border-b dark:border-neutral-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <a href="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-neutral-900 rounded-xl flex items-center justify-center">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-neutral-900">URBAN STYLE</span>
+            <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">URBAN STYLE</span>
           </a>
-          <Button variant="ghost" onClick={() => router.push('/demo')}>
-            ← Volver a la tienda
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle size="sm" />
+            <Button variant="ghost" onClick={() => router.push('/demo')}>
+              ← Volver a la tienda
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -314,8 +321,8 @@ function AuthPageContent() {
           className="w-full max-w-md"
         >
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-neutral-900">Bienvenido</h1>
-            <p className="mt-2 text-neutral-500">Accede a tu cuenta o crea una nueva</p>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Bienvenido</h1>
+            <p className="mt-2 text-neutral-500 dark:text-neutral-400">Accede a tu cuenta o crea una nueva</p>
           </div>
 
           <Tabs defaultValue="login" className="w-full">
@@ -339,7 +346,7 @@ function AuthPageContent() {
                       const baseUrl = window.location.origin
                       signIn('google', { callbackUrl: `${baseUrl}/auth/google-callback?action=login` })
                     }}
-                    className="w-full flex items-center justify-center gap-3 h-11 px-4 bg-white border border-neutral-300 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all font-medium text-sm text-neutral-700"
+                    className="w-full flex items-center justify-center gap-3 h-11 px-4 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-500 transition-all font-medium text-sm text-neutral-700 dark:text-neutral-300"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -353,10 +360,10 @@ function AuthPageContent() {
                   {/* Divider */}
                   <div className="relative my-5">
                     <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-neutral-200" />
+                      <span className="w-full border-t border-neutral-200 dark:border-neutral-700" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="px-3 bg-white text-neutral-400 font-medium">o continúa con tu email</span>
+                      <span className="px-3 bg-white dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500 font-medium">o continúa con tu email</span>
                     </div>
                   </div>
 
@@ -369,7 +376,7 @@ function AuthPageContent() {
                       <Label htmlFor="loginPassword">Contraseña</Label>
                       <div className="relative">
                         <Input id="loginPassword" name="loginPassword" type={showPassword ? 'text' : 'password'} placeholder="••••••" required />
-                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" onClick={() => setShowPassword(!showPassword)}>
+                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300" onClick={() => setShowPassword(!showPassword)}>
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
@@ -396,19 +403,19 @@ function AuthPageContent() {
                   <form onSubmit={handleRegister} className="space-y-4">
                     {/* Role selection - FIRST, before Google button */}
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-neutral-700">¿Cómo quieres registrarte?</Label>
+                      <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">¿Cómo quieres registrarte?</Label>
                       <div className="grid grid-cols-2 gap-3">
                         <button
                           type="button"
                           onClick={() => setRegRole('customer')}
-                          className={`flex flex-col items-center gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all ${regRole === 'customer' ? 'border-neutral-900 bg-neutral-50 shadow-sm' : 'border-neutral-200 hover:border-neutral-300'}`}
+                          className={`flex flex-col items-center gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all ${regRole === 'customer' ? 'border-neutral-900 bg-neutral-50 dark:bg-neutral-800 shadow-sm' : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'}`}
                         >
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${regRole === 'customer' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${regRole === 'customer' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'}`}>
                             <User className="w-6 h-6" />
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-bold">Cliente</p>
-                            <p className="text-xs text-neutral-400">Comprar productos</p>
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500">Comprar productos</p>
                           </div>
                           {regRole === 'customer' && (
                             <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
@@ -421,14 +428,14 @@ function AuthPageContent() {
                         <button
                           type="button"
                           onClick={() => setRegRole('admin')}
-                          className={`flex flex-col items-center gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all ${regRole === 'admin' ? 'border-neutral-900 bg-neutral-50 shadow-sm' : 'border-neutral-200 hover:border-neutral-300'}`}
+                          className={`flex flex-col items-center gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all ${regRole === 'admin' ? 'border-neutral-900 bg-neutral-50 dark:bg-neutral-800 shadow-sm' : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'}`}
                         >
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${regRole === 'admin' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${regRole === 'admin' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'}`}>
                             <Store className="w-6 h-6" />
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-bold">Vendedor</p>
-                            <p className="text-xs text-neutral-400">Crear mi tienda</p>
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500">Crear mi tienda</p>
                           </div>
                           {regRole === 'admin' && (
                             <div className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center">
@@ -450,7 +457,7 @@ function AuthPageContent() {
                       >
                         <Label htmlFor="regStoreNameGoogle">Nombre de la Tienda</Label>
                         <Input id="regStoreNameGoogle" name="regStoreName" placeholder="Mi Tienda Online" required />
-                        <p className="text-xs text-neutral-400">Se creará una tienda nueva con este nombre</p>
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500">Se creará una tienda nueva con este nombre</p>
                       </motion.div>
                     )}
 
@@ -468,7 +475,7 @@ function AuthPageContent() {
                         }
                         signIn('google', { callbackUrl: `${baseUrl}/auth/google-callback?action=${action}${storeName ? `&storeName=${encodeURIComponent(storeName)}` : ''}` })
                       }}
-                      className="w-full flex items-center justify-center gap-3 h-12 px-4 bg-white border-2 border-neutral-300 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all font-medium text-sm text-neutral-700"
+                      className="w-full flex items-center justify-center gap-3 h-12 px-4 bg-white dark:bg-neutral-900 border-2 border-neutral-300 dark:border-neutral-600 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-500 transition-all font-medium text-sm text-neutral-700 dark:text-neutral-300"
                     >
                       <svg className="w-5 h-5" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -482,10 +489,10 @@ function AuthPageContent() {
                     {/* Divider */}
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-neutral-200" />
+                        <span className="w-full border-t border-neutral-200 dark:border-neutral-700" />
                       </div>
                       <div className="relative flex justify-center text-xs">
-                        <span className="px-3 bg-white text-neutral-400 font-medium">o regístrate con tu email</span>
+                        <span className="px-3 bg-white dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500 font-medium">o regístrate con tu email</span>
                       </div>
                     </div>
 
@@ -524,7 +531,7 @@ function AuthPageContent() {
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
         <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
       </div>
     }>

@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const PLANS = [
   {
@@ -35,8 +36,8 @@ const PLANS = [
     ],
     setupIncluded: 'Asistente de configuración guiada',
     icon: <ShoppingBag className="w-5 h-5" />,
-    color: 'bg-neutral-100 text-neutral-900',
-    border: 'border-neutral-200',
+    color: 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100',
+    border: 'border-neutral-200 dark:border-neutral-700',
   },
   {
     id: 'pro',
@@ -63,8 +64,8 @@ const PLANS = [
     ],
     setupIncluded: 'Configuración asistida + capacitación en video',
     icon: <Zap className="w-5 h-5" />,
-    color: 'bg-neutral-900 text-white',
-    border: 'border-neutral-900',
+    color: 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900',
+    border: 'border-neutral-900 dark:border-neutral-100',
     popular: true,
   },
   {
@@ -96,7 +97,7 @@ const PLANS = [
     ],
     setupIncluded: 'Setup completo personalizado + onboarding 1a1 + 30 días de acompañamiento',
     icon: <Star className="w-5 h-5" />,
-    color: 'bg-amber-500 text-neutral-950',
+    color: 'bg-amber-500 text-neutral-950 dark:text-neutral-900',
     border: 'border-amber-500',
     recommended: true,
   },
@@ -171,19 +172,22 @@ export default function RegisterPage() {
   const getSelectedPlan = () => PLANS.find(p => p.id === selectedPlan)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-100">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800">
         <div className="mx-auto max-w-4xl px-4 flex h-14 items-center justify-between">
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Volver
           </button>
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-amber-500" />
-            <span className="text-sm font-bold text-neutral-900">TIENDA ONLINE</span>
+            <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">TIENDA ONLINE</span>
           </div>
-          <span className="text-xs text-neutral-400">Paso {step} de 3</span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-xs text-neutral-400 dark:text-neutral-500">Paso {step} de 3</span>
+          </div>
         </div>
       </header>
 
@@ -198,11 +202,11 @@ export default function RegisterPage() {
             ].map((s) => (
               <div key={s.num} className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                  step >= s.num ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-400'
+                  step >= s.num ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900' : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500'
                 }`}>
                   {step > s.num ? <Check className="w-4 h-4" /> : s.num}
                 </div>
-                {s.num < 3 && <div className={`w-12 h-0.5 ${step > s.num ? 'bg-neutral-900' : 'bg-neutral-200'}`} />}
+                {s.num < 3 && <div className={`w-12 h-0.5 ${step > s.num ? 'bg-neutral-900 dark:bg-neutral-100' : 'bg-neutral-200 dark:bg-neutral-700'}`} />}
               </div>
             ))}
           </div>
@@ -210,66 +214,66 @@ export default function RegisterPage() {
           <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
             {step === 1 && (
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 text-center mb-2">Elige tu plan</h1>
-                <p className="text-neutral-500 text-center text-sm mb-8">Selecciona el plan que impulse tu negocio</p>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 text-center mb-2">Elige tu plan</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 text-center text-sm mb-8">Selecciona el plan que impulse tu negocio</p>
 
                 {/* Setup info banner */}
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/30 rounded-xl">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                      <Settings className="w-4 h-4 text-amber-600" />
+                    <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                      <Settings className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-amber-900">Setup inicial incluido en todos los planes</p>
-                      <p className="text-xs text-amber-700 mt-1">Te ayudamos a configurar tu tienda paso a paso. Sin costo adicional.</p>
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Setup inicial incluido en todos los planes</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Te ayudamos a configurar tu tienda paso a paso. Sin costo adicional.</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   {PLANS.map((plan) => (
-                    <Card key={plan.id} className={`cursor-pointer transition-all hover:shadow-lg ${
-                      selectedPlan === plan.id ? `ring-2 ring-offset-2 ${plan.border}` : ''
-                    } ${plan.recommended ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`} onClick={() => setSelectedPlan(plan.id)}>
+                    <Card key={plan.id} className={`cursor-pointer transition-all hover:shadow-lg dark:shadow-neutral-900/50 ${
+                      selectedPlan === plan.id ? `ring-2 ring-offset-2 dark:ring-offset-neutral-900 ${plan.border}` : ''
+                    } ${plan.recommended ? 'ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-neutral-900' : ''}`} onClick={() => setSelectedPlan(plan.id)}>
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-bold text-neutral-900">{plan.name}</h3>
-                              {plan.popular && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-900 text-white">POPULAR</span>}
-                              {plan.recommended && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">RECOMENDADO</span>}
+                              <h3 className="font-bold text-neutral-900 dark:text-neutral-100">{plan.name}</h3>
+                              {plan.popular && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900">POPULAR</span>}
+                              {plan.recommended && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">RECOMENDADO</span>}
                             </div>
-                            <p className="text-xs text-neutral-500 mt-0.5">{plan.description}</p>
-                            <p className="text-xl font-extrabold text-neutral-900 mt-2">{plan.price}<span className="text-sm font-normal text-neutral-500">/mes</span></p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{plan.description}</p>
+                            <p className="text-xl font-extrabold text-neutral-900 dark:text-neutral-100 mt-2">{plan.price}<span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">/mes</span></p>
                             {plan.setupFee && (
-                              <p className="text-xs text-neutral-500 mt-0.5">+ pago único instalación <span className="font-bold text-neutral-700">{plan.setupFee}</span></p>
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">+ pago único instalación <span className="font-bold text-neutral-700 dark:text-neutral-300">{plan.setupFee}</span></p>
                             )}
-                            <p className="text-[11px] text-green-600 font-medium mt-1 flex items-center gap-1">
+                            <p className="text-[11px] text-green-600 dark:text-green-400 font-medium mt-1 flex items-center gap-1">
                               <Check className="w-3 h-3" />
                               {plan.setupIncluded}
                             </p>
                             <div className="mt-3 flex flex-wrap gap-1.5">
                               {plan.features.slice(0, 4).map((f) => (
-                                <span key={f} className="text-[10px] px-2 py-0.5 bg-neutral-50 text-neutral-600 rounded-full border border-neutral-100">
+                                <span key={f} className="text-[10px] px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-full border border-neutral-100 dark:border-neutral-700">
                                   {f}
                                 </span>
                               ))}
                               {plan.features.length > 4 && (
-                                <span className="text-[10px] px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full border border-amber-100 font-medium">
+                                <span className="text-[10px] px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 rounded-full border border-amber-100 dark:border-amber-800/30 font-medium">
                                   +{plan.features.length - 4} más
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${selectedPlan === plan.id ? plan.color : 'bg-neutral-100'}`}>
-                            {selectedPlan === plan.id ? <Check className="w-5 h-5" /> : <Store className="w-5 h-5 text-neutral-400" />}
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${selectedPlan === plan.id ? plan.color : 'bg-neutral-100 dark:bg-neutral-800'}`}>
+                            {selectedPlan === plan.id ? <Check className="w-5 h-5" /> : <Store className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-                <Button onClick={handleNext} disabled={!selectedPlan} className="w-full mt-6 h-12 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold">
+                <Button onClick={handleNext} disabled={!selectedPlan} className="w-full mt-6 h-12 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 font-semibold">
                   Continuar <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -277,8 +281,8 @@ export default function RegisterPage() {
 
             {step === 2 && (
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 text-center mb-2">Tus datos</h1>
-                <p className="text-neutral-500 text-center text-sm mb-8">Ingresa tu información personal</p>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 text-center mb-2">Tus datos</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 text-center text-sm mb-8">Ingresa tu información personal</p>
                 <div className="space-y-4">
                   {/* Google Sign Up Button */}
                   <button
@@ -287,7 +291,7 @@ export default function RegisterPage() {
                       const storeNameParam = formData.storeName || ''
                       signIn('google', { callbackUrl: `/auth/google-callback?action=register-admin&storeName=${encodeURIComponent(storeNameParam)}` })
                     }}
-                    className="w-full flex items-center justify-center gap-3 h-11 px-4 bg-white border border-neutral-300 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all font-medium text-sm text-neutral-700"
+                    className="w-full flex items-center justify-center gap-3 h-11 px-4 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-500 transition-all font-medium text-sm text-neutral-700 dark:text-neutral-300"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -301,27 +305,27 @@ export default function RegisterPage() {
                   {/* Divider */}
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-neutral-200" />
+                      <span className="w-full border-t border-neutral-200 dark:border-neutral-700" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="px-3 bg-white text-neutral-400 font-medium">o completa manualmente</span>
+                      <span className="px-3 bg-white dark:bg-neutral-950 text-neutral-400 dark:text-neutral-500 font-medium">o completa manualmente</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 mb-1.5 block">Nombre completo *</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Nombre completo *</label>
                     <Input placeholder="Juan Pérez" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-11" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 mb-1.5 block">Correo electrónico *</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Correo electrónico *</label>
                     <Input type="email" placeholder="tu@email.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-11" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 mb-1.5 block">Teléfono / WhatsApp</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Teléfono / WhatsApp</label>
                     <Input placeholder="+51 999 999 999" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-11" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 mb-1.5 block">Contraseña *</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Contraseña *</label>
                     <div className="relative">
                       <Input
                         type={showPassword ? 'text' : 'password'}
@@ -332,7 +336,7 @@ export default function RegisterPage() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                         tabIndex={-1}
                       >
@@ -340,11 +344,11 @@ export default function RegisterPage() {
                       </button>
                     </div>
                     {passwordTooShort && (
-                      <p className="text-xs text-red-500 mt-1">La contraseña debe tener al menos 6 caracteres</p>
+                      <p className="text-xs text-red-500 dark:text-red-400 mt-1">La contraseña debe tener al menos 6 caracteres</p>
                     )}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 mb-1.5 block">Confirmar contraseña *</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Confirmar contraseña *</label>
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? 'text' : 'password'}
@@ -355,7 +359,7 @@ export default function RegisterPage() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         tabIndex={-1}
                       >
@@ -363,10 +367,10 @@ export default function RegisterPage() {
                       </button>
                     </div>
                     {passwordMismatch && (
-                      <p className="text-xs text-red-500 mt-1">Las contraseñas no coinciden</p>
+                      <p className="text-xs text-red-500 dark:text-red-400 mt-1">Las contraseñas no coinciden</p>
                     )}
                     {formData.confirmPassword && !passwordMismatch && formData.password === formData.confirmPassword && (
-                      <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
+                      <p className="text-xs text-green-500 dark:text-green-400 mt-1 flex items-center gap-1">
                         <Check className="w-3 h-3" /> Las contraseñas coinciden
                       </p>
                     )}
@@ -374,14 +378,14 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Security notice */}
-                <div className="mt-4 p-3 bg-neutral-50 rounded-lg border border-neutral-100 flex items-start gap-2">
-                  <Lock className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-neutral-500">Tu contraseña está protegida con encriptación de grado militar (bcrypt). Nunca compartimos tus datos.</p>
+                <div className="mt-4 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-100 dark:border-neutral-700 flex items-start gap-2">
+                  <Lock className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Tu contraseña está protegida con encriptación de grado militar (bcrypt). Nunca compartimos tus datos.</p>
                 </div>
 
                 <div className="flex gap-3 mt-6">
                   <Button variant="outline" onClick={() => setStep(1)} className="h-12 flex-1">Anterior</Button>
-                  <Button onClick={handleNext} disabled={!formData.name || !formData.email || !formData.password || !formData.confirmPassword || passwordMismatch || passwordTooShort} className="h-12 flex-1 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold">
+                  <Button onClick={handleNext} disabled={!formData.name || !formData.email || !formData.password || !formData.confirmPassword || passwordMismatch || passwordTooShort} className="h-12 flex-1 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 font-semibold">
                     Continuar <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </div>
@@ -390,43 +394,43 @@ export default function RegisterPage() {
 
             {step === 3 && (
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 text-center mb-2">Tu tienda</h1>
-                <p className="text-neutral-500 text-center text-sm mb-8">Datos de tu nueva tienda online</p>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 text-center mb-2">Tu tienda</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 text-center text-sm mb-8">Datos de tu nueva tienda online</p>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 mb-1.5 block">Nombre de la tienda *</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Nombre de la tienda *</label>
                     <Input placeholder="Mi Tienda Online" value={formData.storeName} onChange={(e) => setFormData({...formData, storeName: e.target.value})} className="h-11" />
-                    <p className="text-xs text-neutral-400 mt-1">Este nombre será visible para tus clientes</p>
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Este nombre será visible para tus clientes</p>
                   </div>
 
                   {/* Plan summary */}
                   {getSelectedPlan() && (() => {
                     const plan = getSelectedPlan()!
                     return (
-                    <Card className="bg-neutral-50">
+                    <Card className="bg-neutral-50 dark:bg-neutral-900">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3 mb-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${plan.color}`}>
                             {plan.icon}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-neutral-900">Plan {plan.name}</h3>
-                            <p className="text-xs text-neutral-500">{plan.description}</p>
+                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Plan {plan.name}</h3>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{plan.description}</p>
                           </div>
                         </div>
 
-                        <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-3">Incluye:</h4>
+                        <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-3">Incluye:</h4>
                         <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
                           {plan.features.map((feature: string) => (
                             <li key={feature} className="flex items-start gap-2 text-xs">
-                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
-                              <span className="text-neutral-600">{feature}</span>
+                              <Check className="w-3.5 h-3.5 text-green-500 dark:text-green-400 shrink-0 mt-0.5" />
+                              <span className="text-neutral-600 dark:text-neutral-400">{feature}</span>
                             </li>
                           ))}
                         </ul>
 
-                        <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                          <p className="text-xs font-semibold text-amber-800 flex items-center gap-1">
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-100 dark:border-amber-800/30">
+                          <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-1">
                             <Settings className="w-3.5 h-3.5" />
                             Setup: {plan.setupIncluded}
                           </p>
@@ -435,12 +439,12 @@ export default function RegisterPage() {
                         <Separator className="my-4" />
 
                         <div className="space-y-2 text-sm">
-                          <div className="flex justify-between"><span className="text-neutral-500">Plan</span><span className="font-medium">{plan.name}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500">Mensualidad</span><span className="font-bold text-amber-600">{plan.price}{plan.period}</span></div>
-                          {plan.setupFee && <div className="flex justify-between"><span className="text-neutral-500">Instalación (pago único)</span><span className="font-bold text-neutral-700">{plan.setupFee}</span></div>}
-                          <div className="flex justify-between"><span className="text-neutral-500">Nombre</span><span className="font-medium">{formData.name}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500">Email</span><span className="font-medium">{formData.email}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500">Tienda</span><span className="font-medium">{formData.storeName || '—'}</span></div>
+                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Plan</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{plan.name}</span></div>
+                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Mensualidad</span><span className="font-bold text-amber-600 dark:text-amber-400">{plan.price}{plan.period}</span></div>
+                          {plan.setupFee && <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Instalación (pago único)</span><span className="font-bold text-neutral-700 dark:text-neutral-300">{plan.setupFee}</span></div>}
+                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Nombre</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.name}</span></div>
+                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Email</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.email}</span></div>
+                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Tienda</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.storeName || '—'}</span></div>
                         </div>
                       </CardContent>
                     </Card>
@@ -449,7 +453,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex gap-3 mt-6">
                   <Button variant="outline" onClick={() => setStep(2)} className="h-12 flex-1">Anterior</Button>
-                  <Button onClick={handleRegister} disabled={loading || !formData.storeName} className="h-12 flex-1 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold">
+                  <Button onClick={handleRegister} disabled={loading || !formData.storeName} className="h-12 flex-1 bg-amber-500 hover:bg-amber-400 text-neutral-950 dark:text-neutral-900 font-semibold">
                     {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creando...</> : <>
                       Crear mi Tienda <ArrowRight className="ml-2 w-4 h-4" />
                     </>}

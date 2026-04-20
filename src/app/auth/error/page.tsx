@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AlertTriangle, ArrowLeft, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Suspense } from 'react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 function AuthErrorContent() {
   const router = useRouter()
@@ -34,53 +35,58 @@ function AuthErrorContent() {
 
   if (!error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+        <Loader2 className="w-6 h-6 animate-spin text-neutral-400 dark:text-neutral-500" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-950 px-4 relative">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm text-center space-y-6"
       >
-        <div className="mx-auto w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">
+        <div className="mx-auto w-16 h-16 bg-red-50 dark:bg-red-950 rounded-2xl flex items-center justify-center">
           <AlertTriangle className="w-8 h-8 text-red-500" />
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-xl font-bold text-neutral-900">
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
             Error de autenticación
           </h1>
           {error && (
-            <span className="inline-block px-2.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-semibold rounded-full">
+            <span className="inline-block px-2.5 py-0.5 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 text-[10px] font-semibold rounded-full">
               {error}
             </span>
           )}
         </div>
 
-        <p className="text-sm text-neutral-600 leading-relaxed">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
           {message}
         </p>
 
         {error === 'Configuration' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left">
-            <p className="text-xs font-semibold text-amber-800 mb-1">
+          <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">
               ⚠️ Para el administrador:
             </p>
-            <p className="text-xs text-amber-700">
-              Agrega las variables <code className="bg-amber-100 px-1 rounded">GOOGLE_CLIENT_ID</code> y{' '}
-              <code className="bg-amber-100 px-1 rounded">GOOGLE_CLIENT_SECRET</code> en Vercel → Settings → Environment Variables.
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              Agrega las variables <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">GOOGLE_CLIENT_ID</code> y{' '}
+              <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">GOOGLE_CLIENT_SECRET</code> en Vercel → Settings → Environment Variables.
             </p>
           </div>
         )}
 
         <button
           onClick={() => router.push('/login')}
-          className="inline-flex items-center gap-2 h-11 px-6 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 h-11 px-6 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition-colors dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al inicio de sesión
@@ -94,8 +100,8 @@ export default function AuthErrorPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-          <div className="w-6 h-6 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+          <div className="w-6 h-6 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

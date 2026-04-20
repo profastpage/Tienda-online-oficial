@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { useToast } from '@/hooks/use-toast'
 import { SessionProvider, useSession } from 'next-auth/react'
 import { Suspense } from 'react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 function GoogleCallbackContent() {
   const router = useRouter()
@@ -135,13 +136,18 @@ function GoogleCallbackContent() {
   }, [status, session, searchParams, router, setUser, toast, processLogin, retryCount])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-950 relative">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="text-center space-y-4">
-        <div className="mx-auto w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center">
+        <div className="mx-auto w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-2xl flex items-center justify-center">
           {error ? (
             <AlertCircle className="w-8 h-8 text-red-500" />
           ) : (
-            <ShoppingBag className="w-8 h-8 text-neutral-400" />
+            <ShoppingBag className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
           )}
         </div>
         <motion.div
@@ -152,15 +158,15 @@ function GoogleCallbackContent() {
           {error ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin mx-auto text-red-400" />
-              <p className="text-sm font-medium text-red-600">Error</p>
-              <p className="text-xs text-red-500 max-w-xs mx-auto">{error}</p>
-              <p className="text-xs text-neutral-400">Redirigiendo al inicio de sesión...</p>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Error</p>
+              <p className="text-xs text-red-500 dark:text-red-400 max-w-xs mx-auto">{error}</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500">Redirigiendo al inicio de sesión...</p>
             </>
           ) : (
             <>
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-900" />
-              <p className="text-sm font-medium text-neutral-700">Autenticando con Google...</p>
-              <p className="text-xs text-neutral-400">Un momento por favor</p>
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-900 dark:text-neutral-100" />
+              <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Autenticando con Google...</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500">Un momento por favor</p>
               {retryCount > 0 && (
                 <p className="text-xs text-amber-500">Reintentando... ({retryCount}/{maxRetries})</p>
               )}
@@ -177,8 +183,8 @@ export default function GoogleCallbackPage() {
     <SessionProvider>
       <Suspense
         fallback={
-          <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-            <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+          <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+            <div className="w-8 h-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent rounded-full animate-spin" />
           </div>
         }
       >

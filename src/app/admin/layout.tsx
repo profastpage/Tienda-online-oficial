@@ -25,11 +25,12 @@ import {
   Sun,
   Moon,
 } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useTheme } from 'next-themes'
+// useTheme imported via ThemeToggle if needed
 import { useAuthStore } from '@/stores/auth-store'
 import { ADMIN_SECTION_URLS, URL_TO_ADMIN_SECTION } from '@/lib/navigation'
 import { AdminGuidePopup } from '@/components/admin/admin-guide-popup'
@@ -192,7 +193,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, _hydrated: hydrated, logout, hydrate, setUser } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
+  // theme toggle handled by ThemeToggle component
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [showGuideManual, setShowGuideManual] = useState(false)
@@ -398,15 +399,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <HelpCircle className="w-4.5 h-4.5" />
               </Button>
               {/* Theme toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
+              <ThemeToggle />
               <div className="w-8 h-8 rounded-full bg-neutral-900 dark:bg-neutral-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {user.avatar ? (
                   <img
