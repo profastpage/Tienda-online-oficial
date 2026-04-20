@@ -102,6 +102,17 @@ const DEFAULT_CONTENT: Record<string, Record<string, string>> = {
   social: {
     links: '["facebook","instagram","tiktok"]',
   },
+  faq: {
+    title: 'Preguntas Frecuentes',
+    subtitle: 'Todo lo que necesitas saber sobre tu compra',
+    items: JSON.stringify([
+      { q: '¿Cuánto tarda el envío?', a: 'El envío es de 1 a 3 días hábiles a Lima y 3 a 7 días a provincias. Envío gratis en pedidos mayores a S/199.' },
+      { q: '¿Qué métodos de pago aceptan?', a: 'Aceptamos pago contra entrega, transferencia bancaria, y Yape/Plin. También puedes pagar con tarjeta a través de MercadoPago.' },
+      { q: '¿Puedo devolver mi pedido?', a: 'Sí, tienes 30 días para devolver tu producto si no estás satisfecho. El producto debe estar en su estado original.' },
+      { q: '¿Cómo hago mi pedido?', a: 'Puedes hacer tu pedido directamente por WhatsApp o a través de nuestra tienda online. Te guiaremos en cada paso.' },
+      { q: '¿Las tallas son estándar?', a: 'Sí, nuestras tallas siguen la tabla de medidas peruanas estándar. Revisa nuestra guía de tallas para más detalles.' },
+    ]),
+  },
 }
 
 export async function GET(request: Request) {
@@ -122,13 +133,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ ...DEFAULT_CONTENT, _fromDefault: true })
     }
 
+    // Ensure StoreContent table exists (auto-create if missing)
+    try {
+      await db.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "StoreContent" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "storeId" TEXT NOT NULL,
+          "section" TEXT NOT NULL,
+          "key" TEXT NOT NULL,
+          "value" TEXT NOT NULL DEFAULT '',
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "StoreContent_storeId_section_key_key" UNIQUE("storeId", "section", "key"),
+          FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE CASCADE ON UPDATE CASCADE
+        )
+      `)
+    } catch {
+      // Table creation may fail if it already exists with constraints
+    }
+
     let rows: Array<{ section: string; key: string; value: string }> = []
     try {
       rows = await db.$queryRaw<{ section: string; key: string; value: string }[]>`
         SELECT section, key, value FROM StoreContent WHERE storeId = ${store.id}
       `
     } catch {
-      // Table doesn't exist yet
+      // Query failed, will use defaults
     }
 
     // Build content: defaults merged with DB values

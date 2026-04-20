@@ -133,6 +133,16 @@ const SECTIONS: SectionDef[] = [
     ],
   },
   {
+    id: 'faq',
+    label: 'Sección de Preguntas Frecuentes (FAQ)',
+    icon: Sparkles,
+    fields: [
+      { key: 'title', label: 'Título', type: 'text', placeholder: 'Preguntas Frecuentes' },
+      { key: 'subtitle', label: 'Subtítulo', type: 'text', placeholder: 'Todo lo que necesitas saber...' },
+      { key: 'items', label: 'Preguntas y Respuestas (JSON array)', type: 'json', placeholder: '[{"q":"¿Pregunta?","a":"Respuesta aquí..."}]' },
+    ],
+  },
+  {
     id: 'cta',
     label: 'Sección Llamada a la Acción (CTA)',
     icon: Sparkles,

@@ -373,6 +373,35 @@ function TestimonialCarousel({ testimonials }: { testimonials: Testimonial[] }) 
   )
 }
 
+// FAQ Accordion Item
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-muted/50 transition-colors"
+      >
+        <span className="text-sm sm:text-base font-medium text-foreground pr-4">{question}</span>
+        <ChevronUp className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-300 ${open ? 'rotate-0' : 'rotate-180'}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <p className="px-4 sm:px-5 pb-4 sm:pb-5 text-sm text-muted-foreground leading-relaxed">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 interface StorefrontProps {
   storeSlug?: string
 }
@@ -548,10 +577,10 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
   // Hero carousel
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentHero((prev) => (prev + 1) % heroImages.length)
+      setCurrentHero((prev) => (prev + 1) % Math.max(dynamicHeroImages.length, 1))
     }, 5000)
     return () => clearInterval(timer)
-  }, [])
+  }, [dynamicHeroImages.length])
 
   // Fetch data with retry logic
   useEffect(() => {
@@ -1212,7 +1241,7 @@ Gracias!`)
                 </div>
                 {/* Carousel dots */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                  {heroImages.map((_, idx) => (
+                  {dynamicHeroImages.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentHero(idx)}
@@ -1778,6 +1807,44 @@ Gracias!`)
               </p>
             </motion.div>
             <TestimonialCarousel testimonials={testimonials} />
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-16 bg-muted/50 border-y border-border">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-10"
+            >
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+                {sc('faq', 'title', 'Preguntas Frecuentes')}
+              </h2>
+              <p className="mt-2 text-muted-foreground">
+                {sc('faq', 'subtitle', 'Todo lo que necesitas saber sobre tu compra')}
+              </p>
+            </motion.div>
+            <div className="space-y-3">
+              {scJson<Array<{q: string; a: string}>>('faq', 'items', [
+                { q: '¿Cuánto tarda el envío?', a: 'El envío es de 1 a 3 días hábiles a Lima y 3 a 7 días a provincias. Envío gratis en pedidos mayores a S/199.' },
+                { q: '¿Qué métodos de pago aceptan?', a: 'Aceptamos pago contra entrega, transferencia bancaria, y Yape/Plin. También puedes pagar con tarjeta a través de MercadoPago.' },
+                { q: '¿Puedo devolver mi pedido?', a: 'Sí, tienes 30 días para devolver tu producto si no estás satisfecho. El producto debe estar en su estado original.' },
+                { q: '¿Cómo hago mi pedido?', a: 'Puedes hacer tu pedido directamente por WhatsApp o a través de nuestra tienda online. Te guiaremos en cada paso.' },
+                { q: '¿Las tallas son estándar?', a: 'Sí, nuestras tallas siguen la tabla de medidas peruanas estándar. Revisa nuestra guía de tallas para más detalles.' },
+              ]).map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <FaqItem question={item.q} answer={item.a} />
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
