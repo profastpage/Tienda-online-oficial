@@ -19,6 +19,7 @@ import {
   Bot,
   ExternalLink,
   Edit3,
+  Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -34,6 +35,7 @@ import { AdminOrders } from './admin-orders'
 import { AdminSettings } from './admin-settings'
 import { AdminPlan } from './admin-plan'
 import { AdminAi } from './admin-ai'
+import { AdminContent } from './admin-content'
 
 interface NavItem {
   id: AdminSection
@@ -43,6 +45,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'content', label: 'Contenido Tienda', icon: Palette },
   { id: 'products', label: 'Productos', icon: Package },
   { id: 'categories', label: 'Categorías', icon: FolderOpen },
   { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
@@ -53,6 +56,7 @@ const navItems: NavItem[] = [
 
 const sectionTitles: Record<AdminSection, string> = {
   dashboard: 'Dashboard',
+  content: 'Contenido de la Tienda',
   products: 'Productos',
   categories: 'Categorías',
   orders: 'Pedidos',
@@ -188,6 +192,8 @@ export function AdminPanel() {
     switch (adminSection) {
       case 'dashboard':
         return <AdminDashboard />
+      case 'content':
+        return <AdminContent />
       case 'products':
         return <AdminProducts />
       case 'categories':

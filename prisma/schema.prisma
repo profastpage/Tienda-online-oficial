@@ -29,6 +29,7 @@ model Store {
   mercadoPagoPayments MercadoPagoPayment[]
   coupons        Coupon[]
   notifications  AdminNotification[]
+  storeContent   StoreContent[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -237,6 +238,20 @@ model AdminNotification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  @@index([storeId])
+}
+
+model StoreContent {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  section   String   // e.g. "hero", "announcement", "features", "stats", "cta", "footer", "newsletter", "about", "faq"
+  key       String   // e.g. "title", "subtitle", "badge", "image", "items"
+  value     String   @default("") // text, URL, or JSON string for arrays
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, section, key])
   @@index([storeId])
 }
 

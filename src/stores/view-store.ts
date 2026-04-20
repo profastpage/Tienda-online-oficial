@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 export type ViewType = 'landing' | 'register' | 'auth' | 'admin' | 'customer' | 'store-demo' | 'super-admin'
-export type AdminSection = 'dashboard' | 'products' | 'categories' | 'orders' | 'settings' | 'plan' | 'ai'
+export type AdminSection = 'dashboard' | 'products' | 'categories' | 'orders' | 'settings' | 'plan' | 'ai' | 'content'
 export type CustomerSection = 'dashboard' | 'orders' | 'profile'
 
 interface ViewState {

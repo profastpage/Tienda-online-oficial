@@ -389,9 +389,14 @@ interface StoreInfo {
   isActive: boolean
 }
 
+interface StoreContentData {
+  [section: string]: Record<string, string>
+}
+
 export default function Storefront({ storeSlug: initialSlug }: StorefrontProps = {}) {
   const effectiveSlug = initialSlug || 'urban-style'
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null)
+  const [storeContent, setStoreContent] = useState<StoreContentData>({})
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -440,6 +445,46 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
     const encoded = encodeURIComponent(msg)
     return `https://wa.me/${storeWhatsApp}?text=${encoded}`
   }, [storeWhatsApp])
+
+  // Helper to get store content value with fallback
+  const sc = useCallback((section: string, key: string, fallback: string = ''): string => {
+    return storeContent?.[section]?.[key] || fallback
+  }, [storeContent])
+
+  // Helper to parse JSON content with fallback
+  const scJson = useCallback(<T,>(section: string, key: string, fallback: T): T => {
+    try {
+      const val = storeContent?.[section]?.[key]
+      if (val) return JSON.parse(val) as T
+    } catch { /* ignore parse errors */ }
+    return fallback
+  }, [storeContent])
+
+  // Parsed content arrays from store content
+  const dynamicBrands = scJson<string[]>('brands', 'items', ['KUNA', 'ÑAÑA', 'MISTURA', 'ALPACA', 'TUMI', 'INTI', 'WAYKI', 'CHAKRA'])
+  const dynamicFeatures = scJson<Array<{icon: string; title: string; desc: string}>>('features', 'items', [
+    { icon: '🚚', title: 'Envío Gratis', desc: 'En pedidos +S/199' },
+    { icon: '💬', title: 'WhatsApp', desc: 'Pedidos directos' },
+    { icon: '💰', title: '0% Comisión', desc: 'Sin cargos extra' },
+    { icon: '🔄', title: 'Devolución', desc: '30 días garantía' },
+  ])
+  const dynamicStats = scJson<Array<{value: string; label: string}>>('stats', 'items', [
+    { value: '+120', label: 'Negocios activos' },
+    { value: '24/7', label: 'Siempre vendiendo' },
+    { value: '0%', label: 'Comisión por venta' },
+    { value: '+2K', label: 'Clientes felices' },
+  ])
+  const dynamicAboutFeatures = scJson<Array<{icon: string; text: string}>>('about', 'features', [
+    { icon: '✨', text: 'Calidad premium en cada producto' },
+    { icon: '🧵', text: 'Materiales cuidadosamente seleccionados' },
+    { icon: '🎨', text: 'Diseños exclusivos y originales' },
+    { icon: '🚚', text: 'Envío a todo el país' },
+  ])
+  const dynamicHeroImages = [
+    sc('hero', 'image1', '/images/hero/banner.png'),
+    sc('hero', 'image2', '/images/hero/banner-2.png'),
+    sc('hero', 'image3', '/images/hero/banner-3.png'),
+  ].filter((img, i, arr) => arr.indexOf(img) === i) // deduplicate
 
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
@@ -537,14 +582,19 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
 
     async function fetchData() {
       try {
-        const [storeInfoData, productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
+        const [storeInfoData, storeContentData, productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
           fetchWithRetry(`/api/store/info?slug=${effectiveSlug}`).catch(() => null),
+          fetchWithRetry(`/api/store-content?store=${effectiveSlug}`).catch(() => ({})),
           fetchWithRetry(`/api/products?store=${effectiveSlug}`),
           fetchWithRetry(`/api/categories?store=${effectiveSlug}`),
           fetchWithRetry(`/api/testimonials?store=${effectiveSlug}`),
           fetchWithRetry(`/api/store/payment-methods?storeId=${user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3'}`),
         ])
         if (cancelled) return
+        // Load store content (hero, features, stats, etc.)
+        if (storeContentData && typeof storeContentData === 'object' && !storeContentData.error) {
+          setStoreContent(storeContentData)
+        }
         // Load store info into state
         if (storeInfoData && !storeInfoData.error) {
           setStoreInfo(storeInfoData)
@@ -851,8 +901,10 @@ Gracias!`)
       >
         {/* Top bar */}
         <div className="bg-neutral-900 text-white text-center py-2 text-sm">
-          <span className="font-medium">ENVÍO GRATIS</span> en pedidos mayores a S/199 ·{' '}
-          <span className="hidden sm:inline">Pago seguro contra entrega</span>
+          {sc('announcement', 'text', 'ENVÍO GRATIS en pedidos mayores a S/199')}
+          {sc('announcement', 'subtext', '') && (
+            <> · <span className="hidden sm:inline">{sc('announcement', 'subtext', 'Pago seguro contra entrega')}</span></>
+          )}
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1076,19 +1128,19 @@ Gracias!`)
                 transition={{ duration: 0.7 }}
               >
                 <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-muted text-foreground hover:bg-muted">
-                  Nueva Colección 2026
+                  {sc('hero', 'badge', '🔥 Nueva Colección 2026')}
                 </Badge>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-tight">
-                  Estilo urbano
+                  {sc('hero', 'title1', 'Estilo urbano')}
                   <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground via-foreground/70 to-foreground/50">
-                    sin límites
+                    {sc('hero', 'title2', 'sin límites')}
                   </span>
                 </h2>
                 <p className="mt-5 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                  {hasOffers
+                  {sc('hero', 'subtitle', hasOffers
                     ? 'Ofertas exclusivas en streetwear. Calidad, diseño y precios increíbles en cada prenda.'
-                    : 'Descubre nuestra colección premium de streetwear. Calidad, diseño y comodidad en cada prenda.'}
+                    : 'Descubre nuestra colección premium de streetwear. Calidad, diseño y comodidad en cada prenda.')}
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Button
@@ -1096,7 +1148,7 @@ Gracias!`)
                     className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-8 h-12 text-sm font-semibold"
                     onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    Ver Colección
+                    {sc('hero', 'btnText1', 'Ver Colección')}
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </Button>
                   <Button
@@ -1112,7 +1164,7 @@ Gracias!`)
                     }}
                   >
                     {hasOffers ? (
-                      <><Flame className="w-4 h-4 mr-1.5 text-orange-500" /> Ver Ofertas</>
+                      <><Flame className="w-4 h-4 mr-1.5 text-orange-500" /> {sc('hero', 'btnText2', 'Ver Ofertas')}</>
                     ) : (
                       <><LayoutGrid className="w-4 h-4 mr-1.5" /> Ver Categorías</>
                     )}
@@ -1124,13 +1176,13 @@ Gracias!`)
                     <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
                       <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <span>Envío gratis</span>
+                    <span>{sc('hero', 'trustText1', '✅ Envío gratis')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
                       <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <span>Pago contra entrega</span>
+                    <span>{sc('hero', 'trustText2', '💰 Pago contra entrega')}</span>
                   </div>
                 </div>
               </motion.div>
@@ -1142,16 +1194,20 @@ Gracias!`)
               >
                 <div className="relative aspect-[4/3] lg:aspect-auto lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl shadow-lg">
                   {/* Hero carousel with crossfade */}
-                  {heroImages.map((img, idx) => (
+                  {dynamicHeroImages.length > 0 ? dynamicHeroImages.map((img, idx) => (
                     <img
                       key={img}
                       src={img}
-                      alt={`Urban Style Collection ${idx + 1}`}
+                      alt={`${storeName} Collection ${idx + 1}`}
                       className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                        idx === currentHero ? 'opacity-100' : 'opacity-0'
+                        idx === currentHero % dynamicHeroImages.length ? 'opacity-100' : 'opacity-0'
                       }`}
                     />
-                  ))}
+                  )) : (
+                    <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
+                      <ShoppingBag className="w-16 h-16 text-neutral-400" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 </div>
                 {/* Carousel dots */}
@@ -1175,11 +1231,11 @@ Gracias!`)
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                      <span className="text-lg">⭐</span>
+                      <span className="text-lg">{sc('hero', 'stat1Icon', '⭐')}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-foreground">4.8/5</p>
-                      <p className="text-xs text-muted-foreground">+200 reseñas</p>
+                      <p className="text-sm font-bold text-foreground">{sc('hero', 'stat1Value', '4.8/5')}</p>
+                      <p className="text-xs text-muted-foreground">{sc('hero', 'stat1Label', '+200 reseñas')}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -1191,11 +1247,11 @@ Gracias!`)
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <span className="text-lg">🚚</span>
+                      <span className="text-lg">{sc('hero', 'stat2Icon', '🚚')}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-foreground">Envío rápido</p>
-                      <p className="text-xs text-muted-foreground">1-3 días hábiles</p>
+                      <p className="text-sm font-bold text-foreground">{sc('hero', 'stat2Value', 'Envío rápido')}</p>
+                      <p className="text-xs text-muted-foreground">{sc('hero', 'stat2Label', '1-3 días hábiles')}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -1209,7 +1265,7 @@ Gracias!`)
           <div className="flex animate-marquee">
             {[...Array(2)].map((_, setIdx) => (
               <div key={setIdx} className="flex shrink-0 items-center gap-12 px-6">
-                {brands.map((brand) => (
+                {dynamicBrands.map((brand) => (
                   <span key={`${setIdx}-${brand}`} className="text-2xl font-bold text-neutral-300 whitespace-nowrap tracking-wider">
                     {brand}
                   </span>
@@ -1240,7 +1296,7 @@ Gracias!`)
                     </Badge>
                   </div>
                   <p className="text-muted-foreground text-sm md:text-base">
-                    Los mejores precios en productos seleccionados
+                    {sc('offers', 'subtitle', 'Los mejores precios en productos seleccionados')}
                   </p>
                 </div>
                 <Button
@@ -1378,10 +1434,10 @@ Gracias!`)
               className="text-center mb-10"
             >
               <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Explora por Categoría
+                {sc('categories', 'title', 'Explora por Categoría')}
               </h2>
               <p className="mt-3 text-muted-foreground text-lg">
-                Encuentra exactamente lo que buscas
+                {sc('categories', 'subtitle', 'Encuentra exactamente lo que buscas')}
               </p>
             </motion.div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -1645,22 +1701,17 @@ Gracias!`)
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div className="p-8 md:p-12 lg:p-16">
                   <Badge className="mb-4 bg-white/10 text-white hover:bg-white/10 border-white/20 text-xs tracking-wider uppercase">
-                    Nuestra Historia
+                    {sc('about', 'badge', 'Nuestra Historia')}
                   </Badge>
                   <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                    Urban Style - Streetwear Peruano
+                    {sc('about', 'title', storeName || 'Mi Tienda')}
                   </h2>
                   <p className="mt-4 text-neutral-300 text-lg leading-relaxed">
-                    Somos una marca peruana de streetwear que nace de la pasión por la cultura urbana y la moda sin fronteras. Cada prenda está diseñada con calidad premium, utilizando telas peruanas de primera y manufactura 100% local desde Lima.
+                    {sc('about', 'description', 'Somos una marca que nace de la pasión por ofrecer lo mejor a nuestros clientes. Cada producto es cuidadosamente seleccionado para garantizar la mejor calidad y experiencia de compra.')}
                   </p>
                   <div className="mt-6 space-y-2.5">
-                    {[
-                      '✨ Calidad premium en cada prenda',
-                      '🧵 Telas peruanas seleccionadas',
-                      '🎨 Diseños exclusivos y originales',
-                      '🚚 Envío a todo el Perú',
-                    ].map((point) => (
-                      <p key={point} className="text-neutral-400 text-sm">{point}</p>
+                    {dynamicAboutFeatures.map((feat) => (
+                      <p key={feat.text} className="text-neutral-400 text-sm">{feat.icon} {feat.text}</p>
                     ))}
                   </div>
                   <Button
@@ -1668,18 +1719,20 @@ Gracias!`)
                     className="mt-8 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full px-8 h-12 font-semibold"
                     onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    Ver Catálogo
+                    {sc('about', 'btnText', 'Ver Catálogo')}
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </Button>
                 </div>
+                {(sc('about', 'image', '')) && (
                 <div className="hidden md:block h-full min-h-[400px]">
                   <img
-                    src="/images/products/hoodie-gray.png"
-                    alt="Urban Style - Streetwear Peruano"
+                    src={sc('about', 'image', '')}
+                    alt={sc('about', 'title', storeName || 'Mi Tienda')}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-l from-transparent to-neutral-900/30 pointer-events-none hidden md:block" />
                 </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -1690,12 +1743,7 @@ Gracias!`)
         <section className="py-16 bg-muted border-t border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {[
-                { icon: '🚚', title: 'Envío Gratis', desc: 'En pedidos +S/199' },
-                { icon: '💬', title: 'WhatsApp', desc: 'Pedidos directos' },
-                { icon: '💰', title: '0% Comisión', desc: 'Sin cargos extra' },
-                { icon: '🔄', title: 'Devolución', desc: '30 días garantía' },
-              ].map((feature, index) => (
+              {dynamicFeatures.map((feature, index) => (
                 <motion.div
                   key={feature.title}
                   initial={{ opacity: 0, y: 20 }}
@@ -1723,10 +1771,10 @@ Gracias!`)
               className="text-center mb-10"
             >
               <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Lo que dicen nuestros clientes
+                {sc('testimonials', 'title', 'Lo que dicen nuestros clientes')}
               </h2>
               <p className="mt-3 text-muted-foreground text-lg">
-                Reseñas verificadas de compradores reales
+                {sc('testimonials', 'subtitle', 'Reseñas verificadas de compradores reales')}
               </p>
             </motion.div>
             <TestimonialCarousel testimonials={testimonials} />
@@ -1736,20 +1784,20 @@ Gracias!`)
         {/* Newsletter Section */}
         <section className="py-16 bg-background">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">Recibe ofertas exclusivas</h2>
-            <p className="mt-2 text-muted-foreground">Suscríbete y obtén un 10% de descuento en tu primera compra</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">{sc('newsletter', 'title', 'Recibe ofertas exclusivas')}</h2>
+            <p className="mt-2 text-muted-foreground">{sc('newsletter', 'subtitle', 'Suscríbete y obtén un 10% de descuento en tu primera compra')}</p>
             <div className="mt-6 flex gap-2 max-w-md mx-auto">
               <Input
-                placeholder="tu@email.com"
+                placeholder={sc('newsletter', 'placeholder', 'tu@email.com')}
                 className="h-12 rounded-xl"
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
               />
               <Button className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl px-6 h-12 font-semibold whitespace-nowrap">
-                Suscribirme
+                {sc('newsletter', 'btnText', 'Suscribirme')}
               </Button>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground/70">Sin spam. Puedes darte de baja cuando quieras.</p>
+            <p className="mt-3 text-xs text-muted-foreground/70">{sc('newsletter', 'footer', 'Sin spam. Puedes darte de baja cuando quieras.')}</p>
           </div>
         </section>
 
@@ -1757,12 +1805,7 @@ Gracias!`)
         <section className="py-16 bg-neutral-900 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {[
-                { value: '+120', label: 'Negocios activos' },
-                { value: '24/7', label: 'Siempre vendiendo' },
-                { value: '0%', label: 'Comisión por venta' },
-                { value: '+2K', label: 'Clientes felices' },
-              ].map((stat, index) => (
+              {dynamicStats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
                   initial={{ opacity: 0, y: 20 }}
@@ -1789,10 +1832,10 @@ Gracias!`)
               viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                ¿Listo para encontrar tu estilo?
+                {sc('cta', 'title', '¿Listo para encontrar tu estilo?')}
               </h2>
               <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
-                Únete a cientos de clientes que ya confiaron en nosotros. Tu próxima prenda favorita te está esperando.
+                {sc('cta', 'subtitle', 'Únete a cientos de clientes que ya confiaron en nosotros. Tu próxima prenda favorita te está esperando.')}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
@@ -1800,7 +1843,7 @@ Gracias!`)
                   className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-8 h-12 font-semibold"
                   onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  Ver Catálogo Completo
+                  {sc('cta', 'btnText', 'Ver Catálogo Completo')}
                   <ChevronRight className="ml-1 w-4 h-4" />
                 </Button>
                 <Button
@@ -1823,7 +1866,7 @@ Gracias!`)
                 </Button>
               </div>
               <p className="mt-6 text-sm text-muted-foreground/70">
-                Envío gratis desde S/199 · Pago contra entrega · Garantía de 30 días
+                {sc('cta', 'footer', 'Envío gratis desde S/199 · Pago contra entrega · Garantía de 30 días')}
               </p>
             </motion.div>
           </div>
@@ -1866,7 +1909,7 @@ Gracias!`)
             <div>
               <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Tienda</h3>
               <ul className="space-y-2.5">
-                {['Polos', 'Hoodies', 'Pantalones', 'Zapatos', 'Novedades'].map((link) => (
+                {scJson<string[]>('footer', 'shopLinks', ['Polos', 'Hoodies', 'Pantalones', 'Zapatos', 'Novedades']).map((link) => (
                   <li key={link}>
                     <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">
                       {link}
@@ -1879,7 +1922,7 @@ Gracias!`)
             <div>
               <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Ayuda</h3>
               <ul className="space-y-2.5">
-                {['FAQ', 'Guía de tallas', 'Devoluciones', 'Contacto', 'Términos'].map((link) => (
+                {scJson<string[]>('footer', 'helpLinks', ['FAQ', 'Guía de tallas', 'Devoluciones', 'Contacto', 'Términos']).map((link) => (
                   <li key={link}>
                     <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">
                       {link}
@@ -1893,16 +1936,16 @@ Gracias!`)
               <h3 className="font-bold text-sm mb-4 tracking-wider uppercase text-neutral-300">Contacto</h3>
               <div className="space-y-3 text-sm text-neutral-400">
                 <p className="flex items-center gap-2">
-                  <span>📍</span> Lima, Perú
+                  <span>{sc('footer', 'contactAddress', '📍 Lima, Perú')}</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span>📞</span> +51 933 667 414
+                  <span>{sc('footer', 'contactPhone', '📞 +51 999 888 777')}</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span>💬</span> WhatsApp 24/7
+                  <span>{sc('footer', 'contactWhatsapp', '💬 WhatsApp 24/7')}</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span>🕐</span> Lun-Sáb: 9am-8pm
+                  <span>{sc('footer', 'contactHours', '🕐 Lun-Sáb: 9am-8pm')}</span>
                 </p>
               </div>
               {/* Payment methods */}
@@ -1944,10 +1987,10 @@ Gracias!`)
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-400">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
-              <p>&copy; 2026 Urban Style. Todos los derechos reservados.</p>
+              <p>{sc('footer', 'copyright', `© ${new Date().getFullYear()} ${storeName || 'Mi Tienda'}. Todos los derechos reservados.`)}</p>
               <span className="hidden sm:inline text-neutral-600">·</span>
-              <a href="https://tienda-online-oficial.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
-                Creado y desarrollado por <span className="font-semibold text-white">Tienda Online</span>
+              <a href={sc('footer', 'creditsUrl', 'https://tienda-online-oficial.vercel.app/')} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+                {sc('footer', 'creditsText', 'Creado y desarrollado por Tienda Online')}
               </a>
             </div>
             <div className="flex gap-6">
