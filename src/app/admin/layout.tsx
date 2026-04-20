@@ -21,6 +21,7 @@ import {
   HelpCircle,
   ShoppingBag,
   Eye,
+  Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -31,7 +32,7 @@ import { ADMIN_SECTION_URLS, URL_TO_ADMIN_SECTION } from '@/lib/navigation'
 import { AdminGuidePopup } from '@/components/admin/admin-guide-popup'
 import { UpdateNotifier } from '@/components/update-notifier'
 
-export type AdminSection = 'dashboard' | 'products' | 'categories' | 'orders' | 'settings' | 'plan' | 'ai'
+export type AdminSection = 'dashboard' | 'content' | 'products' | 'categories' | 'orders' | 'settings' | 'plan' | 'ai'
 
 interface NavItem {
   id: AdminSection
@@ -42,6 +43,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { id: 'content', label: 'Contenido Tienda', icon: Palette, href: '/admin/contenido' },
   { id: 'products', label: 'Productos', icon: Package, href: '/admin/productos' },
   { id: 'categories', label: 'Categorías', icon: FolderOpen, href: '/admin/categorias' },
   { id: 'orders', label: 'Pedidos', icon: ShoppingCart, href: '/admin/pedidos' },
@@ -52,6 +54,7 @@ const navItems: NavItem[] = [
 
 const sectionTitles: Record<AdminSection, string> = {
   dashboard: 'Dashboard',
+  content: 'Contenido de la Tienda',
   products: 'Productos',
   categories: 'Categorías',
   orders: 'Pedidos',

@@ -14,6 +14,7 @@ export const VIEW_URLS: Record<string, string> = {
 // Admin section to URL mapping
 export const ADMIN_SECTION_URLS: Record<string, string> = {
   dashboard: '/admin/dashboard',
+  content: '/admin/contenido',
   products: '/admin/productos',
   categories: '/admin/categorias',
   orders: '/admin/pedidos',
@@ -42,6 +43,7 @@ export const URL_TO_VIEW: Record<string, string> = {
 export const URL_TO_ADMIN_SECTION: Record<string, string> = {
   '/admin': 'dashboard',
   '/admin/dashboard': 'dashboard',
+  '/admin/contenido': 'content',
   '/admin/productos': 'products',
   '/admin/categorias': 'categories',
   '/admin/pedidos': 'orders',
