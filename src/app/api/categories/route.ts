@@ -48,7 +48,15 @@ export async function GET(request: Request) {
       _count: { products: cat.productCount || 0 }
     }))
 
-    return NextResponse.json(formatted)
+    return NextResponse.json(formatted, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    })
   } catch (error) {
     console.error('[api/categories] Error:', error)
     return NextResponse.json([])

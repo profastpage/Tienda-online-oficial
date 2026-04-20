@@ -31,6 +31,106 @@ async function verifySuperAdmin(request: Request): Promise<boolean> {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// AUTO-MIGRATE: Ensure all required columns exist in the Store table
+// ═══════════════════════════════════════════════════════════════
+async function ensureStoreColumns(db: Awaited<ReturnType<typeof getDb>>): Promise<string[]> {
+  const added: string[] = []
+  try {
+    const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Store")`)
+    const colNames = columns.map(c => c.name)
+
+    const required: { name: string; sql: string }[] = [
+      { name: 'subscriptionExpiresAt', sql: `ALTER TABLE "Store" ADD COLUMN "subscriptionExpiresAt" DATETIME` },
+      { name: 'trialDays', sql: `ALTER TABLE "Store" ADD COLUMN "trialDays" INTEGER DEFAULT 0` },
+      { name: 'description', sql: `ALTER TABLE "Store" ADD COLUMN "description" TEXT DEFAULT ''` },
+      { name: 'address', sql: `ALTER TABLE "Store" ADD COLUMN "address" TEXT DEFAULT ''` },
+      { name: 'whatsappNumber', sql: `ALTER TABLE "Store" ADD COLUMN "whatsappNumber" TEXT DEFAULT ''` },
+      { name: 'logo', sql: `ALTER TABLE "Store" ADD COLUMN "logo" TEXT DEFAULT ''` },
+    ]
+
+    for (const col of required) {
+      if (colNames.includes(col.name)) continue
+      try {
+        await db.$executeRawUnsafe(col.sql)
+        added.push(col.name)
+        console.log(`[super-admin] Added column Store.${col.name}`)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (!msg.includes('duplicate column')) {
+          console.warn(`[super-admin] Store.${col.name} migration failed:`, msg)
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[super-admin] Store column check failed:', err)
+  }
+  return added
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTO-SEED: Ensure demo stores exist in the database
+// ═══════════════════════════════════════════════════════════════
+async function ensureDemoStores(db: Awaited<ReturnType<typeof getDb>>): Promise<number> {
+  const DEMO_STORES = [
+    { id: 'kmpw0h5ig4o518kg4zsm5huo3', name: 'Urban Style', slug: 'urban-style', plan: 'pro', whatsappNumber: '51999999999', address: 'Av. Arequipa 1234, Lima' },
+    { id: 'seed-store-basico', name: 'Mi Tienda Basica', slug: 'mi-tienda-basica', plan: 'basico', whatsappNumber: '51988888888', address: 'Jr. Lima 456, Lima' },
+    { id: 'seed-store-pro', name: 'TechStore Pro', slug: 'techstore-pro', plan: 'pro', whatsappNumber: '51977777777', address: 'Av. Brasil 789, Lima' },
+    { id: 'seed-store-premium', name: 'Fashion Premium', slug: 'fashion-premium', plan: 'premium', whatsappNumber: '51966666666', address: 'Av. Larco 321, Lima' },
+  ]
+
+  const ADMIN_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
+  const SEED_USERS = [
+    { email: 'admin@urbanstyle.pe', storeId: 'kmpw0h5ig4o518kg4zsm5huo3', name: 'Admin Urban Style', role: 'admin' as const },
+    { email: 'cliente@email.com', storeId: 'kmpw0h5ig4o518kg4zsm5huo3', name: 'Cliente Demo', role: 'customer' as const },
+    { email: 'basico@demo.pe', storeId: 'seed-store-basico', name: 'Carlos Basico', role: 'admin' as const },
+    { email: 'basico@cliente.com', storeId: 'seed-store-basico', name: 'Cliente Basico', role: 'customer' as const },
+    { email: 'pro@demo.pe', storeId: 'seed-store-pro', name: 'Maria Pro', role: 'admin' as const },
+    { email: 'pro@cliente.com', storeId: 'seed-store-pro', name: 'Cliente Pro', role: 'customer' as const },
+    { email: 'premium@demo.pe', storeId: 'seed-store-premium', name: 'Ana Premium', role: 'admin' as const },
+    { email: 'premium@cliente.com', storeId: 'seed-store-premium', name: 'Cliente Premium', role: 'customer' as const },
+  ]
+
+  let created = 0
+  const now = new Date().toISOString()
+
+  for (const store of DEMO_STORES) {
+    try {
+      // Check if store exists using minimal query
+      const existing = await db.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM Store WHERE id = '${store.id}'`)
+      if (!existing || existing.length === 0) {
+        await db.$executeRawUnsafe(`
+          INSERT INTO Store (id, name, slug, plan, whatsappNumber, address, isActive, createdAt, updatedAt)
+          VALUES ('${store.id}', '${store.name.replace(/'/g, "''")}', '${store.slug}', '${store.plan}', '${store.whatsappNumber}', '${store.address.replace(/'/g, "''")}', 1, '${now}', '${now}')
+        `)
+        created++
+        console.log(`[super-admin] Auto-created store: ${store.name}`)
+      }
+    } catch (err) {
+      console.error(`[super-admin] Failed to ensure store ${store.id}:`, err instanceof Error ? err.message : err)
+    }
+  }
+
+  // Also ensure seed users exist
+  for (const user of SEED_USERS) {
+    try {
+      const existing = await db.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM StoreUser WHERE email = '${user.email}' AND storeId = '${user.storeId}'`)
+      if (!existing || existing.length === 0) {
+        const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+        await db.$executeRawUnsafe(`
+          INSERT INTO StoreUser (id, email, password, name, role, storeId, avatar, createdAt)
+          VALUES ('${userId}', '${user.email}', '${ADMIN_PASSWORD_HASH}', '${user.name}', '${user.role}', '${user.storeId}', '', '${now}')
+        `)
+        console.log(`[super-admin] Auto-created user: ${user.email}`)
+      }
+    } catch (err) {
+      console.error(`[super-admin] Failed to ensure user ${user.email}:`, err instanceof Error ? err.message : err)
+    }
+  }
+
+  return created
+}
+
+// ═══════════════════════════════════════════════════════════════
 // GET — Fetch all dashboard data
 // ═══════════════════════════════════════════════════════════════
 export async function GET(request: Request) {
@@ -50,6 +150,13 @@ export async function GET(request: Request) {
         stores: [], users: [], leads: [], coupons: [], recentActivity: [],
         _dbWarning: 'No se pudo conectar a la base de datos. Verifica TURSO_URL y DATABASE_AUTH_TOKEN en Vercel.',
       })
+    }
+
+    // ═══ STEP 0: Auto-migrate and auto-seed ═══
+    const migratedCols = await ensureStoreColumns(db)
+    const seededStores = await ensureDemoStores(db)
+    if (migratedCols.length > 0 || seededStores > 0) {
+      console.log(`[super-admin] Auto-repair: migrated ${migratedCols.length} cols, seeded ${seededStores} stores`)
     }
 
     let stores: any[] = [], allUsers: any[] = [], leads: any[] = [], coupons: any[] = []
@@ -80,46 +187,53 @@ export async function GET(request: Request) {
       console.error('[super-admin] Direct count queries failed, will use fallback from detail queries:', err)
     }
 
-    // 1. Stores with full details - use raw SQL for robustness
+    // 1. Stores with full details - use raw SQL with dynamic column detection
     try {
-      const rawStores = await db.$queryRaw<{
-        id: string
-        name: string
-        slug: string
-        logo: string
-        whatsappNumber: string
-        address: string
-        description: string
-        isActive: number
-        plan: string
-        subscriptionExpiresAt: string | null
-        trialDays: number
-        createdAt: Date
-        updatedAt: Date
-      }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, subscriptionExpiresAt, trialDays, createdAt, updatedAt FROM Store ORDER BY createdAt DESC`
-      
+      // First, detect available columns to build a resilient query
+      const storeColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Store")`)
+      const availableCols = storeColumns.map(c => c.name)
+      console.log('[super-admin] Available Store columns:', availableCols)
+
+      // Build SELECT statement with only available columns
+      const wantedCols = ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt']
+      const safeCols = wantedCols.filter(c => availableCols.includes(c))
+      const selectClause = safeCols.join(', ')
+
+      const rawStores = await db.$queryRawUnsafe<Record<string, any>[]>(
+        `SELECT ${selectClause} FROM Store ORDER BY createdAt DESC`
+      )
+
+      console.log(`[super-admin] Fetched ${rawStores.length} stores from DB`)
+
       // Get counts for each store
       stores = await Promise.all(rawStores.map(async (store) => {
         try {
-          const userCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM StoreUser WHERE storeId = ${store.id}`
-          const productCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Product WHERE storeId = ${store.id}`
-          const orderCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM \`Order\` WHERE storeId = ${store.id}`
-          const categoryCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Category WHERE storeId = ${store.id}`
-          
+          const [userCount, productCount, orderCount, categoryCount] = await Promise.all([
+            db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM StoreUser WHERE storeId = '${store.id}'`,
+            db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM Product WHERE storeId = '${store.id}'`,
+            db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM \"Order\" WHERE storeId = '${store.id}'`,
+            db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM Category WHERE storeId = '${store.id}'`,
+          ])
+
           // Get users for this store
-          const users = await db.$queryRaw<{
-            id: string
-            email: string
-            name: string
-            phone: string
-            role: string
-            avatar: string
-            createdAt: Date
-          }[]>`SELECT id, email, name, phone, role, avatar, createdAt FROM StoreUser WHERE storeId = ${store.id} ORDER BY createdAt DESC`
-          
+          const users = await db.$queryRawUnsafe<{
+            id: string; email: string; name: string; phone: string; role: string; avatar: string; createdAt: string
+          }[]>(`SELECT id, email, name, phone, role, avatar, createdAt FROM StoreUser WHERE storeId = '${store.id}' ORDER BY createdAt DESC`)
+
           return {
-            ...store,
-            isActive: store.isActive === 1,
+            id: store.id,
+            name: store.name || '',
+            slug: store.slug || '',
+            logo: store.logo || '',
+            whatsappNumber: store.whatsappNumber || '',
+            address: store.address || '',
+            description: store.description || '',
+            isActive: store.isActive === 1 || store.isActive === true,
+            plan: store.plan || 'basico',
+            subscriptionExpiresAt: store.subscriptionExpiresAt || null,
+            trialDays: store.trialDays || 0,
+            createdAt: store.createdAt,
+            updatedAt: store.updatedAt,
             _count: {
               users: userCount[0]?.count || 0,
               products: productCount[0]?.count || 0,
@@ -127,18 +241,30 @@ export async function GET(request: Request) {
               categories: categoryCount[0]?.count || 0,
               coupons: 0,
             },
-            users: users || [],
+            users: (users || []).map(u => ({
+              id: u.id, email: u.email, name: u.name, phone: u.phone || '',
+              role: u.role, avatar: u.avatar || '', createdAt: u.createdAt
+            })),
           }
         } catch {
           return {
-            ...store,
-            isActive: store.isActive === 1,
+            id: store.id,
+            name: store.name || 'Tienda',
+            slug: store.slug || '',
+            logo: '', whatsappNumber: '', address: '', description: '',
+            isActive: store.isActive === 1 || store.isActive === true,
+            plan: store.plan || 'basico',
+            subscriptionExpiresAt: null, trialDays: 0,
+            createdAt: store.createdAt, updatedAt: store.updatedAt,
             _count: { users: 0, products: 0, orders: 0, categories: 0, coupons: 0 },
             users: [],
           }
         }
       }))
-    } catch (err) { errors.push('Tiendas'); console.error(err) }
+    } catch (err) {
+      errors.push('Tiendas')
+      console.error('[super-admin] Store detail query failed:', err instanceof Error ? err.message : err)
+    }
 
     // 2. All users
     try {

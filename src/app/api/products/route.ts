@@ -91,7 +91,15 @@ export async function GET(request: Request) {
       })
     )
 
-    return NextResponse.json(productsWithCategories)
+    return NextResponse.json(productsWithCategories, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    })
   } catch (error) {
     console.error('[api/products] Error:', error)
     return NextResponse.json([])

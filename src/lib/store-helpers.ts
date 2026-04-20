@@ -8,6 +8,9 @@ export const SEED_STORES: Record<string, { name: string; slug: string }> = {
   'seed-store-premium': { name: 'Fashion Premium', slug: 'fashion-premium' },
 }
 
+// Safe fields that can be exposed in API responses without leaking sensitive data
+export const STORE_SAFE_FIELDS = ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt'] as const
+
 export type StoreData = {
   id: string
   name: string

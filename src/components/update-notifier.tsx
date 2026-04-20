@@ -26,8 +26,11 @@ export function UpdateNotifier() {
       setState((s) => ({ ...s, soundEnabled: saved === 'true' }))
     }
     const dismissed = localStorage.getItem('update-notifier-dismissed')
-    if (!dismissed && 'Notification' in window && Notification.permission === 'default') {
-      const timer = setTimeout(() => setShowBanner(true), 3000)
+    // Only show notification banner if explicitly requested (not auto-show)
+    // This prevents interrupting users in the admin panel
+    const autoShow = localStorage.getItem('update-notifier-auto-show')
+    if (!dismissed && autoShow === 'true' && 'Notification' in window && Notification.permission === 'default') {
+      const timer = setTimeout(() => setShowBanner(true), 5000)
       return () => clearTimeout(timer)
     }
   }, [])

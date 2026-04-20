@@ -497,9 +497,13 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
     let cancelled = false
 
     async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
+      // Add cache-busting to prevent CDN/browser caching stale data
+      const cacheBuster = `?_t=${Date.now()}`
+      const separator = url.includes('?') ? '&' : '?'
+      const bustUrl = `${url}${separator}_cb=${Date.now()}`
       for (let i = 0; i < retries; i++) {
         try {
-          const res = await fetch(url)
+          const res = await fetch(bustUrl, { cache: 'no-store' })
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
           const contentType = res.headers.get('content-type') || ''
           if (!contentType.includes('application/json')) {

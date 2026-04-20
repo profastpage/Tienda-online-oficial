@@ -1,4 +1,4 @@
-const CACHE_NAME = 'urban-style-v3';
+const CACHE_NAME = 'urban-style-v4';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -57,7 +57,7 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Fetch
+// Fetch - network-first for all to avoid stale data
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -82,7 +82,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML/API: network-first
+  // HTML/API: network-first (always fetch fresh, no cache for API calls)
   event.respondWith(
     fetch(request)
       .then((res) => {
