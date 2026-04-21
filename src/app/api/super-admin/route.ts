@@ -247,6 +247,7 @@ export async function GET(request: Request) {
     }
 
     // 0. Direct COUNT queries for accurate stats (independent of detail queries)
+    // NOTE: Turso/libsql may return BigInt or string for COUNT(*), so we use Number() conversion
     let directTotalStores = 0, directActiveStores = 0, directTotalUsers = 0, directTotalProducts = 0, directTotalOrders = 0, directTotalCoupons = 0
     let countQueriesSucceeded = false
     try {
@@ -255,17 +256,26 @@ export async function GET(request: Request) {
         db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Store WHERE isActive = 1`),
         db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM StoreUser`),
         db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Product`),
-        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM \"Order\"`),
+        db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "Order"`),
         db.$queryRawUnsafe(`SELECT COUNT(*) as count FROM Coupon`),
-      ]) as [{count: number}][],
-      directTotalStores = storeCount[0]?.count || 0
-      directActiveStores = activeCount[0]?.count || 0
-      directTotalUsers = userCount[0]?.count || 0
-      directTotalProducts = productCount[0]?.count || 0
-      directTotalOrders = orderCount[0]?.count || 0
-      directTotalCoupons = couponCount[0]?.count || 0
+      ])
+
+      // Safe number extraction — handles BigInt, string, and undefined values from Turso
+      const safeNum = (row: any) => Number(row?.count ?? 0)
+      directTotalStores = safeNum(storeCount[0])
+      directActiveStores = safeNum(activeCount[0])
+      directTotalUsers = safeNum(userCount[0])
+      directTotalProducts = safeNum(productCount[0])
+      directTotalOrders = safeNum(orderCount[0])
+      directTotalCoupons = safeNum(couponCount[0])
       countQueriesSucceeded = true
       console.log('[super-admin] Direct counts OK:', { directTotalStores, directActiveStores, directTotalUsers, directTotalProducts, directTotalOrders, directTotalCoupons })
+      console.log('[super-admin] Raw count types:', {
+        storeCountType: typeof storeCount?.[0]?.count,
+        activeCountType: typeof activeCount?.[0]?.count,
+        storeCountRaw: JSON.stringify(storeCount?.[0]),
+        activeCountRaw: JSON.stringify(activeCount?.[0]),
+      })
     } catch (err) {
       console.error('[super-admin] Direct count queries failed, will use fallback from detail queries:', err)
     }
@@ -294,7 +304,7 @@ export async function GET(request: Request) {
           const [userCount, productCount, orderCount, categoryCount] = await Promise.all([
             db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM StoreUser WHERE storeId = '${store.id}'`,
             db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM Product WHERE storeId = '${store.id}'`,
-            db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM \"Order\" WHERE storeId = '${store.id}'`,
+            db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM "Order" WHERE storeId = '${store.id}'`,
             db.$queryRawUnsafe<[{ count: number }]>`SELECT COUNT(*) as count FROM Category WHERE storeId = '${store.id}'`,
           ])
 
@@ -318,10 +328,10 @@ export async function GET(request: Request) {
             createdAt: store.createdAt,
             updatedAt: store.updatedAt,
             _count: {
-              users: userCount[0]?.count || 0,
-              products: productCount[0]?.count || 0,
-              orders: orderCount[0]?.count || 0,
-              categories: categoryCount[0]?.count || 0,
+              users: Number(userCount[0]?.count ?? 0),
+              products: Number(productCount[0]?.count ?? 0),
+              orders: Number(orderCount[0]?.count ?? 0),
+              categories: Number(categoryCount[0]?.count ?? 0),
               coupons: 0,
             },
             users: (users || []).map(u => ({
@@ -362,7 +372,7 @@ export async function GET(request: Request) {
         createdAt: Date
         storeId: string
       }[]>`SELECT id, email, name, phone, address, role, avatar, createdAt, storeId FROM StoreUser ORDER BY createdAt DESC`
-      
+
       // Add store info to users
       allUsers = await Promise.all(allUsers.map(async (user) => {
         try {
@@ -384,7 +394,7 @@ export async function GET(request: Request) {
     try {
       leads = await db.$queryRaw<any[]>`SELECT * FROM Lead ORDER BY createdAt DESC LIMIT 100`
       const leadCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Lead`
-      totalLeads = leadCount[0]?.count || leads.length
+      totalLeads = Number(leadCount[0]?.count ?? 0) || leads.length
     } catch (err) { errors.push('Leads'); console.error(err); totalLeads = leads?.length || 0 }
 
     // 4. Coupons
@@ -402,7 +412,7 @@ export async function GET(request: Request) {
         createdAt: Date
         storeId: string
       }[]>`SELECT id, code, type, value, minPurchase, maxUses, usedCount, isActive, expiresAt, createdAt, storeId FROM Coupon ORDER BY createdAt DESC`
-      
+
       // Add store info to coupons
       coupons = await Promise.all(coupons.map(async (coupon) => {
         try {
@@ -418,13 +428,30 @@ export async function GET(request: Request) {
       }))
     } catch (err) { errors.push('Coupons'); console.error(err) }
 
-    // Aggregate stats - use direct counts when available, otherwise compute from detail queries
-    const totalStores = countQueriesSucceeded ? directTotalStores : (stores?.length || directTotalStores)
-    const activeStores = countQueriesSucceeded ? directActiveStores : ((stores || []).filter(s => s.isActive).length || directActiveStores)
-    const totalUsers = countQueriesSucceeded ? directTotalUsers : (allUsers?.length || directTotalUsers)
-    const totalProducts = countQueriesSucceeded ? directTotalProducts : ((stores || []).reduce((sum, s) => sum + (s._count?.products || 0), 0) || directTotalProducts)
-    const totalOrders = countQueriesSucceeded ? directTotalOrders : ((stores || []).reduce((sum, s) => sum + (s._count?.orders || 0), 0) || directTotalOrders)
-    const totalCoupons = countQueriesSucceeded ? directTotalCoupons : (coupons?.length || directTotalCoupons)
+    // ═══════════════════════════════════════════════════════════════
+    // Aggregate stats — use Math.max() between count queries and detail queries
+    // This ensures correct values even if count queries return unexpected formats
+    // (BigInt, wrong column name, etc. from Turso/libsql)
+    // ═══════════════════════════════════════════════════════════════
+    const storesFromDetail = stores?.length || 0
+    const activeFromDetail = (stores || []).filter(s => s.isActive).length
+    const usersFromDetail = allUsers?.length || 0
+    const productsFromDetail = (stores || []).reduce((sum, s) => sum + (s._count?.products || 0), 0)
+    const ordersFromDetail = (stores || []).reduce((sum, s) => sum + (s._count?.orders || 0), 0)
+    const couponsFromDetail = coupons?.length || 0
+
+    const totalStores = Math.max(storesFromDetail, directTotalStores)
+    const activeStores = Math.max(activeFromDetail, directActiveStores)
+    const totalUsers = Math.max(usersFromDetail, directTotalUsers)
+    const totalProducts = Math.max(productsFromDetail, directTotalProducts)
+    const totalOrders = Math.max(ordersFromDetail, directTotalOrders)
+    const totalCoupons = Math.max(couponsFromDetail, directTotalCoupons)
+
+    console.log('[super-admin] Stats comparison (detail vs count):', {
+      storesFromDetail, directTotalStores, totalStores,
+      activeFromDetail, directActiveStores, activeStores,
+      usersFromDetail, directTotalUsers, totalUsers,
+    })
 
     // Calculate expiring stores from stores array
     const now = new Date()
@@ -439,7 +466,7 @@ export async function GET(request: Request) {
       return new Date(s.subscriptionExpiresAt) <= now
     }).length
 
-    console.log('[super-admin] Final stats:', { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalCoupons, expiringStores, expiredStores })
+    console.log('[super-admin] Final stats:', { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalCoupons, expiringStores, expiredStores, countQueriesSucceeded })
 
     const planDistribution: Record<string, number> = {}
     for (const store of (stores || [])) {
@@ -510,10 +537,10 @@ export async function PATCH(request: Request) {
         console.log('[super-admin] toggle-store validation failed:', { storeId, isActiveType: typeof isActive })
         return NextResponse.json({ error: 'Datos requeridos', received: { storeId, isActive, isActiveType: typeof isActive } }, { status: 400 })
       }
-      
+
       const result = await db.$executeRaw`UPDATE Store SET isActive = ${isActive ? 1 : 0}, updatedAt = ${new Date().toISOString()} WHERE id = ${storeId}`
       console.log('[super-admin] UPDATE result:', result)
-      
+
       const stores = await db.$queryRaw<{
         id: string
         name: string
@@ -525,7 +552,7 @@ export async function PATCH(request: Request) {
         isActive: number
         plan: string
       }[]>`SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan FROM Store WHERE id = ${storeId}`
-      
+
       console.log('[super-admin] Store after update:', stores[0])
       return NextResponse.json({ success: true, message: `Tienda ${isActive ? 'activada' : 'suspendida'}`, store: stores[0] })
     }
@@ -544,16 +571,16 @@ export async function PATCH(request: Request) {
       if (!storeId || !plan) return NextResponse.json({ error: 'Datos requeridos' }, { status: 400 })
       const validPlans = ['basico', 'pro', 'premium', 'empresarial', 'gratis']
       if (!validPlans.includes(plan)) return NextResponse.json({ error: 'Plan invalido' }, { status: 400 })
-      
+
       await db.$executeRaw`UPDATE Store SET plan = ${plan}, updatedAt = ${new Date().toISOString()} WHERE id = ${storeId}`
-      
+
       const stores = await db.$queryRaw<{
         id: string
         name: string
         slug: string
         plan: string
       }[]>`SELECT id, name, slug, plan FROM Store WHERE id = ${storeId}`
-      
+
       return NextResponse.json({ success: true, message: `Plan cambiado a ${plan}`, store: stores[0] })
     }
 
@@ -561,10 +588,10 @@ export async function PATCH(request: Request) {
     if (action === 'store-token') {
       const { storeId } = body
       if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
-      
+
       const stores = await db.$queryRaw<{ id: string; name: string; slug: string }[]>`SELECT id, name, slug FROM Store WHERE id = ${storeId}`
       const store = stores[0]
-      
+
       if (!store) return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
 
       const tempToken = await signToken({
@@ -592,7 +619,7 @@ export async function PATCH(request: Request) {
 
       const couponId = `coupon_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
       const now = new Date().toISOString()
-      
+
       await db.$executeRaw`
         INSERT INTO Coupon (id, code, storeId, type, value, minPurchase, maxUses, usedCount, isActive, expiresAt, createdAt)
         VALUES (${couponId}, ${code.toUpperCase()}, ${storeId}, ${type || 'percentage'}, ${parseFloat(value)}, ${minPurchase ? parseFloat(minPurchase) : null}, ${maxUses ? parseInt(maxUses) : 0}, 0, 1, ${expiresAt ? new Date(expiresAt).toISOString() : null}, ${now})
@@ -664,7 +691,7 @@ export async function PATCH(request: Request) {
     if (action === 'set-subscription' || action === 'grant-trial') {
       const { storeId, days } = body
       console.log('[super-admin] set-subscription:', { storeId, days, daysType: typeof days })
-      
+
       if (!storeId || !days || typeof days !== 'number' || days <= 0) {
         console.log('[super-admin] set-subscription validation failed')
         return NextResponse.json({ error: 'storeId y days (numero positivo) requeridos', received: { storeId, days, daysType: typeof days } }, { status: 400 })
@@ -688,7 +715,7 @@ export async function PATCH(request: Request) {
         slug: string
         subscriptionExpiresAt: string | null
       }[]>`SELECT id, name, slug, subscriptionExpiresAt FROM Store WHERE id = ${storeId}`
-      
+
       console.log('[super-admin] Store after subscription update:', stores[0])
 
       return NextResponse.json({
