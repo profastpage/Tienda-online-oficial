@@ -1,7 +1,8 @@
+// Usage: TURSO_URL=... DATABASE_AUTH_TOKEN=... npx tsx scripts/setup-turso.ts
 import { createClient } from '@libsql/client'
 
-const TURSO_URL = "libsql://tienda-oficial-fast-page-pro.aws-us-east-1.turso.io"
-const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzU0MDExNTYsImlkIjoiMDE5ZDVlMjYtNWYwMS03NmU5LTlkN2ItNWMwNjgxZDIyYTE2IiwicmlkIjoiNGRiY2ZlOWEtODVmNi00OWFmLTlmM2QtNTNiODFkZjZhNzAzIn0.Mmm56rAwJD0WnwraGh-mik6AWXOquwjLqNCl-uU3fZHpL5dWVEE-0qazx1ZV7iMVUM1wHcKZnuMUvj2w1FtVCQ"
+const TURSO_URL = process.env.TURSO_URL || ''
+const TURSO_TOKEN = process.env.DATABASE_AUTH_TOKEN || ''
 
 const client = createClient({
   url: TURSO_URL,

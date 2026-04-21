@@ -1,3 +1,4 @@
+// Usage: TURSO_URL=... DATABASE_AUTH_TOKEN=... node scripts/seed-demo-products.mjs
 /**
  * Seeding script: Seed all 21 seed-data products into the Urban Style demo store
  * Store ID: kmpw0h5ig4o518kg4zsm5huo3
@@ -13,8 +14,8 @@ import { createClient } from '@libsql/client'
 const STORE_ID = 'kmpw0h5ig4o518kg4zsm5huo3'
 
 const client = createClient({
-  url: 'libsql://tienda-oficial-fast-page-pro.aws-us-east-1.turso.io',
-  authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzU2ODM5MzQsImlkIjoiMDE5ZDVlMjYtNWYwMS03NmU5LTlkN2ItNWMwNjgxZDIyYTE2IiwicmlkIjoiNGRiY2ZlOWEtODVmNi00OWFmLTlmM2QtNTNiODFkZjZhNzAzIn0.q3HXxi47K9uZfhdxgENSdUuf7-nMIHGMvfl2ra_k-E44m9pVvKIops-WtEWPZFERcl94jH4Oy_bC-QnUhb8CBA'
+  url: process.env.TURSO_URL || '',
+  authToken: process.env.DATABASE_AUTH_TOKEN || '',
 })
 
 // Category slug → demo store category ID mapping
