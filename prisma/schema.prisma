@@ -111,6 +111,7 @@ model Order {
   id                 String              @id @default(cuid())
   orderNumber        String              @unique
   customerName       String
+  customerEmail      String              @default("")
   customerPhone      String
   customerAddress    String              @default("")
   status             String              @default("pending")

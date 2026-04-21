@@ -25,6 +25,7 @@ export function StorefrontCheckout() {
   const checkoutStep = useStorefrontStore((s) => s.checkoutStep)
   const checkoutLoading = useStorefrontStore((s) => s.checkoutLoading)
   const customerName = useStorefrontStore((s) => s.customerName)
+  const customerEmail = useStorefrontStore((s) => s.customerEmail)
   const customerPhone = useStorefrontStore((s) => s.customerPhone)
   const customerAddress = useStorefrontStore((s) => s.customerAddress)
   const orderNotes = useStorefrontStore((s) => s.orderNotes)
@@ -38,6 +39,7 @@ export function StorefrontCheckout() {
   const setCheckoutStep = useStorefrontStore((s) => s.setCheckoutStep)
   const setCheckoutLoading = useStorefrontStore((s) => s.setCheckoutLoading)
   const setCustomerName = useStorefrontStore((s) => s.setCustomerName)
+  const setCustomerEmail = useStorefrontStore((s) => s.setCustomerEmail)
   const setCustomerPhone = useStorefrontStore((s) => s.setCustomerPhone)
   const setCustomerAddress = useStorefrontStore((s) => s.setCustomerAddress)
   const setOrderNotes = useStorefrontStore((s) => s.setOrderNotes)
@@ -75,6 +77,7 @@ export function StorefrontCheckout() {
         body: JSON.stringify({
           storeId: user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3',
           customerName,
+          customerEmail,
           customerPhone: formattedPhone,
           customerAddress,
           items: cart.items.map((item) => ({
@@ -147,6 +150,7 @@ export function StorefrontCheckout() {
         body: JSON.stringify({
           storeId: user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3',
           customerName,
+          customerEmail,
           customerPhone: formattedPhone,
           customerAddress,
           items: cart.items.map((item) => ({
@@ -222,7 +226,17 @@ Gracias!`)
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="customerPhone">Teléfono <span className="text-red-500">*</span></Label>
+              <Label htmlFor="customerEmail">Email (para recibir confirmación)</Label>
+              <Input
+                id="customerEmail"
+                type="email"
+                placeholder="tu@email.com"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customerPhone">Teléfono / WhatsApp <span className="text-red-500">*</span></Label>
               <Input
                 id="customerPhone"
                 placeholder="51 999 999 999"

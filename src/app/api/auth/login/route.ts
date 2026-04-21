@@ -4,15 +4,19 @@ import { signToken, comparePassword, hashPassword, rateLimit, getClientIp } from
 import { ensureStoreExists, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
 import { validateRequest, loginSchema } from '@/lib/validations'
 
-// Bcrypt hash for admin123 (ALL seed users use the same password)
-const ADMIN_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
+// Seed users are ONLY available in development mode for testing
+// In production, all credentials must be in the database
+const IS_DEV = process.env.NODE_ENV !== 'production'
 
-// Seed users for fallback when DB is unavailable or empty
-const SEED_USERS = [
+// Bcrypt hash for demo password (development only)
+const DEMO_PASSWORD_HASH = IS_DEV ? '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke' : ''
+
+// Seed users for development/testing ONLY — disabled in production
+const SEED_USERS = IS_DEV ? [
   {
     id: 'seed-admin-001',
     email: 'admin@urbanstyle.pe',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Admin Urban Style',
     phone: '51999999999',
     address: '',
@@ -24,7 +28,7 @@ const SEED_USERS = [
   {
     id: 'seed-client-001',
     email: 'cliente@email.com',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Cliente Demo',
     phone: '51988888888',
     address: '',
@@ -33,11 +37,10 @@ const SEED_USERS = [
     storeName: 'Urban Style',
     storeSlug: 'urban-style',
   },
-  // Básico Plan Store
   {
     id: 'seed-admin-basico',
     email: 'basico@demo.pe',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Carlos Básico',
     phone: '51999999991',
     address: '',
@@ -49,7 +52,7 @@ const SEED_USERS = [
   {
     id: 'seed-cliente-basico',
     email: 'basico@cliente.com',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Cliente Básico',
     phone: '',
     address: '',
@@ -58,11 +61,10 @@ const SEED_USERS = [
     storeName: 'Mi Tienda Básica',
     storeSlug: 'mi-tienda-basica',
   },
-  // Pro Plan Store
   {
     id: 'seed-admin-pro',
     email: 'pro@demo.pe',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'María Pro',
     phone: '51999999992',
     address: '',
@@ -74,7 +76,7 @@ const SEED_USERS = [
   {
     id: 'seed-cliente-pro',
     email: 'pro@cliente.com',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Cliente Pro',
     phone: '',
     address: '',
@@ -83,11 +85,10 @@ const SEED_USERS = [
     storeName: 'TechStore Pro',
     storeSlug: 'techstore-pro',
   },
-  // Premium Plan Store
   {
     id: 'seed-admin-premium',
     email: 'premium@demo.pe',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Ana Premium',
     phone: '51999999993',
     address: '',
@@ -99,7 +100,7 @@ const SEED_USERS = [
   {
     id: 'seed-cliente-premium',
     email: 'premium@cliente.com',
-    password: ADMIN_PASSWORD_HASH,
+    password: DEMO_PASSWORD_HASH,
     name: 'Cliente Premium',
     phone: '',
     address: '',
@@ -108,13 +109,11 @@ const SEED_USERS = [
     storeName: 'Fashion Premium',
     storeSlug: 'fashion-premium',
   },
-]
+] : []
 
 /**
- * Sync a seed user to the database.
- * Creates the user in DB if not exists, or updates password if seed password is newer.
- * Also ensures the store exists.
- * Returns the DB user (with DB-generated ID and all fields including avatar).
+ * Sync a seed user to the database (development only).
+ * In production, this function returns null immediately.
  */
 async function syncSeedUserToDb(seedUser: typeof SEED_USERS[number]): Promise<{
   id: string; email: string; password: string; name: string; phone: string;
@@ -122,19 +121,15 @@ async function syncSeedUserToDb(seedUser: typeof SEED_USERS[number]): Promise<{
   avatar: string | null;
   store: { name: string; slug: string };
 } | null> {
+  if (!IS_DEV) return null
   try {
     const db = await getDb()
-
-    // Ensure the store exists using the safe helper
     await ensureStoreExists(db, seedUser.storeId)
-
-    // Upsert the user: create if not exists, or just ensure they exist
     const dbUser = await db.storeUser.upsert({
       where: {
         email_storeId: { email: seedUser.email, storeId: seedUser.storeId },
       },
       update: {
-        // Only update password if the DB password is plaintext (legacy) or different
         password: seedUser.password,
       },
       create: {
@@ -149,20 +144,11 @@ async function syncSeedUserToDb(seedUser: typeof SEED_USERS[number]): Promise<{
       },
       include: { store: { select: { name: true, slug: true } } },
     })
-
-    console.log(`[login] Synced seed user ${seedUser.email} to DB (id: ${dbUser.id})`)
-
     return {
-      id: dbUser.id,
-      email: dbUser.email,
-      password: dbUser.password,
-      name: dbUser.name,
-      phone: dbUser.phone,
-      address: dbUser.address,
-      role: dbUser.role,
-      storeId: dbUser.storeId,
-      twoFactorEnabled: dbUser.twoFactorEnabled,
-      avatar: dbUser.avatar,
+      id: dbUser.id, email: dbUser.email, password: dbUser.password,
+      name: dbUser.name, phone: dbUser.phone, address: dbUser.address,
+      role: dbUser.role, storeId: dbUser.storeId,
+      twoFactorEnabled: dbUser.twoFactorEnabled, avatar: dbUser.avatar,
       store: { name: dbUser.store.name, slug: dbUser.store.slug },
     }
   } catch (err) {

@@ -4,13 +4,25 @@ import { NextResponse } from 'next/server'
 /**
  * POST /api/seed-sync
  *
- * Ensures all demo stores exist in the database with correct data.
- * Also syncs seed user passwords to admin123.
+ * ⚠️ PRODUCTION SECURITY: This endpoint is PROTECTED.
+ * Requires INIT_DB_SECRET to prevent unauthorized access.
+ * Seed users are only created in development mode.
+ * In production, only stores are synced (no password resets).
  *
  * Call this after deploying to ensure demo stores appear in super admin.
  */
 
-const ADMIN_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
+// Only allow in non-production, or with INIT_DB_SECRET
+const IS_DEV = process.env.NODE_ENV !== 'production'
+
+function verifyAccess(request: Request): boolean {
+  // In production, require INIT_DB_SECRET
+  if (!IS_DEV) {
+    const secret = request.headers.get('x-init-secret') || process.env.INIT_DB_SECRET
+    return !!secret && secret.length >= 16
+  }
+  return true
+}
 
 const DEMO_STORES = [
   { id: 'kmpw0h5ig4o518kg4zsm5huo3', name: 'Urban Style', slug: 'urban-style', plan: 'pro', whatsappNumber: '51999999999', address: 'Av. Arequipa 1234, Lima' },
@@ -30,19 +42,28 @@ const SEED_USERS = [
   { email: 'premium@cliente.com', storeId: 'seed-store-premium', name: 'Cliente Premium', role: 'customer' as const },
 ]
 
+// Demo password hash (only used in development)
+const DEMO_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
+
 export async function POST(request: Request) {
+  // Security check
+  if (!verifyAccess(request)) {
+    return NextResponse.json(
+      { error: 'No autorizado. Se requiere INIT_DB_SECRET.' },
+      { status: 401 }
+    )
+  }
+
   try {
     const db = await getDb()
     const results: { type: string; id: string; status: string; details?: string }[] = []
 
-    // 1. Ensure all demo stores exist
+    // 1. Ensure all demo stores exist (always, for super admin visibility)
     for (const store of DEMO_STORES) {
       try {
-        // Check if store exists
         const existing = await db.store.findUnique({ where: { id: store.id } })
-        
+
         if (!existing) {
-          // Create store using raw SQL for robustness
           await db.$executeRaw`
             INSERT INTO Store (id, name, slug, plan, whatsappNumber, address, isActive, createdAt, updatedAt)
             VALUES (${store.id}, ${store.name}, ${store.slug}, ${store.plan}, ${store.whatsappNumber}, ${store.address}, 1, ${new Date().toISOString()}, ${new Date().toISOString()})
@@ -50,13 +71,12 @@ export async function POST(request: Request) {
           results.push({ type: 'store', id: store.id, status: 'created', details: store.name })
           console.log(`[seed-sync] Created store ${store.name} (${store.id})`)
         } else {
-          // Update store if needed
           await db.$executeRaw`
-            UPDATE Store SET 
-              name = ${store.name}, 
-              slug = ${store.slug}, 
-              plan = ${store.plan}, 
-              whatsappNumber = ${store.whatsappNumber}, 
+            UPDATE Store SET
+              name = ${store.name},
+              slug = ${store.slug},
+              plan = ${store.plan},
+              whatsappNumber = ${store.whatsappNumber},
               address = ${store.address},
               isActive = 1,
               updatedAt = ${new Date().toISOString()}
@@ -70,35 +90,37 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Ensure all seed users exist with correct password
-    for (const user of SEED_USERS) {
-      try {
-        // Check if user exists
-        const existing = await db.$queryRaw<{ id: string }[]>`
-          SELECT id FROM StoreUser WHERE email = ${user.email} AND storeId = ${user.storeId}
-        `
+    // 2. Seed users — ONLY in development mode (never in production)
+    if (IS_DEV) {
+      for (const user of SEED_USERS) {
+        try {
+          const existing = await db.$queryRaw<{ id: string }[]>`
+            SELECT id FROM StoreUser WHERE email = ${user.email} AND storeId = ${user.storeId}
+          `
 
-        if (existing.length === 0) {
-          // Create user
-          const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-          await db.$executeRaw`
-            INSERT INTO StoreUser (id, email, password, name, role, storeId, createdAt)
-            VALUES (${userId}, ${user.email}, ${ADMIN_PASSWORD_HASH}, ${user.name}, ${user.role}, ${user.storeId}, ${new Date().toISOString()})
-          `
-          results.push({ type: 'user', id: user.email, status: 'created', details: user.name })
-          console.log(`[seed-sync] Created user ${user.email}`)
-        } else {
-          // Update user password
-          await db.$executeRaw`
-            UPDATE StoreUser SET password = ${ADMIN_PASSWORD_HASH}, name = ${user.name}
-            WHERE email = ${user.email} AND storeId = ${user.storeId}
-          `
-          results.push({ type: 'user', id: user.email, status: 'updated', details: user.name })
+          if (existing.length === 0) {
+            const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+            await db.$executeRaw`
+              INSERT INTO StoreUser (id, email, password, name, role, storeId, createdAt)
+              VALUES (${userId}, ${user.email}, ${DEMO_PASSWORD_HASH}, ${user.name}, ${user.role}, ${user.storeId}, ${new Date().toISOString()})
+            `
+            results.push({ type: 'user', id: user.email, status: 'created', details: user.name })
+            console.log(`[seed-sync] Created user ${user.email}`)
+          } else {
+            // In dev, sync passwords; in production, this block is skipped entirely
+            await db.$executeRaw`
+              UPDATE StoreUser SET password = ${DEMO_PASSWORD_HASH}, name = ${user.name}
+              WHERE email = ${user.email} AND storeId = ${user.storeId}
+            `
+            results.push({ type: 'user', id: user.email, status: 'updated', details: user.name })
+          }
+        } catch (err) {
+          results.push({ type: 'user', id: user.email, status: 'error', details: err instanceof Error ? err.message : String(err) })
+          console.error(`[seed-sync] Failed for user ${user.email}:`, err)
         }
-      } catch (err) {
-        results.push({ type: 'user', id: user.email, status: 'error', details: err instanceof Error ? err.message : String(err) })
-        console.error(`[seed-sync] Failed for user ${user.email}:`, err)
       }
+    } else {
+      results.push({ type: 'info', id: 'users', status: 'skipped', details: 'Seed users disabled in production' })
     }
 
     const storesOk = results.filter(r => r.type === 'store' && r.status !== 'error').length
@@ -120,15 +142,19 @@ export async function POST(request: Request) {
   }
 }
 
-// GET endpoint to check sync status
+// GET endpoint to check sync status (requires auth)
 export async function GET(request: Request) {
+  if (!verifyAccess(request)) {
+    return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
+  }
+
   try {
     const db = await getDb()
-    
+
     const stores = await db.$queryRaw<{ id: string; name: string; slug: string }[]>`
       SELECT id, name, slug FROM Store ORDER BY createdAt DESC
     `
-    
+
     const users = await db.$queryRaw<{ email: string; name: string; role: string }[]>`
       SELECT email, name, role FROM StoreUser ORDER BY createdAt DESC LIMIT 20
     `

@@ -4,11 +4,21 @@ import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { sendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email-templates'
 import { validateRequest, createOrderSchema } from '@/lib/validations'
+import { rateLimit, getClientIp } from '@/lib/auth'
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: 10 orders per minute per IP
+    const ip = getClientIp(request)
+    if (!rateLimit(ip, 10, 60000)) {
+      return NextResponse.json(
+        { error: 'Demasiados pedidos. Intenta de nuevo en 1 minuto.' },
+        { status: 429 }
+      )
+    }
+
     const db = await getDb()
-    const { storeId, customerName, customerPhone, customerAddress, items, notes, userId, paymentMethodId } = await request.json()
+    const { storeId, customerName, customerEmail, customerPhone, customerAddress, items, notes, userId, paymentMethodId } = await request.json()
 
     // Validate with Zod
     const validation = validateRequest(createOrderSchema, { customerName, customerPhone, customerAddress, items, notes, paymentMethodId })
@@ -16,51 +26,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    // Validate required fields
     if (!storeId) {
-      return NextResponse.json(
-        { error: 'Se requiere el ID de la tienda' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Se requiere el ID de la tienda' }, { status: 400 })
     }
 
     // Validate store exists
     const store = await db.store.findUnique({ where: { id: storeId } })
     if (!store) {
-      return NextResponse.json(
-        { error: 'Tienda no encontrada' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    // Check plan limits (monthly orders) before creating order
+    // Check plan limits
     const plan = store.plan || 'basico'
     const limitCheck = await checkPlanLimit(db, storeId, 'orders', plan)
     if (!limitCheck.allowed) {
       const config = getPlanConfig(plan)
       return NextResponse.json(
-        {
-          error: `Esta tienda ha alcanzado el límite mensual de pedidos del plan ${config.name} (${limitCheck.limit}). El vendedor debe actualizar su plan.`,
-          currentPlan: plan,
-          limit: limitCheck.limit,
-        },
+        { error: `Esta tienda ha alcanzado el límite mensual de pedidos del plan ${config.name} (${limitCheck.limit}).`, currentPlan: plan, limit: limitCheck.limit },
         { status: 403 }
       )
     }
 
     // Calculate total
-    const total = items.reduce((sum: number, item: any) => {
-      return sum + (item.price * item.quantity)
-    }, 0)
+    const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
 
     // Generate order number
     const orderCount = await db.order.count({ where: { storeId } })
     const orderNumber = `TOO-${String(orderCount + 1).padStart(5, '0')}`
 
-    // Build order data
+    // Build order data — now includes customerEmail
     const orderData: Record<string, unknown> = {
       orderNumber,
       customerName,
+      customerEmail: customerEmail || '',
       customerPhone,
       customerAddress: customerAddress || '',
       total,
@@ -81,66 +79,59 @@ export async function POST(request: Request) {
       },
     }
 
-    // Only include paymentMethodId if it exists
     if (paymentMethodId) {
       orderData.paymentMethodId = paymentMethodId
     }
 
-    // Try creating with paymentMethod include first
+    // Create order
     let order
     try {
       order = await db.order.create({
         data: orderData,
-        include: {
-          items: true,
-          paymentMethod: { select: { name: true, type: true } },
-        },
+        include: { items: true, paymentMethod: { select: { name: true, type: true } } },
       })
     } catch {
-      // PaymentMethod table may not exist on fresh deploy – retry without relation
       delete orderData.paymentMethodId
       order = await db.order.create({
         data: orderData,
-        include: {
-          items: true,
-        },
+        include: { items: true },
       })
     }
 
-    // Send order confirmation email (fire and forget)
-    if (customerPhone && customerPhone.includes('@')) {
+    // Build email template
+    const emailItems = order.items.map(item => ({
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.price,
+    }))
+
+    // Send confirmation email to customer (using customerEmail field)
+    const customerEmailAddress = customerEmail || ''
+    if (customerEmailAddress && customerEmailAddress.includes('@')) {
       const emailTemplate = orderConfirmationEmail({
         orderNumber: order.orderNumber,
         customerName,
         storeName: store.name,
         total: order.total,
-        items: order.items.map(item => ({
-          productName: item.productName,
-          quantity: item.quantity,
-          price: item.price,
-        })),
+        items: emailItems,
         status: order.status,
       })
-      sendEmail({ to: customerPhone, subject: emailTemplate.subject, html: emailTemplate.html })
+      sendEmail({ to: customerEmailAddress, subject: emailTemplate.subject, html: emailTemplate.html })
         .catch((err) => console.error('[checkout] Failed to send order confirmation email:', err))
     }
 
-    // Also notify store admin if email available
+    // Notify store admin of new order
     const storeAdmin = await db.storeUser.findFirst({
       where: { storeId, role: 'admin' },
       select: { email: true },
     })
-    if (storeAdmin?.email) {
+    if (storeAdmin?.email && storeAdmin.email !== customerEmailAddress) {
       const adminTemplate = orderConfirmationEmail({
         orderNumber: order.orderNumber,
         customerName,
         storeName: store.name,
         total: order.total,
-        items: order.items.map(item => ({
-          productName: item.productName,
-          quantity: item.quantity,
-          price: item.price,
-        })),
+        items: emailItems,
         status: order.status,
       })
       sendEmail({
@@ -160,9 +151,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('[checkout] Error:', error)
-    return NextResponse.json(
-      { error: 'Error al procesar el pedido' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Error al procesar el pedido' }, { status: 500 })
   }
 }

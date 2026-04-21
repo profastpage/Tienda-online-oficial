@@ -39,6 +39,7 @@ export const createProductSchema = z.object({
 
 export const createOrderSchema = z.object({
   customerName: z.string().min(2, 'Nombre requerido'),
+  customerEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   customerPhone: z.string().min(8, 'Teléfono requerido'),
   customerAddress: z.string().optional().default(''),
   items: z.array(z.object({

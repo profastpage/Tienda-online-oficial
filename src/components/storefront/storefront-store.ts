@@ -42,6 +42,7 @@ interface StorefrontState {
   checkoutStep: 1 | 2 | 3
   checkoutLoading: boolean
   customerName: string
+  customerEmail: string
   customerPhone: string
   customerAddress: string
   orderNotes: string
@@ -137,6 +138,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   checkoutStep: 1,
   checkoutLoading: false,
   customerName: '',
+  customerEmail: '',
   customerPhone: '',
   customerAddress: '',
   orderNotes: '',
@@ -190,6 +192,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   setCheckoutStep: (step) => set({ checkoutStep: step }),
   setCheckoutLoading: (loading) => set({ checkoutLoading: loading }),
   setCustomerName: (n) => set({ customerName: n }),
+  setCustomerEmail: (e) => set({ customerEmail: e }),
   setCustomerPhone: (p) => set({ customerPhone: p }),
   setCustomerAddress: (a) => set({ customerAddress: a }),
   setOrderNotes: (n) => set({ orderNotes: n }),
