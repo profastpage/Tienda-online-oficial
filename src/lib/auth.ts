@@ -54,7 +54,7 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash)
 }
 
-// Extract JWT from Authorization header
+// Extract JWT from Authorization header or cookies
 export function extractToken(request: Request): string | null {
   const auth = request.headers.get('authorization')
   if (auth?.startsWith('Bearer ')) return auth.slice(7)
@@ -81,7 +81,7 @@ export function authError(message: string = 'No autenticado', status: number = 4
  * Distributed rate limiter using the database.
  * Works across serverless invocations (unlike in-memory Map).
  * Uses a sliding window approach.
- * 
+ *
  * @param key - Unique identifier (e.g. "chat:1.2.3.4", "login:1.2.3.4")
  * @param maxRequests - Max requests allowed in the window
  * @param windowMs - Window size in milliseconds (default: 60000 = 1 min)
@@ -140,8 +140,28 @@ export function getClientIp(request: Request): string {
 }
 
 // Authenticated user check - returns user payload or null
+// Supports both auth-token (JWT) and super-admin-token (secret) cookies
 export async function getAuthUser(request: Request): Promise<JwtPayload | null> {
+  // Try JWT from header or auth-token cookie first
   const token = extractToken(request)
-  if (!token) return null
-  return verifyToken(token)
+  if (token) {
+    const payload = await verifyToken(token)
+    if (payload) return payload
+  }
+
+  // Fallback: check super-admin-token cookie (for super admin panel)
+  const cookie = request.headers.get('cookie')
+  if (cookie) {
+    const matchSA = cookie.match(/super-admin-token=([^;]+)/)
+    if (matchSA && matchSA[1] === process.env.SUPER_ADMIN_SECRET) {
+      return {
+        userId: 'super-admin-001',
+        email: process.env.SUPER_ADMIN_EMAIL || 'super-admin',
+        role: 'super-admin',
+        storeId: '__super_admin__',
+      }
+    }
+  }
+
+  return null
 }

@@ -14,7 +14,7 @@ async function verifySuperAdmin(request: Request): Promise<boolean> {
   let cookieToken: string | undefined
   try {
     const cookieStore = await import('next/headers').then(m => m.cookies())
-    cookieToken = cookieStore.get('super-admin-token')?.value
+    cookieToken = cookieStore.get('super-admin-token')?.value || cookieStore.get('auth-token')?.value
   } catch { /* cookies() not available */ }
 
   const token = bearerToken || cookieToken

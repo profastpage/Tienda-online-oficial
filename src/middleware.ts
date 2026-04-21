@@ -85,14 +85,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Super admin page is now protected — requires auth-token from main login
+  // Super admin page protection — accept both auth-token and super-admin-token
   if (pathname.startsWith('/super-admin')) {
-    const cookieToken = request.cookies.get('auth-token')?.value
+    const authToken = request.cookies.get('auth-token')?.value
+    const superAdminToken = request.cookies.get('super-admin-token')?.value
     const authHeader = request.headers.get('authorization')
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-    const jwtToken = token || cookieToken
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const anyToken = bearerToken || authToken || superAdminToken
 
-    if (!jwtToken) {
+    if (!anyToken) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
