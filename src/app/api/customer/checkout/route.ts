@@ -1,19 +1,25 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
-// TODO: Uncomment when email service is ready to send order confirmation emails
-// import { sendEmail } from '@/lib/email'
-// import { orderConfirmationEmail } from '@/lib/email-templates'
+import { sendEmail } from '@/lib/email'
+import { orderConfirmationEmail } from '@/lib/email-templates'
+import { validateRequest, createOrderSchema } from '@/lib/validations'
 
 export async function POST(request: Request) {
   try {
     const db = await getDb()
     const { storeId, customerName, customerPhone, customerAddress, items, notes, userId, paymentMethodId } = await request.json()
 
+    // Validate with Zod
+    const validation = validateRequest(createOrderSchema, { customerName, customerPhone, customerAddress, items, notes, paymentMethodId })
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+
     // Validate required fields
-    if (!storeId || !customerName || !customerPhone || !items || items.length === 0) {
+    if (!storeId) {
       return NextResponse.json(
-        { error: 'Datos del pedido incompletos' },
+        { error: 'Se requiere el ID de la tienda' },
         { status: 400 }
       )
     }
@@ -101,22 +107,48 @@ export async function POST(request: Request) {
       })
     }
 
-    // TODO: Send order confirmation email (fire and forget)
-    // Uncomment the lines below when ready to send order confirmation emails
-    // const emailTemplate = orderConfirmationEmail({
-    //   orderNumber: order.orderNumber,
-    //   customerName,
-    //   storeName: store.name,
-    //   total: order.total,
-    //   items: order.items.map(item => ({
-    //     productName: item.productName,
-    //     quantity: item.quantity,
-    //     price: item.price,
-    //   })),
-    //   status: order.status,
-    // })
-    // sendEmail({ to: customerPhone, subject: emailTemplate.subject, html: emailTemplate.html })
-    //   .catch((err) => console.error('[checkout] Failed to send order confirmation email:', err))
+    // Send order confirmation email (fire and forget)
+    if (customerPhone && customerPhone.includes('@')) {
+      const emailTemplate = orderConfirmationEmail({
+        orderNumber: order.orderNumber,
+        customerName,
+        storeName: store.name,
+        total: order.total,
+        items: order.items.map(item => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        status: order.status,
+      })
+      sendEmail({ to: customerPhone, subject: emailTemplate.subject, html: emailTemplate.html })
+        .catch((err) => console.error('[checkout] Failed to send order confirmation email:', err))
+    }
+
+    // Also notify store admin if email available
+    const storeAdmin = await db.storeUser.findFirst({
+      where: { storeId, role: 'admin' },
+      select: { email: true },
+    })
+    if (storeAdmin?.email) {
+      const adminTemplate = orderConfirmationEmail({
+        orderNumber: order.orderNumber,
+        customerName,
+        storeName: store.name,
+        total: order.total,
+        items: order.items.map(item => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        status: order.status,
+      })
+      sendEmail({
+        to: storeAdmin.email,
+        subject: `[Nuevo Pedido] #${order.orderNumber} - ${store.name}`,
+        html: adminTemplate.html,
+      }).catch((err) => console.error('[checkout] Failed to notify admin:', err))
+    }
 
     return NextResponse.json({
       id: order.id,

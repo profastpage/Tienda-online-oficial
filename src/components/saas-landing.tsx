@@ -236,7 +236,7 @@ function TrustBanner() {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414'
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || ''
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80&auto=format'
 
 const brands = ['KUNA', 'ÑAÑA', 'MISTURA', 'ALPACA', 'TUMI', 'INTI', 'WAYKI', 'CHAKRA', 'WARI', 'PAYKU']

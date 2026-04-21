@@ -646,7 +646,7 @@ export function AdminPlan() {
                       className="w-full h-10 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white"
                       onClick={() => {
                         const msg = encodeURIComponent('Hola! Me interesa el plan Empresarial para Tienda Online Oficial.')
-                        window.open(`https://wa.me/51933667414?text=${msg}`, '_blank')
+                        window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || ''}?text=${msg}`, '_blank')
                       }}
                     >
                       <Building2 className="w-4 h-4 mr-1.5" />
