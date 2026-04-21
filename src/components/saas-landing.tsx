@@ -800,7 +800,7 @@ export default function SaasLanding() {
             className="flex flex-row items-center justify-center gap-5 sm:gap-10 text-center mt-6 sm:mt-10"
           >
             {[
-              { value: '500+', label: 'Tiendas Activas' },
+              { value: '150+', label: 'Tiendas Activas' },
               { value: '98%', label: 'Clientes Satisfechos' },
               { value: '24/7', label: 'Soporte' },
             ].map((stat) => (
@@ -857,7 +857,7 @@ export default function SaasLanding() {
                 onClick={() => router.push('/login')}
               >
                 <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Iniciar Sesión</span>
+                <span className="inline">Iniciar Sesión</span>
               </Button>
               <Button
                 size="sm"
