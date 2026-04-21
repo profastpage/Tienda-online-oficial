@@ -60,9 +60,19 @@ function WhatsAppIcon({ className = 'w-5 h-5' }: { className?: string }) {
 
 // ─── Animated Counter ──────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
-  const [count, setCount] = useState(0)
-  const numericTarget = parseInt(target.replace(/\D/g, ''))
   const ref = useRef<HTMLSpanElement>(null)
+
+  // If target contains no real numbers (e.g. "24/7"), just render it as-is
+  const numericOnly = target.replace(/[^0-9]/g, '')
+  const hasLetters = /[^0-9+]/.test(target.replace(/^[+%]/, ''))
+  const isPlainNumber = /^\d+$/.test(numericOnly) && numericOnly.length > 0
+
+  if (!isPlainNumber) {
+    return <span ref={ref}>{target}{suffix}</span>
+  }
+
+  const numericTarget = parseInt(numericOnly)
+  const [count, setCount] = useState(0)
   const isInView = useInView(ref, { once: true })
 
   useEffect(() => {
