@@ -214,6 +214,10 @@ export async function GET(request: Request) {
     // ═══ STEP 0.5: If still 0 stores, try auto init-db ═══
     let autoInitResult: any = null
     let totalLeads = 0
+    let stores: any[] = []
+    let allUsers: any[] = []
+    let leads: any[] = []
+    let coupons: any[] = []
     const errors: string[] = []
 
     // Quick check: how many stores exist after seeding?
@@ -381,7 +385,7 @@ export async function GET(request: Request) {
       leads = await db.$queryRaw<any[]>`SELECT * FROM Lead ORDER BY createdAt DESC LIMIT 100`
       const leadCount = await db.$queryRaw<[{ count: number }]>`SELECT COUNT(*) as count FROM Lead`
       totalLeads = leadCount[0]?.count || leads.length
-    } catch (err) { errors.push('Leads'); console.error(err); totalLeads = leads.length }
+    } catch (err) { errors.push('Leads'); console.error(err); totalLeads = leads?.length || 0 }
 
     // 4. Coupons
     try {
@@ -415,22 +419,22 @@ export async function GET(request: Request) {
     } catch (err) { errors.push('Coupons'); console.error(err) }
 
     // Aggregate stats - use direct counts when available, otherwise compute from detail queries
-    const totalStores = countQueriesSucceeded ? directTotalStores : (stores.length || directTotalStores)
-    const activeStores = countQueriesSucceeded ? directActiveStores : (stores.filter(s => s.isActive).length || directActiveStores)
-    const totalUsers = countQueriesSucceeded ? directTotalUsers : (allUsers.length || directTotalUsers)
-    const totalProducts = countQueriesSucceeded ? directTotalProducts : (stores.reduce((sum, s) => sum + (s._count?.products || 0), 0) || directTotalProducts)
-    const totalOrders = countQueriesSucceeded ? directTotalOrders : (stores.reduce((sum, s) => sum + (s._count?.orders || 0), 0) || directTotalOrders)
-    const totalCoupons = countQueriesSucceeded ? directTotalCoupons : (coupons.length || directTotalCoupons)
+    const totalStores = countQueriesSucceeded ? directTotalStores : (stores?.length || directTotalStores)
+    const activeStores = countQueriesSucceeded ? directActiveStores : ((stores || []).filter(s => s.isActive).length || directActiveStores)
+    const totalUsers = countQueriesSucceeded ? directTotalUsers : (allUsers?.length || directTotalUsers)
+    const totalProducts = countQueriesSucceeded ? directTotalProducts : ((stores || []).reduce((sum, s) => sum + (s._count?.products || 0), 0) || directTotalProducts)
+    const totalOrders = countQueriesSucceeded ? directTotalOrders : ((stores || []).reduce((sum, s) => sum + (s._count?.orders || 0), 0) || directTotalOrders)
+    const totalCoupons = countQueriesSucceeded ? directTotalCoupons : (coupons?.length || directTotalCoupons)
 
     // Calculate expiring stores from stores array
     const now = new Date()
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-    const expiringStores = stores.filter(s => {
+    const expiringStores = (stores || []).filter(s => {
       if (!s.subscriptionExpiresAt) return false
       const exp = new Date(s.subscriptionExpiresAt)
       return exp > now && exp <= thirtyDaysFromNow
     }).length
-    const expiredStores = stores.filter(s => {
+    const expiredStores = (stores || []).filter(s => {
       if (!s.subscriptionExpiresAt) return false
       return new Date(s.subscriptionExpiresAt) <= now
     }).length
@@ -438,13 +442,13 @@ export async function GET(request: Request) {
     console.log('[super-admin] Final stats:', { totalStores, activeStores, totalUsers, totalProducts, totalOrders, totalCoupons, expiringStores, expiredStores })
 
     const planDistribution: Record<string, number> = {}
-    for (const store of stores) {
+    for (const store of (stores || [])) {
       const plan = store.plan || 'basico'
       planDistribution[plan] = (planDistribution[plan] || 0) + 1
     }
 
     // Recent activity
-    const recentActivity = allUsers.slice(0, 15).map((u) => ({
+    const recentActivity = (allUsers || []).slice(0, 15).map((u: any) => ({
       type: 'registration',
       userName: u.name,
       storeName: u.store?.name || '—',
@@ -478,7 +482,8 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('[super-admin] GET error:', error)
-    return NextResponse.json({ error: 'Error al obtener datos' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: 'Error al obtener datos', details: errorMessage }, { status: 500 })
   }
 }
 
