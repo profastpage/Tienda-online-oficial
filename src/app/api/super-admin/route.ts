@@ -11,21 +11,27 @@ async function verifySuperAdmin(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('authorization')
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
 
-  let cookieToken: string | undefined
+  let cookieTokens: string[] = []
   try {
     const cookieStore = await import('next/headers').then(m => m.cookies())
-    cookieToken = cookieStore.get('super-admin-token')?.value || cookieStore.get('auth-token')?.value
+    const sa = cookieStore.get('super-admin-token')?.value
+    const at = cookieStore.get('auth-token')?.value
+    if (sa) cookieTokens.push(sa)
+    if (at && at !== sa) cookieTokens.push(at)
   } catch { /* cookies() not available */ }
 
-  const token = bearerToken || cookieToken
-  if (!token) return false
+  // Collect all candidate tokens (bearer first, then cookies)
+  const allTokens = [bearerToken, ...cookieTokens].filter((t): t is string => !!t)
 
-  if (token === process.env.SUPER_ADMIN_SECRET) return true
-
-  try {
-    const payload = await verifyToken(token)
-    if (payload && payload.role === 'super-admin') return true
-  } catch { /* not a JWT */ }
+  for (const token of allTokens) {
+    // Check if raw secret match
+    if (token === process.env.SUPER_ADMIN_SECRET) return true
+    // Check if valid JWT with super-admin role
+    try {
+      const payload = await verifyToken(token)
+      if (payload && payload.role === 'super-admin') return true
+    } catch { /* not a JWT, try next */ }
+  }
 
   return false
 }

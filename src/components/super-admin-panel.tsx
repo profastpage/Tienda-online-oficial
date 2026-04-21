@@ -137,27 +137,50 @@ export default function SuperAdminPanel() {
   const [copied, setCopied] = useState<string | null>(null)
 
   // ═══ Auth ═══
-  useEffect(() => {
+  const checkAuth = useCallback(async () => {
     try {
       const stored = localStorage.getItem('user')
       const storedToken = localStorage.getItem('auth-token')
       if (stored) {
         const user = JSON.parse(stored)
-        if (user.role === 'super-admin') { setAuthed(true); setToken(storedToken) }
-        else router.push('/login')
-      } else {
-        fetch('/api/auth/me', { credentials: 'include' })
-          .then(r => r.ok ? r.json() : null)
-          .then(userData => {
+        if (user.role === 'super-admin') {
+          setAuthed(true); setToken(storedToken)
+          // Verify token is still valid via API
+          const meRes = await fetch('/api/auth/me', { credentials: 'include' })
+          if (meRes.ok) {
+            const userData = await meRes.json()
             if (userData?.role === 'super-admin') {
               localStorage.setItem('user', JSON.stringify(userData))
               if (userData.token) localStorage.setItem('auth-token', userData.token)
-              setAuthed(true); setToken(userData.token || null)
-            } else router.push('/login')
-          }).catch(() => router.push('/login'))
+              setToken(userData.token || storedToken)
+              return
+            }
+          }
+          // Token invalid — clear and try cookie-only auth
+          console.warn('[super-admin] Stored token invalid, clearing and retrying...')
+          localStorage.removeItem('user'); localStorage.removeItem('auth-token')
+        } else {
+          localStorage.removeItem('user'); localStorage.removeItem('auth-token')
+        }
       }
-    } catch { router.push('/login') }
+      // No valid localStorage — try cookies via /api/auth/me
+      const meRes = await fetch('/api/auth/me', { credentials: 'include' })
+      if (!meRes.ok) { router.push('/login'); return }
+      const userData = await meRes.json()
+      if (userData?.role === 'super-admin') {
+        localStorage.setItem('user', JSON.stringify(userData))
+        if (userData.token) localStorage.setItem('auth-token', userData.token)
+        setAuthed(true); setToken(userData.token || null)
+      } else {
+        router.push('/login')
+      }
+    } catch (err) {
+      console.error('[super-admin] Auth check error:', err)
+      router.push('/login')
+    }
   }, [router])
+
+  useEffect(() => { checkAuth() }, [checkAuth])
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type })
@@ -188,18 +211,51 @@ export default function SuperAdminPanel() {
     setLoading(true)
     try {
       const t = token || localStorage.getItem('auth-token')
-      // Add cache-busting timestamp to prevent any CDN/browser caching
       const cacheBuster = `?_t=${Date.now()}`
       const res = await fetch(`/api/super-admin${cacheBuster}`, {
         headers: t ? { Authorization: `Bearer ${t}` } : {},
         cache: 'no-store',
       })
-      if (!res.ok) { router.push('/login'); return }
+      if (res.status === 401) {
+        // Auth expired — try to re-auth via cookies before redirecting
+        console.warn('[super-admin] 401 from API, attempting cookie re-auth...')
+        try {
+          const meRes = await fetch('/api/auth/me', { credentials: 'include' })
+          if (meRes.ok) {
+            const meData = await meRes.json()
+            if (meData?.role === 'super-admin' && meData.token) {
+              localStorage.setItem('user', JSON.stringify(meData))
+              localStorage.setItem('auth-token', meData.token)
+              setToken(meData.token)
+              const retryRes = await fetch(`/api/super-admin?_t=${Date.now()}`, {
+                headers: { Authorization: `Bearer ${meData.token}` },
+                cache: 'no-store',
+              })
+              if (retryRes.ok) {
+                const json = await retryRes.json()
+                setData(json)
+                return
+              }
+            }
+          }
+        } catch (retryErr) {
+          console.error('[super-admin] Re-auth attempt failed:', retryErr)
+        }
+        router.push('/login')
+        return
+      }
+      if (!res.ok) {
+        console.error('[super-admin] API error:', res.status)
+        return
+      }
       const json = await res.json()
       if (json.error && !json.stats) throw new Error(json.error)
       setData(json)
-    } catch (err) { console.error('Fetch error:', err) }
-    finally { setLoading(false) }
+    } catch (err) {
+      console.error('[super-admin] Fetch error:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [token, router])
 
   useEffect(() => { if (authed && !data) fetchData() }, [authed, data, fetchData])
