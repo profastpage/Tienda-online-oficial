@@ -20,6 +20,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { ThemeToggle } from '@/components/theme-toggle'
 
+// ═══ Cache Buster - forces browser to load fresh JS chunks ═══
+const PANEL_VERSION = 'v2.1'
+
 // ═══ Types ═══
 interface StoreData {
   id: string; name: string; slug: string; plan: string; isActive: boolean
