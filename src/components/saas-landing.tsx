@@ -717,75 +717,74 @@ export default function SaasLanding() {
       </AnimatePresence>
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
-      <section className="relative min-h-[85svh] sm:min-h-[90svh] md:h-screen flex items-center">
+      <section className="relative min-h-[100svh] sm:min-h-[90svh] md:h-screen flex items-center">
         {/* Full-bleed background image using <img> tag */}
         <img
           src={HERO_IMAGE}
           alt="Tienda Online Oficial - Plataforma e-commerce"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover object-center"
           loading="eager"
         />
 
-        {/* Multi-layer gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/30" />
+        {/* Multi-layer gradient overlay - stronger on mobile */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 sm:from-black/60 sm:via-black/40 sm:to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/20" />
 
-        {/* Hero Content - centered */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Hero Content - centered, mobile-first padding */}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16 pb-20 sm:pt-0 sm:pb-0">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
-            <Badge className="mb-4 sm:mb-6 px-4 py-1.5 bg-white/15 text-white hover:bg-white/15 border-white/20 text-sm backdrop-blur-sm animate-pulse-subtle">
+            <Badge className="mb-3 sm:mb-6 px-3 py-1 sm:px-4 sm:py-1.5 bg-white/15 text-white hover:bg-white/15 border-white/20 text-xs sm:text-sm backdrop-blur-sm animate-pulse-subtle">
               ✨ Plataforma #1 en Perú
             </Badge>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
-            className="text-[2.5rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight"
+            className="text-[1.85rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight"
           >
             Tu Tienda Online{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500">
               Profesional
             </span>
             <br />
-            <span className="text-[1.75rem] sm:text-4xl md:text-5xl lg:text-6xl text-neutral-200 font-semibold">
+            <span className="text-[1.3rem] sm:text-4xl md:text-5xl lg:text-6xl text-neutral-200 font-semibold">
               en Minutos
             </span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-            className="mt-4 sm:mt-6 text-base sm:text-lg text-neutral-300 max-w-2xl mx-auto leading-relaxed"
+            className="mt-3 sm:mt-6 text-sm sm:text-base md:text-lg text-neutral-300 max-w-xl sm:max-w-2xl mx-auto leading-relaxed"
           >
-            Crea tu tienda online profesional sin conocimientos técnicos.
-            Gestiona pedidos por WhatsApp, acepta pagos y haz crecer tu negocio.
+            Crea tu tienda online sin conocimientos técnicos. Gestiona pedidos por WhatsApp y haz crecer tu negocio.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.45, ease: 'easeOut' }}
-            className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="mt-5 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
           >
             <Button
               size="lg"
-              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 h-12 sm:h-13 text-base font-semibold shadow-lg shadow-amber-500/30"
+              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white rounded-full px-6 sm:px-8 h-11 sm:h-13 text-sm sm:text-base font-semibold shadow-lg shadow-amber-500/30"
               onClick={() => router.push('/registro')}
             >
               Crear Tienda
-              <ArrowRight className="ml-2 w-5 h-5" />
+              <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-13 text-base font-semibold border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+              className="w-full sm:w-auto rounded-full px-6 sm:px-8 h-11 sm:h-13 text-sm sm:text-base font-semibold border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
               onClick={() => router.push('/demo')}
             >
               Ver Demo
@@ -793,12 +792,33 @@ export default function SaasLanding() {
             </Button>
           </motion.div>
 
-          {/* WhatsApp CTA */}
+          {/* Stats row - compact on mobile, horizontal on sm+ */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="flex flex-row items-center justify-center gap-5 sm:gap-10 text-center mt-6 sm:mt-10"
+          >
+            {[
+              { value: '500+', label: 'Tiendas Activas' },
+              { value: '98%', label: 'Clientes Satisfechos' },
+              { value: '24/7', label: 'Soporte' },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="text-lg sm:text-2xl font-bold text-white">
+                  <AnimatedCounter target={stat.value} />
+                </p>
+                <p className="text-[11px] sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* WhatsApp CTA - hidden on mobile, shown sm+ */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-4 sm:mt-6"
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="hidden sm:block mt-6"
           >
             <a
               href={whatsappUrl}
@@ -810,67 +830,38 @@ export default function SaasLanding() {
               ¿Tienes dudas? Escríbenos por WhatsApp
             </a>
           </motion.div>
-
-          {/* Stats row - visible on all screens */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.75 }}
-            className="flex lg:flex items-center justify-center gap-6 lg:gap-10 text-center pt-6 sm:pt-0 border-t border-white/10 sm:border-0 mt-8 sm:mt-12"
-          >
-            {[
-              { value: '10+', label: 'Tiendas Activas' },
-              { value: '99.9%', label: 'Uptime' },
-              { value: '24/7', label: 'Soporte' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-xl sm:text-2xl font-bold text-white">
-                  <AnimatedCounter target={stat.value} />
-                </p>
-                <p className="text-sm text-neutral-400 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
         </div>
 
         {/* Bottom fade to white */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-white dark:from-neutral-900 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-32 bg-gradient-to-t from-white dark:from-neutral-900 to-transparent" />
 
-        {/* Top nav bar (mobile + desktop) */}
+        {/* Top nav bar - mobile-first compact */}
         <div className="absolute top-0 left-0 right-0 z-10 bg-black/20 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 p-3 sm:p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-4 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-9 w-9"
                 onClick={() => setMobileMenuOpen(true)}
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
               </Button>
               <span className="hidden sm:inline text-white font-semibold text-sm tracking-tight">Tienda Online Oficial</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               <ThemeToggle size="sm" className="!text-white hover:!bg-white/20 md:hidden" />
               <Button
                 variant="ghost"
-                className="text-white hover:bg-white/20 text-sm font-medium gap-1.5"
+                className="text-white hover:bg-white/20 text-xs sm:text-sm font-medium gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
                 onClick={() => router.push('/login')}
               >
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Iniciar Sesión</span>
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
-                className="hidden sm:inline-flex text-white hover:bg-white/20"
-                onClick={() => router.push('/registro')}
-              >
-                <UserPlus className="w-5 h-5" />
-              </Button>
-              <Button
                 size="sm"
-                className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5 py-2 sm:px-6 font-semibold"
+                className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold"
                 onClick={() => router.push('/registro')}
               >
                 Crear Tienda
