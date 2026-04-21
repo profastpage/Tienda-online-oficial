@@ -685,14 +685,14 @@ export default function SaasLanding() {
                   ))}
                   <ThemeToggle size="sm" className="!text-neutral-300 hover:!text-white hover:!bg-white/10" />
                 </nav>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="text-neutral-300 hover:text-white"
+                    className="text-neutral-300 hover:text-white text-sm font-medium gap-1.5"
                     onClick={() => router.push('/login')}
                   >
                     <LogIn className="w-4 h-4" />
+                    Iniciar Sesión
                   </Button>
                   <Button
                     variant="ghost"
@@ -854,11 +854,11 @@ export default function SaasLanding() {
               <ThemeToggle size="sm" className="!text-white hover:!bg-white/20 md:hidden" />
               <Button
                 variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 text-sm font-medium gap-1.5"
                 onClick={() => router.push('/login')}
               >
-                <LogIn className="w-5 h-5" />
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">Iniciar Sesión</span>
               </Button>
               <Button
                 variant="ghost"
