@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/api-auth'
 import { verifyToken, signToken } from '@/lib/auth'
+import { validateRequest, superAdminActionsSchema } from '@/lib/validations'
 
 // Force dynamic rendering - prevent Next.js from caching this API response
 export const dynamic = 'force-dynamic'
@@ -527,6 +528,13 @@ export async function PATCH(request: Request) {
 
     const body = await request.json()
     const { action } = body
+
+    // Validate action with Zod
+    const validation = validateRequest(superAdminActionsSchema, { action, storeId: body.storeId })
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+
     const db = await getDb()
 
     // ── Toggle Store Active/Suspended ──

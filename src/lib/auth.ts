@@ -130,6 +130,31 @@ export async function rateLimit(
   }
 }
 
+// Sign a password-reset JWT token (15-minute expiry)
+export async function signPasswordResetToken(email: string, userId: string, storeId: string): Promise<string> {
+  return new SignJWT({ email, userId, storeId, type: 'password-reset' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('15m')
+    .setIssuedAt()
+    .sign(getJwtSecret())
+}
+
+// Verify a password-reset JWT token
+export async function verifyPasswordResetToken(token: string): Promise<{ email: string; userId: string; storeId: string; type: string } | null> {
+  try {
+    const { payload } = await jwtVerify(token, getJwtSecret())
+    if (payload.type !== 'password-reset') return null
+    return {
+      email: payload.email as string,
+      userId: payload.userId as string,
+      storeId: payload.storeId as string,
+      type: payload.type as string,
+    }
+  } catch {
+    return null
+  }
+}
+
 // Get client IP from request
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')

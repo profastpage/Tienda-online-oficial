@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { ShoppingBag, Eye, EyeOff, ArrowRight, Store, User, Loader2, ShieldCheck } from 'lucide-react'
+import { ShoppingBag, Eye, EyeOff, ArrowRight, Store, User, Loader2, ShieldCheck, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,11 +19,27 @@ function AuthPageContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [regRole, setRegRole] = useState<'customer' | 'admin'>('customer')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [showResetPassword, setShowResetPassword] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [resetToken, setResetToken] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetDone, setResetDone] = useState(false)
   const { toast } = useToast()
   const { setUser } = useAuthStore()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectUrl = searchParams.get('redirect')
+
+  // Check for reset token in URL params
+  const urlResetToken = searchParams.get('reset')
+  if (urlResetToken && !showResetPassword && !resetToken) {
+    setResetToken(urlResetToken)
+    setShowResetPassword(true)
+    setShowForgotPassword(false)
+  }
 
   // 2FA state
   const [pending2FA, setPending2FA] = useState<{
@@ -196,6 +212,232 @@ function AuthPageContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setForgotLoading(true)
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error)
+      }
+      setForgotSent(true)
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al enviar solicitud', variant: 'destructive' })
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setResetLoading(true)
+    try {
+      const form = e.currentTarget
+      const newPassword = (form.elements.namedItem('resetNewPassword') as HTMLInputElement).value
+      const confirmPassword = (form.elements.namedItem('resetConfirmPassword') as HTMLInputElement).value
+
+      if (newPassword !== confirmPassword) {
+        throw new Error('Las contraseñas no coinciden')
+      }
+
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, newPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      setResetDone(true)
+      toast({ title: '¡Contraseña actualizada!', description: 'Ya puedes iniciar sesión con tu nueva contraseña.' })
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al restablecer la contraseña', variant: 'destructive' })
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  const backToLogin = () => {
+    setShowForgotPassword(false)
+    setShowResetPassword(false)
+    setForgotSent(false)
+    setResetDone(false)
+    setForgotEmail('')
+    setResetToken('')
+    // Clean URL param without reload
+    window.history.replaceState({}, '', '/login')
+  }
+
+  // Forgot Password Screen
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
+        <header className="bg-white dark:bg-neutral-900 border-b dark:border-neutral-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <a href="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-neutral-900 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">URBAN STYLE</span>
+            </a>
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              <Button variant="ghost" onClick={() => router.push('/demo')}>← Volver a la tienda</Button>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+            <Card>
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-2xl flex items-center justify-center mb-4">
+                  {forgotSent ? <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" /> : <KeyRound className="w-8 h-8 text-neutral-900 dark:text-neutral-100" />}
+                </div>
+                <CardTitle className="text-2xl">Recuperar Contraseña</CardTitle>
+                <CardDescription className="text-base mt-1">
+                  {forgotSent ? 'Revisa tu bandeja de entrada' : 'Ingresa tu email para recibir un enlace de recuperación'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {forgotSent ? (
+                  <>
+                    <div className="text-center space-y-3">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Enviamos un enlace a <span className="font-semibold text-neutral-900 dark:text-neutral-100">{forgotEmail}</span>
+                      </p>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                        Si no lo encuentras, revisa tu carpeta de spam. El enlace expira en 15 minutos.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <Button className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 rounded-xl font-semibold" onClick={backToLogin}>
+                        <ArrowLeft className="w-4 h-4 mr-1" /> Volver al inicio de sesión
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => { setForgotSent(false); setForgotEmail('') }}
+                        className="w-full text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 underline underline-offset-4 transition-colors"
+                      >
+                        Enviar a otro email
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="forgotEmail">Email</Label>
+                        <Input id="forgotEmail" name="forgotEmail" type="email" placeholder="tu@email.com" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+                      </div>
+                      <Button type="submit" className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 rounded-xl font-semibold" disabled={forgotLoading || !forgotEmail}>
+                        {forgotLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<>
+                          Enviar enlace <ArrowRight className="w-4 h-4 ml-1" />
+                        </>)}
+                      </Button>
+                    </form>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={backToLogin}
+                        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 underline underline-offset-4 transition-colors"
+                      >
+                        <ArrowLeft className="w-3 h-3 inline mr-1" /> Volver al inicio de sesión
+                      </button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </main>
+      </div>
+    )
+  }
+
+  // Reset Password Screen
+  if (showResetPassword) {
+    return (
+      <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
+        <header className="bg-white dark:bg-neutral-900 border-b dark:border-neutral-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <a href="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-neutral-900 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">URBAN STYLE</span>
+            </a>
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              <Button variant="ghost" onClick={() => router.push('/demo')}>← Volver a la tienda</Button>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+            <Card>
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-2xl flex items-center justify-center mb-4">
+                  {resetDone ? <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" /> : <KeyRound className="w-8 h-8 text-neutral-900 dark:text-neutral-100" />}
+                </div>
+                <CardTitle className="text-2xl">Nueva Contraseña</CardTitle>
+                <CardDescription className="text-base mt-1">
+                  {resetDone ? 'Tu contraseña ha sido actualizada' : 'Ingresa tu nueva contraseña'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {resetDone ? (
+                  <>
+                    <div className="text-center space-y-3">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Tu contraseña se ha actualizado correctamente.
+                      </p>
+                    </div>
+                    <Button className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 rounded-xl font-semibold" onClick={backToLogin}>
+                      Ir a iniciar sesión <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <form onSubmit={handleResetPassword} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="resetNewPassword">Nueva Contraseña</Label>
+                        <Input id="resetNewPassword" name="resetNewPassword" type="password" placeholder="••••••••" required minLength={6} />
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500">Mínimo 6 caracteres</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="resetConfirmPassword">Confirmar Contraseña</Label>
+                        <Input id="resetConfirmPassword" name="resetConfirmPassword" type="password" placeholder="••••••••" required minLength={6} />
+                      </div>
+                      <Button type="submit" className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 rounded-xl font-semibold" disabled={resetLoading}>
+                        {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<>
+                          Restablecer contraseña <ArrowRight className="w-4 h-4 ml-1" />
+                        </>)}
+                      </Button>
+                    </form>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setShowResetPassword(false); setShowForgotPassword(true); setResetToken('') }}
+                        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 underline underline-offset-4 transition-colors"
+                      >
+                        Solicitar un nuevo enlace
+                      </button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </main>
+      </div>
+    )
   }
 
   // 2FA Verification Screen
@@ -380,6 +622,15 @@ function AuthPageContent() {
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                    </div>
+                    <div className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 underline underline-offset-4 transition-colors"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
                     </div>
                     <Button type="submit" className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 rounded-xl font-semibold" disabled={loading}>
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>

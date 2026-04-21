@@ -225,7 +225,7 @@ function SwipeableProductImage({ product, onClick }: { product: Product; onClick
             className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold h-8 w-8 p-0 shrink-0"
             onClick={(e) => {
               e.stopPropagation()
-              const url = `https://wa.me/${typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414') : ''}?text=${encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${product.name}\n💰 S/ ${product.price.toFixed(2)}`)}`
+              const url = `https://wa.me/${typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '') : ''}?text=${encodeURIComponent(`¡Hola! Me interesa el producto:\n📦 ${product.name}\n💰 S/ ${product.price.toFixed(2)}`)}`
               window.open(url, '_blank')
             }}
           >
@@ -441,7 +441,7 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
   const [currentHero, setCurrentHero] = useState(0)
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [selectedImageView, setSelectedImageView] = useState(0)
-  const [storeWhatsApp, setStoreWhatsApp] = useState(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51933667414')
+  const [storeWhatsApp, setStoreWhatsApp] = useState(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '')
   const [storeName, setStoreName] = useState('')
   const [storeLogo, setStoreLogo] = useState('')
   const [storeDescription, setStoreDescription] = useState('')

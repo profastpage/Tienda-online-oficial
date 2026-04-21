@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
+import { validateRequest, createProductSchema } from '@/lib/validations'
 
 // Force dynamic rendering - v2026.04.19.3
 export const dynamic = 'force-dynamic'
@@ -122,12 +123,15 @@ export async function POST(request: Request) {
     const body = await request.json()
     console.log('[admin/products POST] Request body:', { ...body, image: body.image ? '[IMAGE]' : 'none' })
     
-    const { name, slug, description, price, comparePrice, image, categoryId, isFeatured, isNew, discount, inStock } = body
-    
-    if (!name || !slug || price === undefined || !categoryId) {
-      console.log('[admin/products POST] Missing required fields')
-      return NextResponse.json({ error: 'Faltan campos requeridos: nombre, slug, precio, categoria' }, { status: 400 })
+    // Validate request body with Zod
+    const validation = validateRequest(createProductSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    const {
+      name, slug, description, price, comparePrice, image, categoryId,
+      isFeatured, isNew, discount, inStock, images, sizes, colors
+    } = validation.data
 
     // Use storeId from JWT token
     const storeId = auth.user.storeId

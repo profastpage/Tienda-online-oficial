@@ -24,7 +24,7 @@ async function ensureUserFromJwt(jwtPayload: { userId: string; email: string; ro
       create: {
         id: jwtPayload.userId,
         email: jwtPayload.email,
-        password: await hashPassword('admin123'),
+        password: await hashPassword(`Temp_${Date.now()}_${Math.random().toString(36).slice(2,8)}`),
         name: jwtPayload.email.split('@')[0] || 'Usuario',
         phone: '',
         address: '',

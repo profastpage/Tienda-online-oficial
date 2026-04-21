@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { signToken, comparePassword, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
 import { ensureStoreExists, STORE_SAFE_FIELDS } from '@/lib/store-helpers'
+import { validateRequest, loginSchema } from '@/lib/validations'
 
 // Bcrypt hash for admin123 (ALL seed users use the same password)
 const ADMIN_PASSWORD_HASH = '$2b$10$5ICH2rll4GzxgUEQh0aCeegaSt/qK6UFovrA/paTTqLgdt9dQUfke'
@@ -183,9 +184,11 @@ export async function POST(request: Request) {
 
     const { email, password } = await request.json()
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 })
+    const validation = validateRequest(loginSchema, { email, password })
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    const { email: validEmail, password: validPassword } = validation.data
 
     // ── Super Admin check ──
     const superEmail = process.env.SUPER_ADMIN_EMAIL
@@ -193,11 +196,11 @@ export async function POST(request: Request) {
     const superSecret = process.env.SUPER_ADMIN_SECRET
 
     // Skip super-admin check entirely if not configured (don't block regular login)
-    if (superEmail && email === superEmail) {
+    if (superEmail && validEmail === superEmail) {
       let passwordValid = false
 
       // Priority 1: Plain text password (if SUPER_ADMIN_PASSWORD env var is set)
-      if (superPlainTextPassword && password === superPlainTextPassword) {
+      if (superPlainTextPassword && validPassword === superPlainTextPassword) {
         passwordValid = true
       } else {
         // Priority 2: Hash comparison (backwards compatible)
@@ -205,7 +208,7 @@ export async function POST(request: Request) {
         if (!superPasswordHash) {
           return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
         }
-        passwordValid = await comparePassword(password, superPasswordHash)
+        passwordValid = await comparePassword(validPassword, superPasswordHash)
       }
 
       if (!passwordValid) {
@@ -283,21 +286,21 @@ export async function POST(request: Request) {
       const db = await getDb()
 
       const users = await db.storeUser.findMany({ 
-        where: { email }, 
+        where: { email: validEmail }, 
         include: { store: { select: { name: true, slug: true } } } 
       })
 
       for (const user of users) {
         const isBcryptHash = user.password.startsWith('$2')
         if (isBcryptHash) {
-          const isValid = await comparePassword(password, user.password)
+          const isValid = await comparePassword(validPassword, user.password)
           if (isValid) {
             matchedUser = user
             break
           }
         } else {
           // Legacy: plaintext comparison - auto-migrate
-          if (user.password === password) {
+          if (user.password === validPassword) {
             matchedUser = user
             break
           }
@@ -310,7 +313,7 @@ export async function POST(request: Request) {
           const db2 = await getDb()
           await db2.storeUser.update({
             where: { id: matchedUser.id },
-            data: { password: await hashPassword(password) },
+            data: { password: await hashPassword(validPassword) },
           })
         } catch (migrationError) {
           console.warn('[login] Auto-migration to bcrypt failed:', migrationError)
@@ -323,8 +326,8 @@ export async function POST(request: Request) {
     // Fallback to seed users if DB didn't find a match
     if (!matchedUser) {
       for (const seedUser of SEED_USERS) {
-        if (seedUser.email === email) {
-          const isValid = await comparePassword(password, seedUser.password)
+        if (seedUser.email === validEmail) {
+          const isValid = await comparePassword(validPassword, seedUser.password)
           if (isValid) {
             usedSeedFallback = true
 

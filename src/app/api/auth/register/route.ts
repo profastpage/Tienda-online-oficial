@@ -2,6 +2,9 @@ import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { signToken, hashPassword, rateLimit, getClientIp } from '@/lib/auth'
 import { ensureStoreExists, findStoreBySlug } from '@/lib/store-helpers'
+import { sendEmail } from '@/lib/email'
+import { welcomeEmail } from '@/lib/email-templates'
+import { validateRequest, registerSchema } from '@/lib/validations'
 
 // Default seed store for fallback when DB is empty
 const SEED_STORE = {
@@ -25,19 +28,11 @@ export async function POST(request: Request) {
 
     const { email, password, name, phone, address, role, storeName, plan } = await request.json()
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: 'Email, contraseña y nombre son requeridos' }, { status: 400 })
+    const validation = validateRequest(registerSchema, { email, password, name, phone, role, storeName })
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
-
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
-    }
+    const { email: validEmail, password: validPassword, name: validName, phone: validPhone, role: validRole, storeName: validStoreName } = validation.data
 
     let storeId = ''
     let storeNameStr = ''
@@ -46,12 +41,9 @@ export async function POST(request: Request) {
     try {
       const db = await getDb()
 
-      if (role === 'admin') {
-        if (!storeName) {
-          return NextResponse.json({ error: 'Nombre de tienda requerido' }, { status: 400 })
-        }
-        storeNameStr = storeName
-        let slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      if (validRole === 'admin') {
+        storeNameStr = validStoreName || ''
+        let slug = (validStoreName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
         // Ensure slug is unique (append random suffix if needed)
         const existingStore = await findStoreBySlug(db, slug)
@@ -68,9 +60,9 @@ export async function POST(request: Request) {
         try {
           await db.$executeRaw`
             INSERT INTO Store (id, name, slug, whatsappNumber, address, description, logo, isActive, plan, createdAt, updatedAt)
-            VALUES (${storeId}, ${storeName}, ${slug}, ${phone || ''}, ${address || ''}, '', '', 1, ${plan || 'basico'}, ${now}, ${now})
+            VALUES (${storeId}, ${validStoreName || ''}, ${slug}, ${validPhone || ''}, ${address || ''}, '', '', 1, ${plan || 'basico'}, ${now}, ${now})
           `
-          console.log(`[register] Created store ${storeId} (${storeName})`)
+          console.log(`[register] Created store ${storeId} (${validStoreName})`)
         } catch (storeError) {
           console.error('[register] Store creation failed:', storeError instanceof Error ? storeError.message : storeError)
           return NextResponse.json(
@@ -107,13 +99,13 @@ export async function POST(request: Request) {
 
       // Check if user already exists using raw SQL
       const existingUsers = await db.$queryRaw<{ id: string }[]>`
-        SELECT id FROM StoreUser WHERE email = ${email} AND storeId = ${storeId}
+        SELECT id FROM StoreUser WHERE email = ${validEmail} AND storeId = ${storeId}
       `
       if (existingUsers && existingUsers.length > 0) {
         return NextResponse.json({ error: 'Este email ya está registrado' }, { status: 409 })
       }
 
-      const hashedPassword = await hashPassword(password)
+      const hashedPassword = await hashPassword(validPassword)
 
       // Create user using raw SQL
       const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -121,24 +113,24 @@ export async function POST(request: Request) {
       
       await db.$executeRaw`
         INSERT INTO StoreUser (id, email, password, name, phone, address, role, storeId, avatar, createdAt, updatedAt)
-        VALUES (${userId}, ${email}, ${hashedPassword}, ${name}, ${phone || ''}, ${address || ''}, ${role}, ${storeId}, '', ${userNow}, ${userNow})
+        VALUES (${userId}, ${validEmail}, ${hashedPassword}, ${validName}, ${validPhone || ''}, ${address || ''}, ${validRole}, ${storeId}, '', ${userNow}, ${userNow})
       `
 
       // Generate JWT token
       const token = await signToken({
         userId: userId,
-        email: email,
-        role: role,
+        email: validEmail,
+        role: validRole,
         storeId: storeId,
       })
 
       const response = NextResponse.json({
         id: userId,
-        email: email,
-        name: name,
-        phone: phone || '',
+        email: validEmail,
+        name: validName,
+        phone: validPhone || '',
         address: address || '',
-        role: role,
+        role: validRole,
         storeId: storeId,
         storeName: storeNameStr,
         storeSlug: storeSlugStr,
@@ -152,6 +144,12 @@ export async function POST(request: Request) {
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7,
         path: '/',
+      })
+
+      // Send welcome email (fire and forget — don't block the response)
+      const welcome = welcomeEmail(name, storeNameStr)
+      sendEmail({ to: email, subject: welcome.subject, html: welcome.html }).catch((err) => {
+        console.error('[register] Failed to send welcome email:', err)
       })
 
       return response
