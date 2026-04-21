@@ -30,6 +30,7 @@ const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/logout',
+  '/api/auth/me',
   '/api/auth/google',
   '/api/auth/signin',
   '/api/auth/callback',
@@ -174,7 +175,7 @@ export function middleware(request: NextRequest) {
 
   // Super-admin API auth is handled by the route handler itself (JWT + secret)
   // Do NOT block here — middleware edge runtime may not read cookies correctly
-  if (pathname.startsWith('/api/super-admin/auth')) {
+  if (pathname.startsWith('/api/super-admin')) {
     return NextResponse.next()
   }
 
@@ -195,7 +196,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Protect customer routes
-  if (pathname.startsWith('/api/customer/') && pathname !== '/api/customer/checkout') {
+  if (pathname.startsWith('/api/customer/') && pathname !== '/api/customer/checkout' && pathname !== '/api/customer/profile') {
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
     const cookieToken = request.cookies.get('auth-token')?.value

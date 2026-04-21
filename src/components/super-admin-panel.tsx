@@ -137,16 +137,27 @@ export default function SuperAdminPanel() {
   const [copied, setCopied] = useState<string | null>(null)
 
   // ═══ Auth ═══
+  // Helper: call /api/auth/me with BOTH cookie AND Authorization header
+  const fetchAuthMe = useCallback(async (extraHeaders: Record<string, string> = {}): Promise<Response> => {
+    const t = extraHeaders['Authorization'] || (localStorage.getItem('auth-token') ? `Bearer ${localStorage.getItem('auth-token')}` : '')
+    return fetch('/api/auth/me', {
+      credentials: 'include',
+      headers: { ...extraHeaders, ...(t ? { Authorization: t } : {}) },
+    })
+  }, [])
+
   const checkAuth = useCallback(async () => {
     try {
       const stored = localStorage.getItem('user')
       const storedToken = localStorage.getItem('auth-token')
+      const authHeaders = storedToken ? { Authorization: `Bearer ${storedToken}` } : {}
+
       if (stored) {
         const user = JSON.parse(stored)
         if (user.role === 'super-admin') {
           setAuthed(true); setToken(storedToken)
-          // Verify token is still valid via API
-          const meRes = await fetch('/api/auth/me', { credentials: 'include' })
+          // Verify token is still valid via API (send BOTH cookie + Authorization header)
+          const meRes = await fetchAuthMe(authHeaders)
           if (meRes.ok) {
             const userData = await meRes.json()
             if (userData?.role === 'super-admin') {
@@ -163,8 +174,8 @@ export default function SuperAdminPanel() {
           localStorage.removeItem('user'); localStorage.removeItem('auth-token')
         }
       }
-      // No valid localStorage — try cookies via /api/auth/me
-      const meRes = await fetch('/api/auth/me', { credentials: 'include' })
+      // No valid localStorage — try cookies + header via /api/auth/me
+      const meRes = await fetchAuthMe()
       if (!meRes.ok) { router.push('/login'); return }
       const userData = await meRes.json()
       if (userData?.role === 'super-admin') {
@@ -178,7 +189,7 @@ export default function SuperAdminPanel() {
       console.error('[super-admin] Auth check error:', err)
       router.push('/login')
     }
-  }, [router])
+  }, [router, fetchAuthMe])
 
   useEffect(() => { checkAuth() }, [checkAuth])
 
@@ -220,7 +231,7 @@ export default function SuperAdminPanel() {
         // Auth expired — try to re-auth via cookies before redirecting
         console.warn('[super-admin] 401 from API, attempting cookie re-auth...')
         try {
-          const meRes = await fetch('/api/auth/me', { credentials: 'include' })
+          const meRes = await fetchAuthMe()
           if (meRes.ok) {
             const meData = await meRes.json()
             if (meData?.role === 'super-admin' && meData.token) {
