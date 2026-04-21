@@ -29,8 +29,14 @@ export async function GET(request: Request) {
         address: string
         plan: string
         isActive: number
+        primaryColor: string
+        secondaryColor: string
+        accentColor: string
+        fontFamily: string
+        customCSS: string
+        favicon: string
         createdAt: Date
-      }[]>`SELECT id, name, slug, logo, description, whatsappNumber, address, plan, isActive, createdAt FROM Store WHERE id = ${storeId}`
+      }[]>`SELECT id, name, slug, logo, description, whatsappNumber, address, plan, isActive, primaryColor, secondaryColor, accentColor, fontFamily, customCSS, favicon, createdAt FROM Store WHERE id = ${storeId}`
       store = stores[0] || null
     }
     
@@ -46,8 +52,14 @@ export async function GET(request: Request) {
         address: string
         plan: string
         isActive: number
+        primaryColor: string
+        secondaryColor: string
+        accentColor: string
+        fontFamily: string
+        customCSS: string
+        favicon: string
         createdAt: Date
-      }[]>`SELECT id, name, slug, logo, description, whatsappNumber, address, plan, isActive, createdAt FROM Store WHERE slug = ${slug}`
+      }[]>`SELECT id, name, slug, logo, description, whatsappNumber, address, plan, isActive, primaryColor, secondaryColor, accentColor, fontFamily, customCSS, favicon, createdAt FROM Store WHERE slug = ${slug}`
       store = stores[0] || null
     }
 
@@ -76,6 +88,12 @@ export async function GET(request: Request) {
             address: createdStore.address,
             plan: createdStore.plan,
             isActive: createdStore.isActive ? 1 : 0,
+            primaryColor: createdStore.primaryColor,
+            secondaryColor: createdStore.secondaryColor,
+            accentColor: createdStore.accentColor,
+            fontFamily: createdStore.fontFamily,
+            customCSS: createdStore.customCSS,
+            favicon: createdStore.favicon,
             createdAt: createdStore.createdAt,
           }
         }
@@ -98,6 +116,12 @@ export async function GET(request: Request) {
           address: createdStore.address,
           plan: createdStore.plan,
           isActive: createdStore.isActive ? 1 : 0,
+          primaryColor: createdStore.primaryColor,
+          secondaryColor: createdStore.secondaryColor,
+          accentColor: createdStore.accentColor,
+          fontFamily: createdStore.fontFamily,
+          customCSS: createdStore.customCSS,
+          favicon: createdStore.favicon,
           createdAt: createdStore.createdAt,
         }
       }

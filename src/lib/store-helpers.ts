@@ -9,7 +9,7 @@ export const SEED_STORES: Record<string, { name: string; slug: string }> = {
 }
 
 // Safe fields that can be exposed in API responses without leaking sensitive data
-export const STORE_SAFE_FIELDS = ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt'] as const
+export const STORE_SAFE_FIELDS = ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'customDomain', 'domainVerified', 'domainVerifiedAt', 'primaryColor', 'secondaryColor', 'accentColor', 'fontFamily', 'customCSS', 'favicon', 'createdAt', 'updatedAt'] as const
 
 export type StoreData = {
   id: string
@@ -21,6 +21,17 @@ export type StoreData = {
   description: string
   isActive: boolean
   plan: string
+  customDomain: string | null
+  domainVerified: boolean
+  domainVerifiedAt: Date | null
+  subscriptionExpiresAt: Date | null
+  trialDays: number
+  primaryColor: string
+  secondaryColor: string
+  accentColor: string
+  fontFamily: string
+  customCSS: string
+  favicon: string
   createdAt: Date
   updatedAt: Date
 }
@@ -34,7 +45,7 @@ export async function findStoreById(
 ): Promise<StoreData | null> {
   try {
     const stores = await db.$queryRaw<StoreData[]>`
-      SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, createdAt, updatedAt
+      SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, subscriptionExpiresAt, trialDays, customDomain, domainVerified, domainVerifiedAt, primaryColor, secondaryColor, accentColor, fontFamily, customCSS, favicon, createdAt, updatedAt
       FROM Store
       WHERE id = ${storeId}
     `
@@ -54,13 +65,33 @@ export async function findStoreBySlug(
 ): Promise<StoreData | null> {
   try {
     const stores = await db.$queryRaw<StoreData[]>`
-      SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, createdAt, updatedAt
+      SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, subscriptionExpiresAt, trialDays, customDomain, domainVerified, domainVerifiedAt, primaryColor, secondaryColor, accentColor, fontFamily, customCSS, favicon, createdAt, updatedAt
       FROM Store
       WHERE slug = ${slug}
     `
     return stores[0] || null
   } catch (error) {
     console.error('[store-helpers] findStoreBySlug failed:', error instanceof Error ? error.message : error)
+    return null
+  }
+}
+
+/**
+ * Find a store by custom domain using raw SQL.
+ */
+export async function findStoreByCustomDomain(
+  db: PrismaClient,
+  domain: string
+): Promise<StoreData | null> {
+  try {
+    const stores = await db.$queryRaw<StoreData[]>`
+      SELECT id, name, slug, logo, whatsappNumber, address, description, isActive, plan, subscriptionExpiresAt, trialDays, customDomain, domainVerified, domainVerifiedAt, primaryColor, secondaryColor, accentColor, fontFamily, customCSS, favicon, createdAt, updatedAt
+      FROM Store
+      WHERE customDomain = ${domain} AND isActive = 1
+    `
+    return stores[0] || null
+  } catch (error) {
+    console.error('[store-helpers] findStoreByCustomDomain failed:', error instanceof Error ? error.message : error)
     return null
   }
 }
@@ -91,6 +122,16 @@ export async function ensureStoreExists(
       INSERT INTO Store (id, name, slug, logo, whatsappNumber, address, description, isActive, plan, createdAt, updatedAt)
       VALUES (${storeId}, ${name}, ${slug}, '', '', '', '', 1, 'basico', ${now}, ${now})
     `
+    // Add customDomain columns if they don't exist yet (schema migration)
+    try {
+      await db.$executeRaw`ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL`
+    } catch { /* column already exists */ }
+    try {
+      await db.$executeRaw`ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0`
+    } catch { /* column already exists */ }
+    try {
+      await db.$executeRaw`ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL`
+    } catch { /* column already exists */ }
     console.log(`[store-helpers] Created store ${storeId} (${name})`)
     return findStoreById(db, storeId)
   } catch (createError) {
@@ -114,6 +155,15 @@ export async function updateStore(
     logo?: string
     isActive?: boolean
     plan?: string
+    customDomain?: string | null
+    domainVerified?: boolean
+    domainVerifiedAt?: Date | string | null
+    primaryColor?: string
+    secondaryColor?: string
+    accentColor?: string
+    fontFamily?: string
+    customCSS?: string
+    favicon?: string
   }
 ): Promise<StoreData | null> {
   try {
@@ -147,6 +197,42 @@ export async function updateStore(
     if (data.plan !== undefined) {
       updates.push('plan = ?')
       values.push(data.plan)
+    }
+    if (data.customDomain !== undefined) {
+      updates.push('customDomain = ?')
+      values.push(data.customDomain)
+    }
+    if (data.domainVerified !== undefined) {
+      updates.push('domainVerified = ?')
+      values.push(data.domainVerified ? 1 : 0)
+    }
+    if (data.domainVerifiedAt !== undefined) {
+      updates.push('domainVerifiedAt = ?')
+      values.push(data.domainVerifiedAt ? new Date(data.domainVerifiedAt).toISOString() : null)
+    }
+    if (data.primaryColor !== undefined) {
+      updates.push('primaryColor = ?')
+      values.push(data.primaryColor)
+    }
+    if (data.secondaryColor !== undefined) {
+      updates.push('secondaryColor = ?')
+      values.push(data.secondaryColor)
+    }
+    if (data.accentColor !== undefined) {
+      updates.push('accentColor = ?')
+      values.push(data.accentColor)
+    }
+    if (data.fontFamily !== undefined) {
+      updates.push('fontFamily = ?')
+      values.push(data.fontFamily)
+    }
+    if (data.customCSS !== undefined) {
+      updates.push('customCSS = ?')
+      values.push(data.customCSS)
+    }
+    if (data.favicon !== undefined) {
+      updates.push('favicon = ?')
+      values.push(data.favicon)
     }
     
     if (updates.length === 0) {

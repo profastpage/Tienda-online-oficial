@@ -4,6 +4,20 @@ import type { NextRequest } from 'next/server'
 // Simple in-memory rate limiter for middleware
 const rateLimiter = new Map<string, { count: number; resetTime: number }>()
 
+// Custom domain → slug cache (avoid calling lookup API on every request)
+const customDomainCache = new Map<string, { slug: string; ts: number }>()
+const DOMAIN_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+// Known app domains that should NOT be treated as custom domains
+const APP_DOMAINS = [
+  process.env.NEXT_PUBLIC_APP_URL
+    ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname
+    : null,
+  'localhost',
+  'tiendaonlineoficial.com',
+  'www.tiendaonlineoficial.com',
+].filter(Boolean) as string[]
+
 function checkRateLimit(ip: string, max: number = 60, windowMs: number = 60000): boolean {
   const now = Date.now()
   const record = rateLimiter.get(ip)
@@ -67,8 +81,41 @@ const SUPER_ADMIN_PATHS = [
   '/api/init-db',
 ]
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const hostname = request.headers.get('host')?.split(':')[0] || '' // strip port
+
+  // ═══ CUSTOM DOMAIN HANDLING ═══
+  // If the hostname is NOT a known app domain, check if it's a custom domain
+  if (hostname && !APP_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`))) {
+    // Check in-memory cache first
+    const cached = customDomainCache.get(hostname)
+    if (cached && Date.now() - cached.ts < DOMAIN_CACHE_TTL) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${cached.slug}${pathname === '/' ? '' : pathname}`
+      return NextResponse.rewrite(url)
+    }
+
+    // Look up the domain via internal API
+    try {
+      const lookupUrl = new URL('/api/store/lookup-domain', request.url)
+      lookupUrl.searchParams.set('hostname', hostname)
+      const res = await fetch(lookupUrl.toString(), {
+        headers: { 'x-internal': '1' },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.slug) {
+          customDomainCache.set(hostname, { slug: data.slug, ts: Date.now() })
+          const url = request.nextUrl.clone()
+          url.pathname = `/${data.slug}${pathname === '/' ? '' : pathname}`
+          return NextResponse.rewrite(url)
+        }
+      }
+    } catch {
+      // Lookup failed, fall through to normal handling
+    }
+  }
 
   // ═══ Protect authenticated PAGE routes ═══
   // Redirect to login if no auth token present
@@ -213,10 +260,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/api/:path*', 
-    '/admin/:path*', 
-    '/cliente/:path*', 
-    '/super-admin/:path*',
-    '/:slug/editordetienda',
+    '/:path*',  // Match all paths for custom domain support + existing route protection
   ],
 }

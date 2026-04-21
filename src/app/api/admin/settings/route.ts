@@ -62,7 +62,7 @@ export async function PUT(request: Request) {
     // Ensure store exists before updating
     await ensureStoreExists(db, storeId)
 
-    const { name, description, whatsappNumber, address, logo } = body
+    const { name, description, whatsappNumber, address, logo, customDomain, primaryColor, secondaryColor, accentColor, fontFamily, customCSS, favicon } = body
 
     const updateData: {
       name?: string
@@ -70,6 +70,13 @@ export async function PUT(request: Request) {
       whatsappNumber?: string
       address?: string
       logo?: string
+      customDomain?: string | null
+      primaryColor?: string
+      secondaryColor?: string
+      accentColor?: string
+      fontFamily?: string
+      customCSS?: string
+      favicon?: string
     } = {}
     
     if (name) updateData.name = name
@@ -77,6 +84,13 @@ export async function PUT(request: Request) {
     if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber
     if (address !== undefined) updateData.address = address
     if (logo !== undefined) updateData.logo = logo
+    if (customDomain !== undefined) updateData.customDomain = customDomain
+    if (primaryColor !== undefined) updateData.primaryColor = primaryColor
+    if (secondaryColor !== undefined) updateData.secondaryColor = secondaryColor
+    if (accentColor !== undefined) updateData.accentColor = accentColor
+    if (fontFamily !== undefined) updateData.fontFamily = fontFamily
+    if (customCSS !== undefined) updateData.customCSS = customCSS
+    if (favicon !== undefined) updateData.favicon = favicon
 
     // Update using the safe helper (uses raw SQL)
     const updatedStore = await updateStore(db, storeId, updateData)

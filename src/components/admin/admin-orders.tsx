@@ -24,6 +24,8 @@ import {
   Mail,
   Hash,
   Layers,
+  Download,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -185,10 +187,13 @@ export function AdminOrders() {
   const [editNotes, setEditNotes] = useState('')
   const [isEditingNotes, setIsEditingNotes] = useState(false)
   const [savingNotes, setSavingNotes] = useState(false)
+  const [exportingCSV, setExportingCSV] = useState(false)
+  const [exportingPDF, setExportingPDF] = useState(false)
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const storeId = user?.storeId || ''
+  const { getAuthHeaders } = useAuthStore()
 
   // Debounced search
   useEffect(() => {
@@ -291,6 +296,63 @@ export function AdminOrders() {
     })
   }
 
+  // ── Export handlers ─────────────────────────────────────────
+  const handleExportCSV = async () => {
+    setExportingCSV(true)
+    try {
+      const params = new URLSearchParams({ storeId, format: 'csv' })
+      if (activeFilter !== 'all') params.set('status', activeFilter)
+      const res = await fetch(`/api/admin/orders/export?${params}`, {
+        headers: { ...getAuthHeaders() },
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        const disposition = res.headers.get('Content-Disposition')
+        const filename = disposition
+          ? disposition.split('filename=')[1]?.replace(/"/g, '')
+          : `pedidos_${new Date().toISOString().slice(0, 10)}.csv`
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch {
+      // silent
+    } finally {
+      setExportingCSV(false)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true)
+    try {
+      const params = new URLSearchParams({ storeId, format: 'pdf' })
+      if (activeFilter !== 'all') params.set('status', activeFilter)
+      const res = await fetch(`/api/admin/orders/export?${params}`, {
+        headers: { ...getAuthHeaders() },
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        const disposition = res.headers.get('Content-Disposition')
+        const filename = disposition
+          ? disposition.split('filename=')[1]?.replace(/"/g, '')
+          : `pedidos_${new Date().toISOString().slice(0, 10)}.pdf`
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch {
+      // silent
+    } finally {
+      setExportingPDF(false)
+    }
+  }
+
   // Statistics
   const totalOrders = orders.length
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0)
@@ -359,21 +421,51 @@ export function AdminOrders() {
             </button>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-          className="h-10 rounded-xl border-neutral-200 text-neutral-600 hover:bg-neutral-50 gap-2 px-4"
-        >
-          {sortOrder === 'desc' ? (
-            <ArrowDown className="w-4 h-4" />
-          ) : (
-            <ArrowUp className="w-4 h-4" />
-          )}
-          <span className="text-xs font-medium">
-            {sortOrder === 'desc' ? 'Más recientes' : 'Más antiguos'}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            disabled={exportingCSV || orders.length === 0}
+            className="h-10 rounded-xl border-neutral-200 text-neutral-600 hover:bg-neutral-50 gap-2 px-3"
+          >
+            {exportingCSV ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span className="text-xs font-medium hidden sm:inline">CSV</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={exportingPDF || orders.length === 0}
+            className="h-10 rounded-xl border-neutral-200 text-neutral-600 hover:bg-neutral-50 gap-2 px-3"
+          >
+            {exportingPDF ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileText className="w-4 h-4" />
+            )}
+            <span className="text-xs font-medium hidden sm:inline">PDF</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+            className="h-10 rounded-xl border-neutral-200 text-neutral-600 hover:bg-neutral-50 gap-2 px-4"
+          >
+            {sortOrder === 'desc' ? (
+              <ArrowDown className="w-4 h-4" />
+            ) : (
+              <ArrowUp className="w-4 h-4" />
+            )}
+            <span className="text-xs font-medium hidden sm:inline">
+              {sortOrder === 'desc' ? 'Más recientes' : 'Más antiguos'}
+            </span>
+          </Button>
+        </div>
       </div>
 
       {/* Statistics bar */}

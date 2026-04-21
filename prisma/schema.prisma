@@ -9,114 +9,123 @@ datasource db {
 }
 
 model Store {
-  id             String   @id @default(cuid())
-  name           String
-  slug           String   @unique
-  logo           String   @default("")
-  whatsappNumber String   @default("")
-  address        String   @default("")
-  description    String   @default("")
-  isActive       Boolean  @default(true)
-  plan           String   @default("basico")
+  id                    String               @id @default(cuid())
+  name                  String
+  slug                  String               @unique
+  logo                  String               @default("")
+  whatsappNumber        String               @default("")
+  address               String               @default("")
+  description           String               @default("")
+  isActive              Boolean              @default(true)
+  plan                  String               @default("basico")
   subscriptionExpiresAt DateTime? // when the current plan expires
-  trialDays      Int      @default(0) // extra trial days granted by super admin
-  users          StoreUser[]
-  categories     Category[]
-  products       Product[]
-  orders         Order[]
-  testimonials   Testimonial[]
-  paymentMethods PaymentMethod[]
-  mercadoPagoPayments MercadoPagoPayment[]
-  coupons        Coupon[]
-  notifications  AdminNotification[]
-  storeContent   StoreContent[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  trialDays             Int                  @default(0) // extra trial days granted by super admin
+  users                 StoreUser[]
+  categories            Category[]
+  products              Product[]
+  orders                Order[]
+  testimonials          Testimonial[]
+  paymentMethods        PaymentMethod[]
+  mercadoPagoPayments   MercadoPagoPayment[]
+  coupons               Coupon[]
+  notifications         AdminNotification[]
+  storeContent          StoreContent[]
+  customDomain          String? // e.g. "www.mitienda.com"
+  domainVerified        Boolean              @default(false)
+  domainVerifiedAt      DateTime?
+  primaryColor          String               @default("#171717")
+  secondaryColor        String               @default("#fafafa")
+  accentColor           String               @default("#171717")
+  fontFamily            String               @default("system-ui")
+  customCSS             String               @default("")
+  favicon               String               @default("")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
 }
 
 model StoreUser {
-  id                String   @id @default(cuid())
-  email             String
-  password          String
-  name              String
-  phone             String   @default("")
-  address           String   @default("")
-  role              String   @default("customer")
-  storeId           String
-  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  orders            Order[]
-  twoFactorSecret   String?
-  twoFactorEnabled  Boolean  @default(false)
-  googleId          String?  @unique
-  avatar            String?  @default("")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  email            String
+  password         String
+  name             String
+  phone            String   @default("")
+  address          String   @default("")
+  role             String   @default("customer")
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders           Order[]
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean  @default(false)
+  googleId         String?  @unique
+  avatar           String?  @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([email, storeId])
   @@index([storeId, role])
 }
 
 model Category {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
   slug      String
-  image     String   @default("")
-  sortOrder Int      @default(0)
+  image     String    @default("")
+  sortOrder Int       @default(0)
   storeId   String
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   products  Product[]
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([storeId])
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String
-  description String   @default("")
-  price       Float
+  id           String   @id @default(cuid())
+  name         String
+  slug         String
+  description  String   @default("")
+  price        Float
   comparePrice Float?
-  image       String   @default("")
-  images      String   @default("[]")
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  storeId     String
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  isFeatured  Boolean  @default(false)
-  isNew       Boolean  @default(false)
-  discount    Int?
-  sizes       String   @default("[]")
-  colors      String   @default("[]")
-  rating      Float    @default(4.5)
-  reviewCount Int      @default(0)
-  inStock     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  image        String   @default("")
+  images       String   @default("[]")
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id])
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  isFeatured   Boolean  @default(false)
+  isNew        Boolean  @default(false)
+  discount     Int?
+  sizes        String   @default("[]")
+  colors       String   @default("[]")
+  rating       Float    @default(4.5)
+  reviewCount  Int      @default(0)
+  inStock      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([slug, storeId])
   @@index([storeId])
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  orderNumber     String      @unique
-  customerName    String
-  customerPhone   String
-  customerAddress String      @default("")
-  status          String      @default("pending")
-  total           Float
-  notes           String      @default("")
-  storeId         String
-  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  userId           String?
-  user             StoreUser?    @relation(fields: [userId], references: [id])
-  paymentMethodId  String?
-  paymentMethod    PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  id                 String              @id @default(cuid())
+  orderNumber        String              @unique
+  customerName       String
+  customerPhone      String
+  customerAddress    String              @default("")
+  status             String              @default("pending")
+  total              Float
+  notes              String              @default("")
+  storeId            String
+  store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId             String?
+  user               StoreUser?          @relation(fields: [userId], references: [id])
+  paymentMethodId    String?
+  paymentMethod      PaymentMethod?      @relation(fields: [paymentMethodId], references: [id])
   mercadoPagoPayment MercadoPagoPayment?
-  items            OrderItem[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  items              OrderItem[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([storeId])
   @@index([storeId, createdAt])
@@ -185,23 +194,23 @@ model Lead {
 }
 
 model MercadoPagoPayment {
-  id              String   @id @default(cuid())
-  orderId         String   @unique
-  order           Order    @relation(fields: [orderId], references: [id])
-  storeId         String
-  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  preferenceId    String
-  paymentId       String?
-  status          String   @default("pending")
-  paymentType     String   @default("")
-  lastFourDigits  String   @default("")
-  installments    Int      @default(1)
-  payerEmail      String   @default("")
-  payerDocType    String   @default("")
-  payerDocNumber  String   @default("")
-  metadata        String   @default("{}")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  orderId        String   @unique
+  order          Order    @relation(fields: [orderId], references: [id])
+  storeId        String
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  preferenceId   String
+  paymentId      String?
+  status         String   @default("pending")
+  paymentType    String   @default("")
+  lastFourDigits String   @default("")
+  installments   Int      @default(1)
+  payerEmail     String   @default("")
+  payerDocType   String   @default("")
+  payerDocNumber String   @default("")
+  metadata       String   @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([storeId])
   @@index([status])
@@ -209,19 +218,19 @@ model MercadoPagoPayment {
 }
 
 model Coupon {
-  id          String   @id @default(cuid())
-  code        String   @unique
+  id          String    @id @default(cuid())
+  code        String    @unique
   storeId     String
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  type        String   @default("percentage") // percentage | fixed
-  value       Float    // e.g. 20 means 20% or S/20 fixed
-  minPurchase Float?  // minimum purchase amount to apply
-  maxUses     Int      @default(0) // 0 = unlimited
-  usedCount   Int      @default(0)
-  isActive    Boolean  @default(true)
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type        String    @default("percentage") // percentage | fixed
+  value       Float // e.g. 20 means 20% or S/20 fixed
+  minPurchase Float? // minimum purchase amount to apply
+  maxUses     Int       @default(0) // 0 = unlimited
+  usedCount   Int       @default(0)
+  isActive    Boolean   @default(true)
   expiresAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([storeId])
   @@index([code])
@@ -229,7 +238,7 @@ model Coupon {
 
 model AdminNotification {
   id        String   @id @default(cuid())
-  storeId   String?  // null = broadcast to all stores
+  storeId   String? // null = broadcast to all stores
   store     Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
   type      String   @default("info") // info | promo | warning | coupon
   title     String
@@ -245,8 +254,8 @@ model StoreContent {
   id        String   @id @default(cuid())
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  section   String   // e.g. "hero", "announcement", "features", "stats", "cta", "footer", "newsletter", "about", "faq"
-  key       String   // e.g. "title", "subtitle", "badge", "image", "items"
+  section   String // e.g. "hero", "announcement", "features", "stats", "cta", "footer", "newsletter", "about", "faq"
+  key       String // e.g. "title", "subtitle", "badge", "image", "items"
   value     String   @default("") // text, URL, or JSON string for arrays
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,9 +266,9 @@ model StoreContent {
 
 model RateLimit {
   id        String   @id @default(cuid())
-  key       String   @unique  // e.g. "chat:1.2.3.4" or "login:1.2.3.4"
+  key       String   @unique // e.g. "chat:1.2.3.4" or "login:1.2.3.4"
   count     Int      @default(1)
-  windowEnd DateTime  // when the window resets
+  windowEnd DateTime // when the window resets
   createdAt DateTime @default(now())
 
   @@index([key])

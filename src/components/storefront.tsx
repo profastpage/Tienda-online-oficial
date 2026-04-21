@@ -416,6 +416,12 @@ interface StoreInfo {
   address: string
   plan: string
   isActive: boolean
+  primaryColor?: string
+  secondaryColor?: string
+  accentColor?: string
+  fontFamily?: string
+  customCSS?: string
+  favicon?: string
 }
 
 interface StoreContentData {
@@ -919,7 +925,18 @@ Gracias!`)
   }, [fabOpen])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background" style={storeInfo?.fontFamily && storeInfo.fontFamily !== 'system-ui' ? { fontFamily: `${storeInfo.fontFamily}, sans-serif` } : undefined}>
+      {/* Inject CSS custom properties for store theming */}
+      {storeInfo && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root {
+            --store-primary: ${storeInfo.primaryColor || '#171717'};
+            --store-secondary: ${storeInfo.secondaryColor || '#fafafa'};
+            --store-accent: ${storeInfo.accentColor || '#171717'};
+            --store-font: ${storeInfo.fontFamily || 'system-ui'};
+          }
+        ` }} />
+      )}
       {/* Header - Fixed at top */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -929,7 +946,7 @@ Gracias!`)
         }`}
       >
         {/* Top bar */}
-        <div className="bg-neutral-900 text-white text-center py-2 text-sm">
+        <div className="text-white text-center py-2 text-sm" style={{ backgroundColor: 'var(--store-primary)' }}>
           {sc('announcement', 'text', 'ENVÍO GRATIS en pedidos mayores a S/199')}
           {sc('announcement', 'subtext', '') && (
             <> · <span className="hidden sm:inline">{sc('announcement', 'subtext', 'Pago seguro contra entrega')}</span></>
@@ -949,7 +966,7 @@ Gracias!`)
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
               <a href="#" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-neutral-900 rounded-xl overflow-hidden flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--store-primary)' }}>
                   {storeLogo ? (
                     <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
                   ) : (
@@ -976,7 +993,7 @@ Gracias!`)
                   className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors relative group"
                 >
                   {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-neutral-900 group-hover:w-full transition-all duration-300" />
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" style={{ backgroundColor: 'var(--store-primary)' }} />
                 </a>
               ))}
             </nav>
@@ -1174,7 +1191,8 @@ Gracias!`)
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Button
                     size="lg"
-                    className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-8 h-12 text-sm font-semibold"
+                    className="text-white rounded-full px-8 h-12 text-sm font-semibold"
+                    style={{ backgroundColor: 'var(--store-primary)' }}
                     onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                   >
                     {sc('hero', 'btnText1', 'Ver Colección')}
@@ -1725,7 +1743,8 @@ Gracias!`)
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="relative bg-neutral-900 rounded-3xl overflow-hidden"
+              className="relative rounded-3xl overflow-hidden text-white"
+              style={{ backgroundColor: 'var(--store-primary)' }}
             >
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div className="p-8 md:p-12 lg:p-16">
@@ -1860,7 +1879,7 @@ Gracias!`)
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
               />
-              <Button className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl px-6 h-12 font-semibold whitespace-nowrap">
+              <Button className="text-white rounded-xl px-6 h-12 font-semibold whitespace-nowrap" style={{ backgroundColor: 'var(--store-primary)' }}>
                 {sc('newsletter', 'btnText', 'Suscribirme')}
               </Button>
             </div>
@@ -1869,7 +1888,7 @@ Gracias!`)
         </section>
 
         {/* Stats */}
-        <section className="py-16 bg-neutral-900 text-white">
+        <section className="py-16 text-white" style={{ backgroundColor: 'var(--store-primary)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               {dynamicStats.map((stat, index) => (
@@ -1907,7 +1926,8 @@ Gracias!`)
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   size="lg"
-                  className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-8 h-12 font-semibold"
+                  className="text-white rounded-full px-8 h-12 font-semibold"
+                  style={{ backgroundColor: 'var(--store-accent)' }}
                   onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   {sc('cta', 'btnText', 'Ver Catálogo Completo')}
@@ -1941,7 +1961,7 @@ Gracias!`)
       </main>
 
       {/* Footer */}
-      <footer className="bg-neutral-900 text-white border-t border-neutral-800">
+      <footer className="text-white border-t border-neutral-800" style={{ backgroundColor: 'var(--store-primary)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             {/* Brand */}

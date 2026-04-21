@@ -5,8 +5,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   try {
     const db = await getDb()
-    const stores = await db.$queryRawUnsafe<{ id: string; name: string; description: string; logo: string; plan: string }[]>(
-      `SELECT id, name, description, logo, plan FROM "Store" WHERE slug = '${slug.replace(/'/g, "''")}' AND isActive = 1`
+    const stores = await db.$queryRawUnsafe<{ id: string; name: string; description: string; logo: string; plan: string; favicon: string }[]>(
+      `SELECT id, name, description, logo, plan, favicon FROM "Store" WHERE slug = '${slug.replace(/'/g, "''")}' AND isActive = 1`
     )
 
     if (stores.length === 0) {
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const storeUrl = `https://tienda-online-oficial.vercel.app/${slug}`
     const ogImage = store.logo || `https://tienda-online-oficial.vercel.app/images/og-default.png`
 
-    return {
+    const metadata: Record<string, unknown> = {
       title: `${store.name} | Tienda Online Oficial`,
       description: store.description || `Visita ${store.name} - Tienda online con los mejores productos. Compra fácil y seguro.`,
       keywords: [store.name, 'tienda online', 'comprar online', slug, 'Perú'],
@@ -43,6 +43,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         canonical: storeUrl,
       },
     }
+
+    // Add custom favicon if set
+    if (store.favicon) {
+      metadata.icons = {
+        icon: store.favicon,
+      }
+    }
+
+    return metadata
   } catch (error) {
     return {
       title: `${slug} | Tienda Online Oficial`,
@@ -51,6 +60,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default function StoreLayout({ children }: { children: React.ReactNode }) {
+export default function StoreLayout({ children, params }: { children: React.ReactNode; params: Promise<{ slug: string }> }) {
+  // Layout is a server component - CSS custom properties are injected by the Storefront client component
   return children
 }

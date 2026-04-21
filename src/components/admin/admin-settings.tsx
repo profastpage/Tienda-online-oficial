@@ -21,6 +21,11 @@ import {
   Phone,
   Link,
   Image,
+  Globe,
+  AlertTriangle,
+  Copy,
+  Info,
+  Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,6 +64,16 @@ interface StoreData {
   address: string
   logo: string
   slug: string
+  plan: string
+  customDomain: string | null
+  domainVerified: boolean
+  domainVerifiedAt: string | null
+  primaryColor?: string
+  secondaryColor?: string
+  accentColor?: string
+  fontFamily?: string
+  customCSS?: string
+  favicon?: string
 }
 
 interface PaymentMethod {
@@ -156,6 +171,12 @@ export function AdminSettings() {
     whatsappNumber: '',
     address: '',
     logo: '',
+    primaryColor: '#171717',
+    secondaryColor: '#fafafa',
+    accentColor: '#171717',
+    fontFamily: 'system-ui',
+    customCSS: '',
+    favicon: '',
   })
 
   const storeId = user?.storeId || ''
@@ -194,6 +215,19 @@ export function AdminSettings() {
   // Store logo toggle state
   const [showLogoUrlInput, setShowLogoUrlInput] = useState(false)
 
+  // Custom domain state
+  const [domainInput, setDomainInput] = useState('')
+  const [domainSaving, setDomainSaving] = useState(false)
+  const [domainSaved, setDomainSaved] = useState(false)
+  const [domainLoading, setDomainLoading] = useState(true)
+  const [domainConfig, setDomainConfig] = useState<{
+    customDomain: string | null
+    domainVerified: boolean
+    domainVerifiedAt: string | null
+    plan: string
+  } | null>(null)
+  const [domainRemoving, setDomainRemoving] = useState(false)
+
   useEffect(() => {
     if (!storeId) return
     async function fetchStore() {
@@ -211,6 +245,12 @@ export function AdminSettings() {
             whatsappNumber: data.whatsappNumber || '',
             address: data.address || '',
             logo: data.logo || '',
+            primaryColor: data.primaryColor || '#171717',
+            secondaryColor: data.secondaryColor || '#fafafa',
+            accentColor: data.accentColor || '#171717',
+            fontFamily: data.fontFamily || 'system-ui',
+            customCSS: data.customCSS || '',
+            favicon: data.favicon || '',
           })
         }
       } catch {
@@ -272,6 +312,103 @@ export function AdminSettings() {
       avatar: user.avatar || '',
     })
   }, [user])
+
+  // Fetch custom domain config
+  useEffect(() => {
+    if (!storeId) return
+    async function fetchDomainConfig() {
+      setDomainLoading(true)
+      try {
+        const { token } = useAuthStore.getState()
+        const res = await fetch(`/api/admin/domain?storeId=${storeId}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setDomainConfig(data)
+          if (data.customDomain) {
+            setDomainInput(data.customDomain)
+          }
+        }
+      } catch {
+        // silent
+      } finally {
+        setDomainLoading(false)
+      }
+    }
+    fetchDomainConfig()
+  }, [storeId])
+
+  const handleSaveDomain = async () => {
+    if (!storeId || !domainInput.trim()) {
+      toast({ title: 'Error', description: 'Ingresa un dominio válido.', variant: 'destructive' })
+      return
+    }
+    setDomainSaving(true)
+    setDomainSaved(false)
+    try {
+      const { token } = useAuthStore.getState()
+      const res = await fetch('/api/admin/domain', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ domain: domainInput.trim(), storeId }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setDomainConfig({
+          customDomain: data.customDomain,
+          domainVerified: data.domainVerified,
+          domainVerifiedAt: null,
+          plan: domainConfig?.plan || store?.plan || 'basico',
+        })
+        setDomainSaved(true)
+        toast({
+          title: 'Dominio configurado',
+          description: data.message || `Dominio ${data.customDomain} guardado correctamente.`,
+        })
+        setTimeout(() => setDomainSaved(false), 4000)
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Error' }))
+        toast({ title: 'Error', description: err.error || 'No se pudo guardar el dominio', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Error de conexión', variant: 'destructive' })
+    } finally {
+      setDomainSaving(false)
+    }
+  }
+
+  const handleRemoveDomain = async () => {
+    if (!storeId) return
+    setDomainRemoving(true)
+    try {
+      const { token } = useAuthStore.getState()
+      const res = await fetch(`/api/admin/domain?storeId=${storeId}`, {
+        method: 'DELETE',
+        ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+      })
+      if (res.ok) {
+        setDomainConfig(prev => prev ? { ...prev, customDomain: null, domainVerified: false, domainVerifiedAt: null } : null)
+        setDomainInput('')
+        setDomainSaved(false)
+        toast({ title: 'Dominio eliminado', description: 'El dominio personalizado ha sido eliminado.' })
+      } else {
+        toast({ title: 'Error', description: 'No se pudo eliminar el dominio', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Error de conexión', variant: 'destructive' })
+    } finally {
+      setDomainRemoving(false)
+    }
+  }
+
+  const handleCopyCname = () => {
+    navigator.clipboard.writeText('cname.tiendaonlineoficial.com')
+    toast({ title: 'Copiado', description: 'CNAME copiado al portapapeles.' })
+  }
 
   const handleSaveProfile = async () => {
     if (!user) return
@@ -928,6 +1065,393 @@ export function AdminSettings() {
           </span>
         )}
       </div>
+
+      {/* ==================== STORE APPEARANCE / THEME SECTION ==================== */}
+      <Separator className="bg-neutral-200" />
+
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center">
+            <Palette className="w-4 h-4 text-pink-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-neutral-900">Apariencia de la Tienda</h2>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Personaliza los colores, fuente y estilo visual de tu tienda
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="rounded-xl border-neutral-200">
+        <CardContent className="p-4 sm:p-6 space-y-6">
+          {/* Color Pickers */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Primary Color */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-neutral-700">Color Principal</Label>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={form.primaryColor}
+                    onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 cursor-pointer p-0.5"
+                  />
+                </div>
+                <Input
+                  value={form.primaryColor}
+                  onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
+                  placeholder="#171717"
+                  className="h-10 rounded-lg text-sm border-neutral-200 font-mono flex-1"
+                  maxLength={7}
+                />
+              </div>
+              <p className="text-xs text-neutral-400">Títulos, botones principales, nav</p>
+            </div>
+
+            {/* Secondary Color */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-neutral-700">Color Secundario</Label>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={form.secondaryColor}
+                    onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 cursor-pointer p-0.5"
+                  />
+                </div>
+                <Input
+                  value={form.secondaryColor}
+                  onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })}
+                  placeholder="#fafafa"
+                  className="h-10 rounded-lg text-sm border-neutral-200 font-mono flex-1"
+                  maxLength={7}
+                />
+              </div>
+              <p className="text-xs text-neutral-400">Fondos, secciones claras</p>
+            </div>
+
+            {/* Accent Color */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-neutral-700">Color de Acento</Label>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={form.accentColor}
+                    onChange={(e) => setForm({ ...form, accentColor: e.target.value })}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 cursor-pointer p-0.5"
+                  />
+                </div>
+                <Input
+                  value={form.accentColor}
+                  onChange={(e) => setForm({ ...form, accentColor: e.target.value })}
+                  placeholder="#171717"
+                  className="h-10 rounded-lg text-sm border-neutral-200 font-mono flex-1"
+                  maxLength={7}
+                />
+              </div>
+              <p className="text-xs text-neutral-400">Botones CTA, enlaces destacados</p>
+            </div>
+          </div>
+
+          <Separator className="bg-neutral-100" />
+
+          {/* Font Family Selector */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-neutral-700">Tipografía</Label>
+            <Select
+              value={form.fontFamily}
+              onValueChange={(value) => setForm({ ...form, fontFamily: value })}
+            >
+              <SelectTrigger className="h-10 rounded-lg text-sm border-neutral-200 w-full sm:w-64">
+                <SelectValue placeholder="Selecciona una fuente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system-ui">
+                  <span style={{ fontFamily: 'system-ui' }}>System Default</span>
+                </SelectItem>
+                <SelectItem value="Inter">
+                  <span style={{ fontFamily: 'Inter, sans-serif' }}>Inter (Moderna)</span>
+                </SelectItem>
+                <SelectItem value="Playfair Display">
+                  <span style={{ fontFamily: '"Playfair Display", serif' }}>Playfair Display (Elegante)</span>
+                </SelectItem>
+                <SelectItem value="Poppins">
+                  <span style={{ fontFamily: 'Poppins, sans-serif' }}>Poppins (Amigable)</span>
+                </SelectItem>
+                <SelectItem value="Montserrat">
+                  <span style={{ fontFamily: 'Montserrat, sans-serif' }}>Montserrat (Limpia)</span>
+                </SelectItem>
+                <SelectItem value="Roboto">
+                  <span style={{ fontFamily: 'Roboto, sans-serif' }}>Roboto (Profesional)</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-neutral-400">La fuente se aplicará a toda tu tienda</p>
+          </div>
+
+          <Separator className="bg-neutral-100" />
+
+          {/* Favicon URL */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-neutral-700">
+              Favicon (URL)
+            </Label>
+            <Input
+              value={form.favicon}
+              onChange={(e) => setForm({ ...form, favicon: e.target.value })}
+              placeholder="https://ejemplo.com/favicon.ico"
+              className="h-10 rounded-lg text-sm border-neutral-200 w-full"
+            />
+            <p className="text-xs text-neutral-400">
+              URL del ícono que aparece en la pestaña del navegador (PNG, ICO, 32x32px)
+            </p>
+          </div>
+
+          <Separator className="bg-neutral-100" />
+
+          {/* Preview */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-neutral-700">Vista Previa</Label>
+            <div
+              className="rounded-xl border border-neutral-200 overflow-hidden"
+              style={{ fontFamily: form.fontFamily === 'system-ui' ? undefined : `${form.fontFamily}, sans-serif` }}
+            >
+              {/* Preview Header */}
+              <div className="flex items-center gap-3 p-4" style={{ backgroundColor: form.primaryColor }}>
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Store className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-bold text-white">Mi Tienda</span>
+              </div>
+              {/* Preview Body */}
+              <div className="p-4 space-y-3" style={{ backgroundColor: form.secondaryColor }}>
+                <div className="h-3 rounded-full bg-neutral-200 w-3/4" />
+                <div className="h-3 rounded-full bg-neutral-200 w-1/2" />
+                <div className="flex gap-2 pt-1">
+                  <div
+                    className="px-4 py-2 rounded-lg text-xs font-semibold text-white"
+                    style={{ backgroundColor: form.accentColor }}
+                  >
+                    Comprar Ahora
+                  </div>
+                  <div
+                    className="px-4 py-2 rounded-lg text-xs font-medium border"
+                    style={{
+                      borderColor: form.primaryColor,
+                      color: form.primaryColor,
+                    }}
+                  >
+                    Ver Catálogo
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="bg-neutral-100" />
+
+          {/* Custom CSS (Premium only) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium text-neutral-700">CSS Personalizado</Label>
+              <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-[10px] font-semibold px-2 py-0 h-5 rounded-full">Premium</Badge>
+            </div>
+            <Textarea
+              value={form.customCSS}
+              onChange={(e) => setForm({ ...form, customCSS: e.target.value })}
+              placeholder=".mi-clase { color: red; }"
+              rows={4}
+              className="rounded-lg text-sm border-neutral-200 font-mono resize-none w-full"
+            />
+            <p className="text-xs text-neutral-400">
+              Código CSS avanzado para personalizar aún más tu tienda
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ==================== CUSTOM DOMAIN SECTION ==================== */}
+      <Separator className="bg-neutral-200" />
+
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+            <Globe className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-neutral-900">Dominio Personalizado</h2>
+              <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-[10px] font-semibold px-2 py-0 h-5 rounded-full">Empresarial</Badge>
+            </div>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Conecta tu propio dominio a tu tienda online
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="rounded-xl border-neutral-200">
+        <CardContent className="p-4 sm:p-6 space-y-5">
+          {/* Plan check */}
+          {domainConfig && domainConfig.plan !== 'empresarial' ? (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-50 border border-purple-200">
+              <AlertTriangle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-purple-900">Plan Empresarial requerido</p>
+                <p className="text-xs text-purple-700 mt-1">
+                  El dominio personalizado está disponible únicamente en el plan Empresarial. 
+                  Actualiza tu plan para habilitar esta función.
+                </p>
+              </div>
+            </div>
+          ) : domainLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : (
+            <>
+              {/* Current domain status */}
+              {domainConfig?.customDomain && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 border border-neutral-200">
+                  <div className="flex-shrink-0">
+                    {domainConfig.domainVerified ? (
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-neutral-900 truncate">
+                      {domainConfig.customDomain}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${domainConfig.domainVerified ? 'text-green-600' : 'text-amber-600'}`}>
+                      {domainConfig.domainVerified
+                        ? 'Dominio verificado y activo'
+                        : 'Pendiente de verificación DNS'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveDomain}
+                    disabled={domainRemoving}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 text-xs flex-shrink-0"
+                  >
+                    {domainRemoving ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    )}
+                    Eliminar
+                  </Button>
+                </div>
+              )}
+
+              {/* Domain input */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-neutral-700">
+                  Tu dominio personalizado
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={domainInput}
+                    onChange={(e) => setDomainInput(e.target.value)}
+                    placeholder="www.mitienda.com"
+                    className="h-10 rounded-lg text-sm border-neutral-200 flex-1 font-mono"
+                    disabled={domainSaving}
+                  />
+                  <Button
+                    onClick={handleSaveDomain}
+                    disabled={domainSaving || !domainInput.trim()}
+                    className={`h-10 rounded-lg text-sm font-medium gap-2 px-4 flex-shrink-0 ${
+                      domainSaved
+                        ? 'bg-green-600 hover:bg-green-600 text-white'
+                        : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                    }`}
+                  >
+                    {domainSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : domainSaved ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {domainSaved ? '¡Guardado!' : domainSaving ? 'Guardando...' : 'Guardar'}
+                  </Button>
+                </div>
+                <p className="text-xs text-neutral-400">
+                  Ingresa solo el dominio (ej: www.mitienda.com). No incluyas http:// ni /
+                </p>
+              </div>
+
+              <Separator className="bg-neutral-100" />
+
+              {/* DNS setup instructions */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-neutral-500" />
+                  <p className="text-sm font-semibold text-neutral-900">Instrucciones de configuración DNS</p>
+                </div>
+                <ol className="space-y-3">
+                  {[
+                    {
+                      step: 1,
+                      title: 'Ingresar tu dominio',
+                      desc: 'Escribe tu dominio personalizado en el campo de arriba (ej: www.mitienda.com)',
+                    },
+                    {
+                      step: 2,
+                      title: 'Crear registro CNAME',
+                      desc: 'En la configuración DNS de tu dominio, crea un registro CNAME apuntando a:',
+                      highlight: 'cname.tiendaonlineoficial.com',
+                      copyable: true,
+                    },
+                    {
+                      step: 3,
+                      title: 'Esperar propagación DNS',
+                      desc: 'La propagación puede tomar hasta 48 horas, aunque generalmente es mucho más rápida.',
+                    },
+                    {
+                      step: 4,
+                      title: 'Verificación automática',
+                      desc: 'Una vez que el DNS esté propagado, el dominio se verificará automáticamente y tu tienda será accesible desde él.',
+                    },
+                  ].map((item) => (
+                    <li key={item.step} className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold">
+                        {item.step}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-900">{item.title}</p>
+                        <p className="text-xs text-neutral-500 mt-0.5">{item.desc}</p>
+                        {item.highlight && (
+                          <button
+                            type="button"
+                            onClick={handleCopyCname}
+                            className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 transition-colors group cursor-pointer"
+                          >
+                            <code className="text-xs font-mono font-medium text-neutral-800">{item.highlight}</code>
+                            <Copy className="w-3 h-3 text-neutral-400 group-hover:text-neutral-700" />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ==================== PUSH NOTIFICATIONS SECTION ==================== */}
       <Separator className="bg-neutral-200" />
