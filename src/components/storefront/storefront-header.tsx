@@ -47,7 +47,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
       }`}
     >
       {/* Top bar */}
-      <div className="text-white text-center py-2 text-sm" style={{ backgroundColor: 'var(--store-primary)' }}>
+      <div className="text-white text-center py-1 text-xs" style={{ backgroundColor: 'var(--store-primary)' }}>
         {handleSc('announcement', 'text', 'ENVÍO GRATIS en pedidos mayores a S/199')}
         {handleSc('announcement', 'subtext', '') && (
           <> · <span className="hidden sm:inline">{handleSc('announcement', 'subtext', 'Pago seguro contra entrega')}</span></>
@@ -55,7 +55,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-12 md:h-14">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Button
@@ -67,18 +67,18 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
             <a href="#" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--store-primary)' }}>
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--store-primary)' }}>
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
                 ) : (
-                  <ShoppingBag className="w-5 h-5 text-white" />
+                  <ShoppingBag className="w-4 h-4 text-white" />
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-foreground leading-none">
+                <h1 className="text-lg font-bold tracking-tight text-foreground leading-none">
                   {storeName || 'Mi Tienda'}
                 </h1>
-                <p className="text-[10px] text-muted-foreground/70 tracking-widest uppercase hidden sm:block">
+                <p className="text-[9px] text-muted-foreground/70 tracking-widest uppercase hidden sm:block">
                   {storeDescription ? (storeDescription.length > 30 ? storeDescription.slice(0, 30) + '...' : storeDescription) : 'Tienda Online'}
                 </p>
               </div>
@@ -91,7 +91,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               <a
                 key={item}
                 href="#"
-                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors relative group"
+                className="text-xs font-medium text-foreground/70 hover:text-foreground transition-colors relative group"
               >
                 {item}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" style={{ backgroundColor: 'var(--store-primary)' }} />
@@ -108,30 +108,30 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               aria-label="Toggle dark mode"
             >
-              <Sun className="w-5 h-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute w-5 h-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
             {user ? (
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => router.push(user.role === 'admin' ? '/admin' : '/cliente')}>
-                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold">{user.name.charAt(0)}</div>
+                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[9px] font-bold">{user.name.charAt(0)}</div>
                   <span className="max-w-[80px] truncate">{user.name}</span>
                 </Button>
-                <Button variant="ghost" size="icon" className="text-muted-foreground/70 hover:text-red-500 h-8 w-8" onClick={async () => { await logout(); router.push('/login') }}>
-                  <LogOut className="w-4 h-4" />
+                <Button variant="ghost" size="icon" className="text-muted-foreground/70 hover:text-red-500 h-7 w-7" onClick={async () => { await logout(); router.push('/login') }}>
+                  <LogOut className="w-3.5 h-3.5" />
                 </Button>
               </div>
             ) : (
               <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground" onClick={() => router.push('/login')}>
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline text-xs font-medium">Ingresar</span>
               </Button>
             )}
             <div className="hidden sm:flex items-center relative">
-              <Search className="absolute left-3 w-4 h-4 text-muted-foreground/70" />
+              <Search className="absolute left-3 w-3.5 h-3.5 text-muted-foreground/70" />
               <Input
                 placeholder="Buscar productos..."
-                className="pl-9 w-48 lg:w-64 h-9 text-sm bg-muted border-border rounded-full focus:ring-1 focus:ring-ring"
+                className="pl-8 w-44 lg:w-56 h-8 text-sm bg-muted border-border rounded-full focus:ring-1 focus:ring-ring"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -142,7 +142,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               className="text-foreground/70 hover:text-foreground relative"
               onClick={wishlist.toggleWishlist}
             >
-              <Heart className={`w-5 h-5 ${wishlist.totalItems() > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`w-4 h-4 ${wishlist.totalItems() > 0 ? 'fill-red-500 text-red-500' : ''}`} />
               {wishlist.totalItems() > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-[10px]">
                   {wishlist.totalItems()}
@@ -155,7 +155,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               className="text-foreground/70 hover:text-foreground relative"
               onClick={cart.toggleCart}
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-4 h-4" />
               {cart.totalItems() > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-neutral-900 text-white text-[10px]">
                   {cart.totalItems()}
