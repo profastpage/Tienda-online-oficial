@@ -38,12 +38,26 @@ export async function GET(request: Request) {
     try {
       const db = await getDb()
 
-      const store = await db.store.findUnique({ where: { slug: storeSlug } })
+      // Find store by slug using raw SQL (compatible with Turso adapter)
+      const stores = await db.$queryRaw<{ id: string }[]>`
+        SELECT id FROM Store WHERE slug = ${storeSlug}
+      `
+      const store = stores[0] || null
       if (store) {
-        const testimonials = await db.testimonial.findMany({
-          where: { storeId: store.id },
-          orderBy: { createdAt: 'desc' },
-        })
+        const testimonials = await db.$queryRaw<{
+          id: string
+          name: string
+          role: string
+          content: string
+          rating: number
+          storeId: string
+          createdAt: Date
+        }[]>`
+          SELECT id, name, role, content, rating, storeId, createdAt
+          FROM Testimonial
+          WHERE storeId = ${store.id}
+          ORDER BY createdAt DESC
+        `
 
         if (testimonials.length > 0) {
           return NextResponse.json(testimonials)

@@ -14,24 +14,37 @@ export async function GET(request: Request) {
     try {
       const db = await getDb()
 
-      const methods = await db.paymentMethod.findMany({
-        where: {
-          storeId,
-          isActive: true,
-        },
-        orderBy: { sortOrder: 'asc' },
-        select: {
-          id: true,
-          type: true,
-          name: true,
-          qrCode: true,
-          accountNumber: true,
-          accountHolder: true,
-          bankName: true,
-        },
-      })
+      // Use raw SQL (compatible with Turso adapter)
+      const methods = await db.$queryRaw<{
+        id: string
+        type: string
+        name: string
+        qrCode: string | null
+        accountNumber: string | null
+        accountHolder: string | null
+        bankName: string | null
+        isActive: boolean
+        sortOrder: number
+      }[]>`
+        SELECT id, type, name, qrCode, accountNumber, accountHolder, bankName, isActive, sortOrder
+        FROM PaymentMethod
+        WHERE storeId = ${storeId} AND isActive = 1
+        ORDER BY sortOrder ASC
+      `
 
-      return NextResponse.json({ methods })
+      const activeMethods = methods
+        .filter(m => m.isActive === true || m.isActive === 1)
+        .map(m => ({
+          id: m.id,
+          type: m.type,
+          name: m.name,
+          qrCode: m.qrCode,
+          accountNumber: m.accountNumber,
+          accountHolder: m.accountHolder,
+          bankName: m.bankName,
+        }))
+
+      return NextResponse.json({ methods: activeMethods })
     } catch (dbError) {
       console.warn('[api/store/payment-methods] Database error:', dbError instanceof Error ? dbError.message : dbError)
       return NextResponse.json({ methods: [] })

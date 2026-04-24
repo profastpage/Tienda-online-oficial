@@ -12,8 +12,11 @@ export async function GET(request: Request) {
 
     const db = await getDb()
 
-    // Find store by slug
-    const store = await db.store.findUnique({ where: { slug: storeSlug } })
+    // Find store by slug using raw SQL (compatible with Turso adapter)
+    const stores = await db.$queryRaw<{ id: string }[]>`
+      SELECT id FROM Store WHERE slug = ${storeSlug}
+    `
+    const store = stores[0] || null
     if (!store) {
       console.log('[api/categories] Store not found:', storeSlug)
       return NextResponse.json([])

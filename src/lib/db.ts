@@ -69,43 +69,40 @@ async function createTursoClient(): Promise<PrismaClient> {
 export const db = globalForPrisma.prisma ?? createLocalClient()
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 
-// Async Turso client (lazy loaded, cached)
-let _tursoDb: PrismaClient | null = null
-let _tursoPromise: Promise<PrismaClient> | null = null
-
+// Async Turso client (lazy loaded, cached globally including serverless)
 export async function getDb(): Promise<PrismaClient> {
   // If no Turso credentials, use local SQLite
   if (!hasTurso) return db
 
-  // Return cached Turso client if available
-  if (_tursoDb) return _tursoDb
+  // Return cached Turso client if available (global for serverless warm instances)
+  const cachedTurso = (globalThis as any).__tursoDb as PrismaClient | undefined
+  if (cachedTurso) return cachedTurso
 
-  // Create Turso client (lazy, only once)
-  if (!_tursoPromise) {
-    _tursoPromise = createTursoClient()
-      .then(client => {
-        _tursoDb = client
-        return client
-      })
-      .catch(err => {
-        console.error('[db] ═══ TURSO CONNECTION FAILED ═══')
-        console.error('[db] Error:', err instanceof Error ? err.message : err)
-        console.error('[db] Falling back to local SQLite')
-        console.error('[db] ════════════════════════════════')
-        // IMPORTANT: Do NOT fall back silently - this will use an empty local DB
-        // In production, we should fail so the user knows Turso is broken
-        if (process.env.NODE_ENV === 'production') {
-          throw new Error(
-            `Cannot connect to Turso database. ` +
-            `Check that TURSO_URL and DATABASE_AUTH_TOKEN are correct in Vercel. ` +
-            `Error: ${err instanceof Error ? err.message : String(err)}`
-          )
-        }
-        return db
-      })
-  }
+  // Check if creation is already in progress
+  const pendingPromise = (globalThis as any).__tursoPromise as Promise<PrismaClient> | undefined
+  if (pendingPromise) return pendingPromise
 
-  return _tursoPromise
+  // Create Turso client (lazy, only once per instance)
+  const promise = createTursoClient()
+    .then(client => {
+      (globalThis as any).__tursoDb = client
+      return client
+    })
+    .catch(err => {
+      console.error('[db] TURSO CONNECTION FAILED')
+      console.error('[db] Error:', err instanceof Error ? err.message : err)
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          `Cannot connect to Turso database. ` +
+          `Check TURSO_URL and DATABASE_AUTH_TOKEN in Vercel. ` +
+          `Error: ${err instanceof Error ? err.message : String(err)}`
+        )
+      }
+      return db
+    })
+
+  ;(globalThis as any).__tursoPromise = promise
+  return promise
 }
 
 // Health check function - can be called from /api/health
