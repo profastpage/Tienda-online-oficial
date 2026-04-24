@@ -108,6 +108,12 @@ export async function POST(request: Request) {
     const storeRequired: { name: string; sql: string }[] = [
       { name: 'subscriptionExpiresAt', sql: `ALTER TABLE "Store" ADD COLUMN "subscriptionExpiresAt" DATETIME` },
       { name: 'trialDays', sql: `ALTER TABLE "Store" ADD COLUMN "trialDays" INTEGER DEFAULT 0` },
+      { name: 'primaryColor', sql: `ALTER TABLE "Store" ADD COLUMN "primaryColor" TEXT NOT NULL DEFAULT '#171717'` },
+      { name: 'secondaryColor', sql: `ALTER TABLE "Store" ADD COLUMN "secondaryColor" TEXT NOT NULL DEFAULT '#fafafa'` },
+      { name: 'accentColor', sql: `ALTER TABLE "Store" ADD COLUMN "accentColor" TEXT NOT NULL DEFAULT '#171717'` },
+      { name: 'fontFamily', sql: `ALTER TABLE "Store" ADD COLUMN "fontFamily" TEXT NOT NULL DEFAULT 'system-ui'` },
+      { name: 'customCSS', sql: `ALTER TABLE "Store" ADD COLUMN "customCSS" TEXT NOT NULL DEFAULT ''` },
+      { name: 'favicon', sql: `ALTER TABLE "Store" ADD COLUMN "favicon" TEXT NOT NULL DEFAULT ''` },
     ]
 
     const storeAdded: string[] = []
@@ -180,7 +186,7 @@ export async function GET(request: Request) {
     const prismaColumns: Record<string, string[]> = {
       StoreUser: ['id', 'email', 'password', 'name', 'phone', 'address', 'role', 'storeId', 'twoFactorSecret', 'twoFactorEnabled', 'googleId', 'avatar', 'createdAt', 'updatedAt'],
       Product: ['id', 'name', 'slug', 'description', 'price', 'comparePrice', 'image', 'images', 'categoryId', 'storeId', 'isFeatured', 'isNew', 'discount', 'sizes', 'colors', 'rating', 'reviewCount', 'inStock', 'createdAt', 'updatedAt'],
-      Store: ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt'],
+      Store: ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'customDomain', 'domainVerified', 'domainVerifiedAt', 'primaryColor', 'secondaryColor', 'accentColor', 'fontFamily', 'customCSS', 'favicon', 'createdAt', 'updatedAt'],
     }
 
     for (const table of tables) {

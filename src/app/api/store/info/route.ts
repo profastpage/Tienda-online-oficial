@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { ensureStoreExists, SEED_STORES } from '@/lib/store-helpers'
+import { ensureStoreExists, ensureStoreColumns, SEED_STORES } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -13,6 +13,10 @@ export async function GET(request: Request) {
     }
 
     const db = await getDb()
+    
+    // CRITICAL: Ensure all Store columns exist in DB before querying
+    // This auto-migrates missing columns (primaryColor, secondaryColor, etc.)
+    await ensureStoreColumns(db)
     
     // First, try to find by slug or storeId
     let store = null

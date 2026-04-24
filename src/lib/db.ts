@@ -56,6 +56,38 @@ async function createTursoClient(): Promise<PrismaClient> {
     await client.$queryRaw`SELECT 1 as test`
 
     console.log('[db] Turso connection established successfully')
+
+    // AUTO-MIGRATE: Ensure all Store columns exist after connection is established.
+    // This fixes the root cause where new Prisma schema columns (primaryColor,
+    // secondaryColor, accentColor, fontFamily, customCSS, favicon) were never
+    // pushed to the production Turso database. Safe to call repeatedly.
+    try {
+      const storeColumnsToEnsure = [
+        'ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL',
+        'ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0',
+        'ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL',
+        'ALTER TABLE Store ADD COLUMN subscriptionExpiresAt DATETIME',
+        'ALTER TABLE Store ADD COLUMN trialDays INTEGER DEFAULT 0',
+        "ALTER TABLE Store ADD COLUMN primaryColor TEXT NOT NULL DEFAULT '#171717'",
+        "ALTER TABLE Store ADD COLUMN secondaryColor TEXT NOT NULL DEFAULT '#fafafa'",
+        "ALTER TABLE Store ADD COLUMN accentColor TEXT NOT NULL DEFAULT '#171717'",
+        "ALTER TABLE Store ADD COLUMN fontFamily TEXT NOT NULL DEFAULT 'system-ui'",
+        "ALTER TABLE Store ADD COLUMN customCSS TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE Store ADD COLUMN favicon TEXT NOT NULL DEFAULT ''",
+      ]
+      for (const sql of storeColumnsToEnsure) {
+        try {
+          await client.$executeRawUnsafe(sql)
+        } catch {
+          // Column already exists — expected
+        }
+      }
+      console.log('[db] Store schema auto-migration completed')
+    } catch (migrationError) {
+      console.warn('[db] Store auto-migration had issues (non-fatal):',
+        migrationError instanceof Error ? migrationError.message : migrationError)
+    }
+
     return client
   } catch (error) {
     console.error('[db] Turso connection failed:', error instanceof Error ? error.message : error)

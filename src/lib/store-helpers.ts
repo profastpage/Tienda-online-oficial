@@ -97,6 +97,38 @@ export async function findStoreByCustomDomain(
 }
 
 /**
+ * Ensure all Store columns from the Prisma schema exist in the actual DB.
+ * Uses ALTER TABLE ADD COLUMN with try/catch so it's safe to call repeatedly.
+ * This is the SINGLE SOURCE OF TRUTH for Store schema migrations.
+ */
+export async function ensureStoreColumns(db: PrismaClient): Promise<void> {
+  const columnsToEnsure: { name: string; sql: string }[] = [
+    { name: 'customDomain', sql: 'ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL' },
+    { name: 'domainVerified', sql: 'ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0' },
+    { name: 'domainVerifiedAt', sql: 'ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL' },
+    { name: 'subscriptionExpiresAt', sql: 'ALTER TABLE Store ADD COLUMN subscriptionExpiresAt DATETIME' },
+    { name: 'trialDays', sql: 'ALTER TABLE Store ADD COLUMN trialDays INTEGER DEFAULT 0' },
+    { name: 'primaryColor', sql: "ALTER TABLE Store ADD COLUMN primaryColor TEXT NOT NULL DEFAULT '#171717'" },
+    { name: 'secondaryColor', sql: "ALTER TABLE Store ADD COLUMN secondaryColor TEXT NOT NULL DEFAULT '#fafafa'" },
+    { name: 'accentColor', sql: "ALTER TABLE Store ADD COLUMN accentColor TEXT NOT NULL DEFAULT '#171717'" },
+    { name: 'fontFamily', sql: 'ALTER TABLE Store ADD COLUMN fontFamily TEXT NOT NULL DEFAULT \'system-ui\'' },
+    { name: 'customCSS', sql: 'ALTER TABLE Store ADD COLUMN customCSS TEXT NOT NULL DEFAULT \'\'' },
+    { name: 'favicon', sql: 'ALTER TABLE Store ADD COLUMN favicon TEXT NOT NULL DEFAULT \'\'' },
+  ]
+
+  for (const col of columnsToEnsure) {
+    try {
+      await db.$executeRawUnsafe(col.sql)
+    } catch {
+      // Column already exists — this is expected
+    }
+  }
+}
+
+// Cache flag to avoid running PRAGMA check on every request
+let columnsVerified = false
+
+/**
  * Ensure a store exists in the database.
  * If it doesn't exist, create it with known seed data or default values.
  * This is critical for demo/seed accounts where the store might not exist yet.
@@ -105,6 +137,12 @@ export async function ensureStoreExists(
   db: PrismaClient, 
   storeId: string
 ): Promise<StoreData | null> {
+  // Ensure all schema columns exist (idempotent, runs once per cold start)
+  if (!columnsVerified) {
+    await ensureStoreColumns(db)
+    columnsVerified = true
+  }
+
   // First, try to find existing store
   let store = await findStoreById(db, storeId)
   if (store) return store
@@ -122,16 +160,6 @@ export async function ensureStoreExists(
       INSERT INTO Store (id, name, slug, logo, whatsappNumber, address, description, isActive, plan, createdAt, updatedAt)
       VALUES (${storeId}, ${name}, ${slug}, '', '', '', '', 1, 'basico', ${now}, ${now})
     `
-    // Add customDomain columns if they don't exist yet (schema migration)
-    try {
-      await db.$executeRaw`ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL`
-    } catch { /* column already exists */ }
-    try {
-      await db.$executeRaw`ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0`
-    } catch { /* column already exists */ }
-    try {
-      await db.$executeRaw`ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL`
-    } catch { /* column already exists */ }
     console.log(`[store-helpers] Created store ${storeId} (${name})`)
     return findStoreById(db, storeId)
   } catch (createError) {

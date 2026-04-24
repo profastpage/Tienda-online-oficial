@@ -191,6 +191,42 @@ async function syncTables() {
       await client.execute(`ALTER TABLE "Store" ADD COLUMN "trialDays" INTEGER NOT NULL DEFAULT 0`)
       console.log("✅ Added Store.trialDays")
     }
+    if (!storeColNames.has('customDomain')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "customDomain" TEXT DEFAULT NULL`)
+      console.log("✅ Added Store.customDomain")
+    }
+    if (!storeColNames.has('domainVerified')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "domainVerified" INTEGER NOT NULL DEFAULT 0`)
+      console.log("✅ Added Store.domainVerified")
+    }
+    if (!storeColNames.has('domainVerifiedAt')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "domainVerifiedAt" TEXT DEFAULT NULL`)
+      console.log("✅ Added Store.domainVerifiedAt")
+    }
+    if (!storeColNames.has('primaryColor')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "primaryColor" TEXT NOT NULL DEFAULT '#171717'`)
+      console.log("✅ Added Store.primaryColor")
+    }
+    if (!storeColNames.has('secondaryColor')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "secondaryColor" TEXT NOT NULL DEFAULT '#fafafa'`)
+      console.log("✅ Added Store.secondaryColor")
+    }
+    if (!storeColNames.has('accentColor')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "accentColor" TEXT NOT NULL DEFAULT '#171717'`)
+      console.log("✅ Added Store.accentColor")
+    }
+    if (!storeColNames.has('fontFamily')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "fontFamily" TEXT NOT NULL DEFAULT 'system-ui'`)
+      console.log("✅ Added Store.fontFamily")
+    }
+    if (!storeColNames.has('customCSS')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "customCSS" TEXT NOT NULL DEFAULT ''`)
+      console.log("✅ Added Store.customCSS")
+    }
+    if (!storeColNames.has('favicon')) {
+      await client.execute(`ALTER TABLE "Store" ADD COLUMN "favicon" TEXT NOT NULL DEFAULT ''`)
+      console.log("✅ Added Store.favicon")
+    }
   } catch (e) {
     console.warn("Could not check Store columns:", e)
   }
