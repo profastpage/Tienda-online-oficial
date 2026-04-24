@@ -11,6 +11,9 @@ interface Message {
   content: string
 }
 
+// Atlas endpoint (Cloudflare Pages) — change this to your Atlas domain
+const ATLAS_API_URL = process.env.NEXT_PUBLIC_ATLAS_URL || 'https://profastpage-atlas.pages.dev'
+
 interface AiChatProps {
   onClose?: () => void
 }
@@ -41,7 +44,7 @@ export default function AiChat({ onClose }: AiChatProps) {
     if (isOpen && messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: '¡Hola! 👋 Soy el asistente virtual de Urban Style. ¿En qué puedo ayudarte hoy?'
+        content: '¡Hola! 👋 Soy Atlas, tu consultor de estilo en Urban Style. Pregúntame sobre outfits, tendencias o productos.'
       }])
     }
   }, [isOpen, messages.length])
@@ -60,16 +63,17 @@ export default function AiChat({ onClose }: AiChatProps) {
         content: m.content,
       }))
 
-      const res = await fetch('/api/chat', {
+      // Send to Atlas on Cloudflare Pages
+      const res = await fetch(`${ATLAS_API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatHistory }),
+        body: JSON.stringify({ message: userMessage, history: messages }),
       })
 
       const data = await res.json()
 
-      if (data.message) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      if (data.content || data.message) {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.content || data.message }])
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
@@ -114,7 +118,7 @@ export default function AiChat({ onClose }: AiChatProps) {
               <Bot className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-sm">Asistente Urban Style</h3>
+              <h3 className="font-bold text-sm">Atlas — Estilo</h3>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-xs text-white/80">En línea</span>
