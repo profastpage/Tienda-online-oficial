@@ -1,9 +1,8 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Short revalidation — products change infrequently, 30s cache avoids cold starts
+export const revalidate = 30
 
 export async function GET(request: Request) {
   try {
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
 
     const db = await getDb()
 
-    // Find store by slug using raw SQL (compatible with Turso adapter)
+    // Find store by slug
     const stores = await db.$queryRaw<{ id: string; name: string; slug: string }[]>`
       SELECT id, name, slug FROM Store WHERE slug = ${storeSlug}
     `
@@ -25,84 +24,64 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    // Build where conditions using parameterized queries
-    let whereClause = 'storeId = ? AND inStock = 1'
+    // Build WHERE clause with parameterized queries
+    let whereClause = 'p.storeId = ? AND p.inStock = 1'
     let queryParams: any[] = [store.id]
-    let categoryIdFilter: string | null = null
-    
+
     if (categorySlug) {
-      // Find category ID by slug
-      const category = await db.$queryRaw<{ id: string }[]>`
-        SELECT id FROM Category WHERE slug = ${categorySlug} AND storeId = ${store.id}
-      `
-      if (category.length > 0) {
-        categoryIdFilter = category[0].id
-        whereClause += ' AND categoryId = ?'
-        queryParams.push(categoryIdFilter)
-      }
+      whereClause += ' AND c.slug = ? AND c.storeId = ?'
+      queryParams.push(categorySlug, store.id)
     }
-    
+
     if (featured === 'true') {
-      whereClause += ' AND isFeatured = 1'
+      whereClause += ' AND p.isFeatured = 1'
     }
-    
+
     if (search) {
       const sanitizedSearch = `%${search.replace(/'/g, "''")}%`
-      whereClause += ' AND (name LIKE ? OR description LIKE ?)'
+      whereClause += ' AND (p.name LIKE ? OR p.description LIKE ?)'
       queryParams.push(sanitizedSearch, sanitizedSearch)
     }
 
-    // Get products using parameterized query
-    const query = `SELECT id, name, slug, description, price, comparePrice, image, images, sizes, colors, discount, isNew, rating, reviewCount, inStock, categoryId FROM Product WHERE ${whereClause} ORDER BY createdAt DESC`
-    
-    const products = await db.$queryRawUnsafe<{
-      id: string
-      name: string
-      slug: string
-      description: string
-      price: number
-      comparePrice: number | null
-      image: string
-      images: string
-      sizes: string
-      colors: string
-      discount: number | null
-      isNew: boolean
-      rating: number
-      reviewCount: number
-      inStock: boolean
-      categoryId: string
-    }[]>(query, ...queryParams)
+    // Single JOIN query — eliminates N+1 (was 1 query per product for category)
+    const query = `
+      SELECT
+        p.id, p.name, p.slug, p.description, p.price, p.comparePrice,
+        p.image, p.images, p.sizes, p.colors, p.discount, p.isNew,
+        p.rating, p.reviewCount, p.inStock, p.categoryId,
+        c.id as "catId", c.name as "catName", c.slug as "catSlug"
+      FROM Product p
+      LEFT JOIN Category c ON c.id = p.categoryId
+      WHERE ${whereClause}
+      ORDER BY p.createdAt DESC
+    `
 
-    // Fetch category info for each product
-    const productsWithCategories = await Promise.all(
-      products.map(async (product) => {
-        try {
-          const cat = await db.$queryRaw<{ id: string; name: string; slug: string }[]>`
-            SELECT id, name, slug FROM Category WHERE id = ${product.categoryId}
-          `
-          return {
-            ...product,
-            category: cat[0] || { name: 'Sin categoría', slug: 'sin-categoria' }
-          }
-        } catch {
-          return {
-            ...product,
-            category: { name: 'Sin categoría', slug: 'sin-categoria' }
-          }
-        }
-      })
-    )
+    const rows = await db.$queryRawUnsafe<any[]>(query, ...queryParams)
 
-    return NextResponse.json(productsWithCategories, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'CDN-Cache-Control': 'no-store',
-        'Vercel-CDN-Cache-Control': 'no-store',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
-    })
+    // Map rows to response shape — no extra DB queries
+    const products = rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      description: row.description,
+      price: row.price,
+      comparePrice: row.comparePrice,
+      image: row.image,
+      images: row.images,
+      sizes: row.sizes,
+      colors: row.colors,
+      discount: row.discount,
+      isNew: row.isNew,
+      rating: row.rating,
+      reviewCount: row.reviewCount,
+      inStock: row.inStock,
+      categoryId: row.categoryId,
+      category: row.catName
+        ? { id: row.catId, name: row.catName, slug: row.catSlug }
+        : { name: 'Sin categoría', slug: 'sin-categoria' },
+    }))
+
+    return NextResponse.json(products)
   } catch (error) {
     console.error('[api/products] Error:', error)
     return NextResponse.json([])

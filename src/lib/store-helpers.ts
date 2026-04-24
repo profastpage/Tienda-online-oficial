@@ -97,32 +97,13 @@ export async function findStoreByCustomDomain(
 }
 
 /**
- * Ensure all Store columns from the Prisma schema exist in the actual DB.
- * Uses ALTER TABLE ADD COLUMN with try/catch so it's safe to call repeatedly.
- * This is the SINGLE SOURCE OF TRUTH for Store schema migrations.
+ * Ensure all Store columns exist — delegates to the optimized ensureSchema in db.ts
+ * which uses PRAGMA table_info to check before ALTER TABLE (no wasted try/catch).
  */
 export async function ensureStoreColumns(db: PrismaClient): Promise<void> {
-  const columnsToEnsure: { name: string; sql: string }[] = [
-    { name: 'customDomain', sql: 'ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL' },
-    { name: 'domainVerified', sql: 'ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0' },
-    { name: 'domainVerifiedAt', sql: 'ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL' },
-    { name: 'subscriptionExpiresAt', sql: 'ALTER TABLE Store ADD COLUMN subscriptionExpiresAt DATETIME' },
-    { name: 'trialDays', sql: 'ALTER TABLE Store ADD COLUMN trialDays INTEGER DEFAULT 0' },
-    { name: 'primaryColor', sql: "ALTER TABLE Store ADD COLUMN primaryColor TEXT NOT NULL DEFAULT '#171717'" },
-    { name: 'secondaryColor', sql: "ALTER TABLE Store ADD COLUMN secondaryColor TEXT NOT NULL DEFAULT '#fafafa'" },
-    { name: 'accentColor', sql: "ALTER TABLE Store ADD COLUMN accentColor TEXT NOT NULL DEFAULT '#171717'" },
-    { name: 'fontFamily', sql: 'ALTER TABLE Store ADD COLUMN fontFamily TEXT NOT NULL DEFAULT \'system-ui\'' },
-    { name: 'customCSS', sql: 'ALTER TABLE Store ADD COLUMN customCSS TEXT NOT NULL DEFAULT \'\'' },
-    { name: 'favicon', sql: 'ALTER TABLE Store ADD COLUMN favicon TEXT NOT NULL DEFAULT \'\'' },
-  ]
-
-  for (const col of columnsToEnsure) {
-    try {
-      await db.$executeRawUnsafe(col.sql)
-    } catch {
-      // Column already exists — this is expected
-    }
-  }
+  // Dynamic import to avoid circular dependency; ensureSchema is exported from db.ts
+  const { ensureSchema } = await import('@/lib/db')
+  await ensureSchema(db)
 }
 
 // Cache flag to avoid running PRAGMA check on every request

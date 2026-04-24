@@ -54,46 +54,58 @@ async function createTursoClient(): Promise<PrismaClient> {
 
     // Test the connection with a simple query
     await client.$queryRaw`SELECT 1 as test`
-
-    console.log('[db] Turso connection established successfully')
-
-    // AUTO-MIGRATE: Ensure all Store columns exist after connection is established.
-    // This fixes the root cause where new Prisma schema columns (primaryColor,
-    // secondaryColor, accentColor, fontFamily, customCSS, favicon) were never
-    // pushed to the production Turso database. Safe to call repeatedly.
-    try {
-      const storeColumnsToEnsure = [
-        'ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL',
-        'ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0',
-        'ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL',
-        'ALTER TABLE Store ADD COLUMN subscriptionExpiresAt DATETIME',
-        'ALTER TABLE Store ADD COLUMN trialDays INTEGER DEFAULT 0',
-        "ALTER TABLE Store ADD COLUMN primaryColor TEXT NOT NULL DEFAULT '#171717'",
-        "ALTER TABLE Store ADD COLUMN secondaryColor TEXT NOT NULL DEFAULT '#fafafa'",
-        "ALTER TABLE Store ADD COLUMN accentColor TEXT NOT NULL DEFAULT '#171717'",
-        "ALTER TABLE Store ADD COLUMN fontFamily TEXT NOT NULL DEFAULT 'system-ui'",
-        "ALTER TABLE Store ADD COLUMN customCSS TEXT NOT NULL DEFAULT ''",
-        "ALTER TABLE Store ADD COLUMN favicon TEXT NOT NULL DEFAULT ''",
-      ]
-      for (const sql of storeColumnsToEnsure) {
-        try {
-          await client.$executeRawUnsafe(sql)
-        } catch {
-          // Column already exists — expected
-        }
-      }
-      console.log('[db] Store schema auto-migration completed')
-    } catch (migrationError) {
-      console.warn('[db] Store auto-migration had issues (non-fatal):',
-        migrationError instanceof Error ? migrationError.message : migrationError)
-    }
-
+    console.log('[db] Turso connection established')
     return client
   } catch (error) {
     console.error('[db] Turso connection failed:', error instanceof Error ? error.message : error)
-    console.error('[db] TURSO_URL set:', Boolean(process.env.TURSO_URL))
-    console.error('[db] DATABASE_AUTH_TOKEN set:', Boolean(process.env.DATABASE_AUTH_TOKEN))
     throw error
+  }
+}
+
+// Lazy schema migration — only runs ONCE and only if columns are actually missing.
+// Uses PRAGMA table_info to check before ALTER TABLE (avoids 11 try/catch on every cold start).
+let __schemaMigrated = false
+export async function ensureSchema(db: PrismaClient): Promise<void> {
+  if (__schemaMigrated) return
+
+  try {
+    const cols = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Store")`)
+    const existing = new Set(cols.map(c => c.name))
+
+    const missing: string[] = []
+    const migrations: { col: string; sql: string }[] = [
+      { col: 'customDomain', sql: 'ALTER TABLE Store ADD COLUMN customDomain TEXT DEFAULT NULL' },
+      { col: 'domainVerified', sql: 'ALTER TABLE Store ADD COLUMN domainVerified INTEGER DEFAULT 0' },
+      { col: 'domainVerifiedAt', sql: 'ALTER TABLE Store ADD COLUMN domainVerifiedAt TEXT DEFAULT NULL' },
+      { col: 'subscriptionExpiresAt', sql: 'ALTER TABLE Store ADD COLUMN subscriptionExpiresAt DATETIME' },
+      { col: 'trialDays', sql: 'ALTER TABLE Store ADD COLUMN trialDays INTEGER DEFAULT 0' },
+      { col: 'primaryColor', sql: "ALTER TABLE Store ADD COLUMN primaryColor TEXT NOT NULL DEFAULT '#171717'" },
+      { col: 'secondaryColor', sql: "ALTER TABLE Store ADD COLUMN secondaryColor TEXT NOT NULL DEFAULT '#fafafa'" },
+      { col: 'accentColor', sql: "ALTER TABLE Store ADD COLUMN accentColor TEXT NOT NULL DEFAULT '#171717'" },
+      { col: 'fontFamily', sql: "ALTER TABLE Store ADD COLUMN fontFamily TEXT NOT NULL DEFAULT 'system-ui'" },
+      { col: 'customCSS', sql: "ALTER TABLE Store ADD COLUMN customCSS TEXT NOT NULL DEFAULT ''" },
+      { col: 'favicon', sql: "ALTER TABLE Store ADD COLUMN favicon TEXT NOT NULL DEFAULT ''" },
+    ]
+
+    for (const m of migrations) {
+      if (!existing.has(m.col)) {
+        missing.push(m.sql)
+      }
+    }
+
+    if (missing.length === 0) {
+      __schemaMigrated = true
+      return
+    }
+
+    console.log(`[db] Migrating ${missing.length} missing Store columns...`)
+    for (const sql of missing) {
+      try { await db.$executeRawUnsafe(sql) } catch { /* ignore */ }
+    }
+    __schemaMigrated = true
+    console.log('[db] Store schema migration completed')
+  } catch (err) {
+    console.warn('[db] Schema check failed (non-fatal):', err instanceof Error ? err.message : err)
   }
 }
 
@@ -116,8 +128,10 @@ export async function getDb(): Promise<PrismaClient> {
 
   // Create Turso client (lazy, only once per instance)
   const promise = createTursoClient()
-    .then(client => {
+    .then(async client => {
       (globalThis as any).__tursoDb = client
+      // Run schema migration in background (non-blocking for first request)
+      ensureSchema(client).catch(() => {})
       return client
     })
     .catch(err => {

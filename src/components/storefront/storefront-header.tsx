@@ -56,29 +56,29 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-12 md:h-14">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
+          {/* Logo — min-w-0 + truncate prevents overflow on mobile */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden shrink-0"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-            <a href="#" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--store-primary)' }}>
+            <a href="#" className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--store-primary)' }}>
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
                 ) : (
-                  <ShoppingBag className="w-4 h-4 text-white" />
+                  <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                 )}
               </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight text-foreground leading-none">
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-none truncate">
                   {storeName || 'Mi Tienda'}
                 </h1>
-                <p className="text-[9px] text-muted-foreground/70 tracking-widest uppercase hidden sm:block">
+                <p className="text-[8px] sm:text-[9px] text-muted-foreground/70 tracking-widest uppercase hidden sm:block truncate">
                   {storeDescription ? (storeDescription.length > 30 ? storeDescription.slice(0, 30) + '...' : storeDescription) : 'Tienda Online'}
                 </p>
               </div>
@@ -99,8 +99,8 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             ))}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
+          {/* Actions — shrink-0 prevents icon area from being squeezed */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <Button
               variant="ghost"
               size="icon"
