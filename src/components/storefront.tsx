@@ -1,12 +1,6 @@
 'use client'
 
 import { useEffect, useCallback, useMemo } from 'react'
-import {
-  localProducts,
-  localCategories,
-  localTestimonials,
-  localStoreContent,
-} from '@/components/storefront/storefront-local-data'
 import { motion } from 'framer-motion'
 import { ShieldCheck, Clock, AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -106,17 +100,6 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
     }
   }, [store.setMpCheckoutStatus])
 
-  // ── Load local data instantly (no API calls) ─────────────────
-  useEffect(() => {
-    // Products, categories, testimonials and store content load from local constants
-    store.setProducts(localProducts)
-    store.setCategories(localCategories)
-    store.setTestimonials(localTestimonials)
-    store.setStoreContent(localStoreContent)
-    store.setStoreName('Urban Style')
-    store.setLoading(false)
-  }, [store])
-
   // ── Checkout open handler ───────────────────────────────────
   const openCheckout = useCallback(() => {
     cart.closeCart()
@@ -130,7 +113,7 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
     store.setCreatedOrder(null)
     store.setMpCheckoutStatus(null)
     setTimeout(() => store.setCheckoutOpen(true), 150)
-  }, [cart, store, user?.name])
+  }, [cart.closeCart, cart, store.setCheckoutStep, store.setCustomerName, store.setCustomerPhone, store.setCustomerAddress, store.setOrderNotes, store.setTermsAccepted, store.setSelectedPaymentMethod, store.setCreatedOrder, store.setMpCheckoutStatus, store.setCheckoutOpen, user?.name])
 
   // ── WhatsApp order URL builder ──────────────────────────────
   const getWhatsAppOrderUrl = useCallback(() => {

@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 import type { Product, Category, Testimonial, StoreInfo, StoreContentData, PaymentMethod, CreatedOrder } from './storefront-types'
+import {
+  localProducts,
+  localCategories,
+  localTestimonials,
+  localStoreContent,
+} from './storefront-local-data'
 
 interface StorefrontState {
   // ── Store data ──────────────────────────────────────────────
@@ -98,18 +104,18 @@ interface StorefrontState {
 }
 
 export const useStorefrontStore = create<StorefrontState>()((set) => ({
-  // ── Store data ──────────────────────────────────────────────
+  // ── Store data (pre-cargado desde archivo local, SIN API) ───
   storeInfo: null,
-  storeContent: {},
-  products: [],
-  categories: [],
-  testimonials: [],
+  storeContent: localStoreContent,
+  products: localProducts,
+  categories: localCategories,
+  testimonials: localTestimonials,
   paymentMethods: [],
   loading: false,
 
   // ── Derived store info ──────────────────────────────────────
   storeWhatsApp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
-  storeName: '',
+  storeName: 'Urban Style',
   storeLogo: '',
   storeDescription: '',
 
