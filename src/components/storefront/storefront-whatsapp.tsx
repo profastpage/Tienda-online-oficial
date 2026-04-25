@@ -86,9 +86,9 @@ export function StorefrontFab({ getWhatsAppOrderUrl }: StorefrontFabProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Unified FAB Menu */}
-      <div data-fab-menu className="fixed bottom-[90px] right-6 z-40 flex flex-col items-end gap-3">
-        {/* Expanded action buttons - fan out above */}
+      {/* Unified FAB Menu — elevated above Bottom Nav (z-50) */}
+      <div data-fab-menu className="fixed bottom-[100px] right-5 z-[55] flex flex-col items-end gap-3" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        {/* Expanded action buttons - fan out above with safe spacing */}
         <AnimatePresence>
           {fabOpen && (
             <motion.div
@@ -96,7 +96,7 @@ export function StorefrontFab({ getWhatsAppOrderUrl }: StorefrontFabProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.8 }}
               transition={{ duration: 0.2 }}
-              className="flex flex-col items-end gap-2.5"
+              className="flex flex-col items-end gap-2.5 max-h-[60vh] overflow-y-auto overflow-x-visible scrollbar-hide pr-1"
             >
               {/* Notification Bell */}
               <motion.button
@@ -194,23 +194,23 @@ export function StorefrontFab({ getWhatsAppOrderUrl }: StorefrontFabProps) {
           )}
         </AnimatePresence>
 
-        {/* Minimalist Back to Top - only arrow, no background */}
-        {scrollY > 400 && (
+        {/* Minimalist Back to Top — hides when FAB menu is open to avoid overlap */}
+        {!fabOpen && scrollY > 400 && (
           <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="absolute -top-10 right-2 w-8 h-8 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
+            className="w-9 h-9 rounded-full bg-background/80 dark:bg-neutral-800/80 backdrop-blur-sm border border-border/50 flex items-center justify-center text-foreground/50 hover:text-foreground shadow-md transition-colors"
             aria-label="Volver arriba"
           >
-            <ChevronUp className="w-5 h-5" />
+            <ChevronUp className="w-4 h-4" />
           </motion.button>
         )}
 
         {/* Main FAB Button */}
         <motion.button
           onClick={(e) => { e.stopPropagation(); setFabOpen(!fabOpen) }}
-          className="w-14 h-14 rounded-full bg-white dark:bg-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-200 text-neutral-900 shadow-xl shadow-neutral-900/20 dark:shadow-white/10 flex items-center justify-center transition-all hover:scale-105 relative"
+          className="w-14 h-14 rounded-full bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xl shadow-neutral-900/20 dark:shadow-black/40 flex items-center justify-center transition-all hover:scale-105 relative ring-1 ring-neutral-200 dark:ring-neutral-700/50"
           whileTap={{ scale: 0.92 }}
           aria-label="Menú de acciones"
         >

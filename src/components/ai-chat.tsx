@@ -110,7 +110,7 @@ export default function AiChat({ onClose }: AiChatProps) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.9 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed bottom-24 right-6 z-50 w-[calc(100vw-2rem)] sm:w-[360px] h-[480px] max-h-[70vh] bg-background rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden"
+          className="fixed bottom-[120px] right-5 z-[56] w-[calc(100vw-2rem)] sm:w-[360px] h-[480px] max-h-[60vh] bg-background rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 flex items-center gap-3 shrink-0">
