@@ -132,29 +132,47 @@ export function SwipeableProductImage({ product, onClick }: { product: Product; 
           </Badge>
         )}
       </div>
-      {/* Wishlist button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`absolute top-3 right-3 h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10`}
-        onClick={(e) => {
-          e.stopPropagation()
-          wishlist.toggleItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            slug: product.slug,
-          })
-          toast({
-            title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
-            description: product.name,
-            duration: 800,
-          })
-        }}
+      {/* Wishlist button with pulse animation */}
+      <motion.div
+        className="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
+        whileTap={{ scale: 1.3 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
       >
-        <Heart className={`w-4 h-4 ${isWished ? 'fill-red-500 text-red-500' : ''}`} />
-      </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-8 w-8 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background shadow-sm`}
+          onClick={(e) => {
+            e.stopPropagation()
+            wishlist.toggleItem({
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              image: product.image,
+              slug: product.slug,
+            })
+            toast({
+              title: wishlist.isInWishlist(product.id) ? 'Agregado a favoritos' : 'Eliminado de favoritos',
+              description: product.name,
+              duration: 800,
+            })
+          }}
+        >
+          <Heart
+            className={`w-4 h-4 transition-all duration-300 ${isWished ? 'fill-red-500 text-red-500' : ''}`}
+          />
+        </Button>
+        {/* Pulse ring when active */}
+        {isWished && (
+          <motion.div
+            key={product.id + '-pulse'}
+            className="absolute inset-0 rounded-full border-2 border-red-500"
+            initial={{ scale: 1, opacity: 0.8 }}
+            animate={{ scale: 1.6, opacity: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          />
+        )}
+      </motion.div>
       {/* Desktop Quick View Overlay */}
       <div className="hidden md:block absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
         <div className="flex gap-2">

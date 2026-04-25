@@ -197,6 +197,10 @@ img {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+@keyframes shimmer-slide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 .animate-shimmer::after {
   content: '';
   position: absolute;
@@ -204,6 +208,11 @@ img {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
   animation: shimmer 2s infinite;
   pointer-events: none;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer-slide 1.8s ease-in-out infinite;
 }
 
 /* Holographic border animation */

@@ -22,6 +22,7 @@ import { StorefrontCart } from '@/components/storefront/storefront-cart'
 import { StorefrontCheckout } from '@/components/storefront/storefront-checkout'
 import { StorefrontFab } from '@/components/storefront/storefront-whatsapp'
 import { StorefrontBottomNav } from '@/components/storefront/storefront-bottom-nav'
+import { WelcomePopup } from '@/components/storefront/storefront-welcome-popup'
 
 interface StorefrontProps {
   storeSlug?: string
@@ -237,6 +238,9 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
 
       {/* Bottom Navigation — mobile only, appears after scrolling */}
       <StorefrontBottomNav />
+
+      {/* Welcome Popup — lead magnet with coupon */}
+      <WelcomePopup />
     </div>
   )
 }
