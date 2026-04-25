@@ -15,7 +15,7 @@ export const localCategories: Category[] = [
     id: 'cat-calzado',
     name: 'Calzado',
     slug: 'calzado',
-    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=450&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/6044266/pexels-photo-6044266.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop',
     _count: { products: 10 },
   },
   {
@@ -62,10 +62,10 @@ export const localProducts: Product[] = [
     description: 'Zapatilla runner de alto rendimiento en rojo vibrante con suela amortiguada de gel y upper en malla transpirable. Diseño aerodinámico con líneas dinámicas que optimizan cada zancada. Plantilla ergonómica extraíble y suela antideslizante multidireccional.',
     price: 189.90,
     comparePrice: 249.90,
-    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/1174470/pexels-photo-1174470.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/1174470/pexels-photo-1174470.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/966058/pexels-photo-966058.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     ]),
     sizes: JSON.stringify(['38', '39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
@@ -80,23 +80,23 @@ export const localProducts: Product[] = [
     category: { name: 'Calzado', slug: 'calzado' },
   },
 
-  // 2 · Stellar Sport — Zapatilla Running Rojo Oscuro
-  //    Imagen: running shoe rojo oscuro sobre fondo blanco
+  // 2 · Stellar Sport — Zapatilla Running Borgoña
+  //    Imagen: running shoe borgoña sobre fondo blanco
   {
     id: '2',
-    name: 'Stellar Sport | Cloud Speed Rojo',
-    slug: 'stellar-sport-cloud-speed-rojo',
-    description: 'Zapatilla de running con tecnología de amortiguación avanzada en tono rojo profundo. Upper en mesh de alta transpirabilidad con overlays sintéticos de soporte. Suela antideslizante con patrón de tracción multidireccional para entrenamientos intensos.',
+    name: 'Stellar Sport | Cloud Speed Borgoña',
+    slug: 'stellar-sport-cloud-speed-borgona',
+    description: 'Zapatilla de running con tecnología de amortiguación avanzada en tono borgoña profundo. Upper en mesh de alta transpirabilidad con overlays sintéticos de soporte. Suela antideslizante con patrón de tracción multidireccional para entrenamientos intensos.',
     price: 219.90,
     comparePrice: 289.90,
-    image: 'https://images.unsplash.com/photo-1562183241-b937e95585b6?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/3766219/pexels-photo-3766219.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1562183241-b937e95585b6?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/3766219/pexels-photo-3766219.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/3766219/pexels-photo-3766219.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
-      { name: 'Rojo Oscuro', hex: '#991b1b' },
+      { name: 'Borgoña', hex: '#991b1b' },
       { name: 'Negro', hex: '#1a1a1a' },
       { name: 'Azul', hex: '#2563eb' },
     ]),
@@ -117,10 +117,10 @@ export const localProducts: Product[] = [
     description: 'Botas de cuero genuino negro con acabado premium y suela de goma antideslizante. Costuras decorativas y hebilla lateral metálica. Construcción robusta para el terreno urbano con estilo que transita del trabajo a la noche.',
     price: 299.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1584735175315-9d5df23860e6?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/9241620/pexels-photo-9241620.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1584735175315-9d5df23860e6?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/9241620/pexels-photo-9241620.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/9241620/pexels-photo-9241620.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43']),
     colors: JSON.stringify([
@@ -135,23 +135,22 @@ export const localProducts: Product[] = [
     category: { name: 'Calzado', slug: 'calzado' },
   },
 
-  // 4 · Urban Vibe — Zapatilla Chunky Plataforma Blanca
-  //    Imagen: sneaker blanco/beige con suela plataforma gruesa
+  // 4 · Urban Vibe — Zapatilla Retro Beige
+  //    Imagen: sneaker beige retro con suela clásica
   {
     id: '4',
-    name: 'Urban Vibe | Plataform Elite',
-    slug: 'urban-vibe-plataform-elite',
-    description: 'Zapatilla de plataforma con diseño chunky inspirado en el streetwear contemporáneo. Color blanco limpio con suela elevada de 4 cm en tonos beige y goma. Materiales mixtos con paneles de malla y piel sintética. La pieza statement para tu outfit.',
+    name: 'Urban Vibe | Vintage Court Beige',
+    slug: 'urban-vibe-vintage-court-beige',
+    description: 'Zapatilla retro estilo court en tono beige con suela de goma clásica y upper en piel sintética. Diseño inspirado en los courts de los años 70 con líneas limpias y atemporales. Comodidad de todo el día con plantilla acolchada y costuras reforzadas. Un clásico que nunca pasa de moda.',
     price: 189.90,
     comparePrice: 239.90,
-    image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/15830674/pexels-photo-15830674.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/15830674/pexels-photo-15830674.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/15830674/pexels-photo-15830674.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['37', '38', '39', '40', '41', '42']),
     colors: JSON.stringify([
-      { name: 'Blanco', hex: '#f5f5f5' },
       { name: 'Beige', hex: '#d4a574' },
       { name: 'Negro', hex: '#1a1a1a' },
     ]),
@@ -172,10 +171,10 @@ export const localProducts: Product[] = [
     description: 'Mocasín clásico de cuero genuino marrón con suela flexible y bordado decorativo en el empeine. Construcción artesanal con plantilla acolchada de espuma viscoelástica. Acabado pulido que mejora con el uso. Perfecto para un look smart-casual elegante.',
     price: 249.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/18054235/pexels-photo-18054235.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/18054235/pexels-photo-18054235.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/18054235/pexels-photo-18054235.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
@@ -190,24 +189,24 @@ export const localProducts: Product[] = [
     category: { name: 'Calzado', slug: 'calzado' },
   },
 
-  // 6 · Stellar Sport — Zapatilla Basketball High Top Blanca
-  //    Imagen: zapatilla blanca de caña alta estilo basketball
+  // 6 · Stellar Sport — Zapatilla LED High Top Negra
+  //    Imagen: zapatilla negra con suela LED iluminada
   {
     id: '6',
-    name: 'Stellar Sport | High Court Blanco',
-    slug: 'stellar-sport-high-court-blanco',
-    description: 'Zapatilla basketball con caña alta en cuero sintético blanco. Tobillera acolchada con soporte lateral reforzado. Suela de goma con patrón de tracción para cancha. Detalles perforados para ventilación y cierre de cordones reforzado.',
+    name: 'Stellar Sport | Neon Court LED Negro',
+    slug: 'stellar-sport-neon-court-led-negro',
+    description: 'Zapatilla basketball con caña alta en cuero sintético negro y suela con tecnología LED iluminada. Tobillera acolchada con soporte lateral reforzado. Suela de goma con luces LED recargables por USB con múltiples modos de color. Detalles perforados para ventilación y cierre de cordones reforzado.',
     price: 199.90,
     comparePrice: 259.90,
-    image: 'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/373924/pexels-photo-373924.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/373924/pexels-photo-373924.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/373924/pexels-photo-373924.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
-      { name: 'Blanco', hex: '#f5f5f5' },
       { name: 'Negro', hex: '#1a1a1a' },
+      { name: 'Blanco', hex: '#f5f5f5' },
     ]),
     discount: 23,
     isNew: true,
@@ -226,10 +225,10 @@ export const localProducts: Product[] = [
     description: 'Chelsea boots de cuero genuino en tono café con elásticos laterales de alta resistencia. Suela de goma track antideslizante e interior forrado en microfibra. Un clásico británico reinventado con acabado premium para el estilo urbano.',
     price: 279.90,
     comparePrice: 349.90,
-    image: 'https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/26856060/pexels-photo-26856060.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/26856060/pexels-photo-26856060.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/26856060/pexels-photo-26856060.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43']),
     colors: JSON.stringify([
@@ -244,24 +243,25 @@ export const localProducts: Product[] = [
     category: { name: 'Calzado', slug: 'calzado' },
   },
 
-  // 8 · Urban Vibe — Sneaker Casual Gris
-  //    Imagen: zapatilla gris con detalles blancos en mesh
+  // 8 · Urban Vibe — Sneaker Suede Chunky Gris
+  //    Imagen: zapatilla suede gris con suela chunky
   {
     id: '8',
-    name: 'Urban Vibe | Street Walker Gris',
-    slug: 'urban-vibe-street-walker-gris',
-    description: 'Sneaker casual en gris con detalles blancos y suela EVA ligera. Upper en mesh transpirable con overlays sintéticos de soporte. Plantilla acolchada con tecnología de retorno de energía. Comodidad de todo el día para el ritmo urbano sin esfuerzo.',
+    name: 'Urban Vibe | Suede Chunky Gris',
+    slug: 'urban-vibe-suede-chunky-gris',
+    description: 'Sneaker chunky en ante (suede) gris con suela extragrande de goma y detalles blancos. Upper en suede premium con overlays sintéticos de soporte. Plantilla acolchada con tecnología de retorno de energía. Suela chunky de última generación para el ritmo urbano sin esfuerzo.',
     price: 159.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/8373049/pexels-photo-8373049.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/8373049/pexels-photo-8373049.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/8373049/pexels-photo-8373049.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['38', '39', '40', '41', '42', '43']),
     colors: JSON.stringify([
       { name: 'Gris', hex: '#6b7280' },
       { name: 'Blanco', hex: '#f5f5f5' },
+      { name: 'Menta', hex: '#34d399' },
     ]),
     discount: null,
     isNew: false,
@@ -280,10 +280,10 @@ export const localProducts: Product[] = [
     description: 'Zapatilla de skate con suela vulcanizada plana y upper en lona negra resistente. Diseño retro con puntera reforzada en goma blanca y costuras contrastantes. Suela Waffle de tracción superior. Ideal para skateboarding o un look casual auténtico.',
     price: 149.90,
     comparePrice: 189.90,
-    image: 'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/8079829/pexels-photo-8079829.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/8079829/pexels-photo-8079829.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/8079829/pexels-photo-8079829.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['37', '38', '39', '40', '41', '42', '43']),
     colors: JSON.stringify([
@@ -308,10 +308,10 @@ export const localProducts: Product[] = [
     description: 'Botas de trekking con membrana impermeable y suela antideslizante de alta adherencia. Upper en nylon gris con refuerzos de piel sintética en talón y puntera. Tobillera alta con soporte de tobillo integrado. Ventilación superior para aventuras en cualquier terreno.',
     price: 329.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/9160315/pexels-photo-9160315.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1520219306100-ec4afeeefe58?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/9160315/pexels-photo-9160315.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/9160315/pexels-photo-9160315.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
@@ -339,10 +339,10 @@ export const localProducts: Product[] = [
     description: 'Sudadera con capucha oversize en felpa premium de 380gsm color negro. Bolsillo canguro frontal, cordones ajustables metálicos y interior cepillado ultra suave. Corte amplio con hombros caídos. El básico esencial del streetwear premium.',
     price: 139.90,
     comparePrice: 179.90,
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/8410838/pexels-photo-8410838.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/8410838/pexels-photo-8410838.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/8410838/pexels-photo-8410838.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
     colors: JSON.stringify([
@@ -367,10 +367,10 @@ export const localProducts: Product[] = [
     description: 'Chaqueta de mezclilla azul con lavado vintage artesanal y detalles desgastados. Cierre de botones de metal, bolsillos con solapa y ajuste regular. Tela denim de 12oz con prelavado enzimático. Un clásico atemporal que mejora con cada uso.',
     price: 189.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/114996/pexels-photo-114996.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/114996/pexels-photo-114996.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/114996/pexels-photo-114996.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -394,10 +394,10 @@ export const localProducts: Product[] = [
     description: 'Bomber jacket en nylon verde oliva con forro interior satinado. Ribetes elásticos en mangas, cintura y cuello. Bolsillos con cierre YKK y parche bordado en el pecho. Estilo militar moderno con acabados premium de resistencia al agua.',
     price: 209.90,
     comparePrice: 269.90,
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/5592267/pexels-photo-5592267.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/5592267/pexels-photo-5592267.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/5592267/pexels-photo-5592267.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
     colors: JSON.stringify([
@@ -413,13 +413,13 @@ export const localProducts: Product[] = [
     category: { name: 'Ropa', slug: 'ropa-superior' },
   },
 
-  // 14 · Urban Vibe — Polo Pima Blanco
+  // 14 · Urban Vibe — Tee Pima Blanco
   //    Imagen: camiseta blanca doblada sobre fondo neutro
   {
     id: '14',
-    name: 'Urban Vibe | Essential Polo Blanco',
-    slug: 'urban-vibe-essential-polo-blanco',
-    description: 'Polo de algodón pima 100% peruano en blanco con cuello ribeteado reforzado. Tejido 30/1 suave al tacto con ajuste regular. Costuras planas anti-irritación y acabado pre-encogido. La base perfecta para cualquier look casual o smart.',
+    name: 'Urban Vibe | Essential Tee Blanco',
+    slug: 'urban-vibe-essential-tee-blanco',
+    description: 'Camiseta de algodón pima 100% peruano en blanco con acabado reforzado. Tejido 30/1 suave al tacto con ajuste regular. Costuras planas anti-irritación y acabado pre-encogido. La base perfecta para cualquier look casual o smart.',
     price: 69.90,
     comparePrice: 89.90,
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=800&fit=crop&auto=format&q=80',
@@ -451,10 +451,10 @@ export const localProducts: Product[] = [
     description: 'Camisa de franela en algodón brushed con patrón de cuadros escoceses rojo y negro. Botones de concha natural, bolsillo en el pecho y mangas ajustables a la muñeca. Tela de gramaje medio con interior aterciopelado para máxima comodidad.',
     price: 99.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/30713830/pexels-photo-30713830.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/30713830/pexels-photo-30713830.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/30713830/pexels-photo-30713830.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -479,10 +479,10 @@ export const localProducts: Product[] = [
     description: 'Rompevientos ultraligero en azul con tecnología impermeable y costuras termo-selladas. Capucha retráctil, bolsillos con cierre y reflectores de seguridad. Tela ripstop de alta durabilidad con ventilation zips. Para entrenar sin importar el clima.',
     price: 159.90,
     comparePrice: 199.90,
-    image: 'https://images.unsplash.com/photo-1495105787522-5334e3ffa0ef?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/11482937/pexels-photo-11482937.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1495105787522-5334e3ffa0ef?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/11482937/pexels-photo-11482937.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/11482937/pexels-photo-11482937.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
     colors: JSON.stringify([
@@ -507,10 +507,10 @@ export const localProducts: Product[] = [
     description: 'Pantalón jogger cargo en algodón twill negro con bolsillos laterales de gran capacidad. Cintura elástica con cordón ajustable, puños en ribete y caída relajada. Bolsillos con solapa y cierre de velcro. Comodidad táctica para la ciudad.',
     price: 119.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/19751093/pexels-photo-19751093.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/19751093/pexels-photo-19751093.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/19751093/pexels-photo-19751093.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -535,10 +535,10 @@ export const localProducts: Product[] = [
     description: 'Camisa oxford en algodón premium celeste pálido con tejido basket weave de alta densidad. Cuello botón down, puños con botones y ajuste slim fit. Costuras de refuerzo en lateral y acabado antiarrugas para un look formal relajado.',
     price: 109.90,
     comparePrice: 139.90,
-    image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/4427902/pexels-photo-4427902.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/4427902/pexels-photo-4427902.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/4427902/pexels-photo-4427902.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -563,10 +563,10 @@ export const localProducts: Product[] = [
     description: 'Suéter tejido en punto cable color crema con cuello redondo. Mezcla de algodón y acrílico para calidez sin peso excesivo. Patrón textil clásico de trenzado que aporta textura y elegancia. Ideal para outfits de temporada fría con estilo.',
     price: 149.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1527719327859-c6ce80353573?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/14641437/pexels-photo-14641437.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1527719327859-c6ce80353573?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/14641437/pexels-photo-14641437.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/14641437/pexels-photo-14641437.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -591,10 +591,10 @@ export const localProducts: Product[] = [
     description: 'Parka acolchada negra con relleno de plumón sintético de alta densidad 300gsm. Capucha con borla desmontable, forro polar interior y bolsillos con cierre. Resistente al viento y al agua con costuras termo-selladas para temperaturas extremas.',
     price: 279.90,
     comparePrice: 359.90,
-    image: 'https://images.unsplash.com/photo-1605812860427-4024433a70fd?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/4275569/pexels-photo-4275569.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1605812860427-4024433a70fd?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/4275569/pexels-photo-4275569.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/4275569/pexels-photo-4275569.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
     colors: JSON.stringify([
@@ -623,10 +623,10 @@ export const localProducts: Product[] = [
     description: 'Mochila profesional negra con compartimento acolchado para laptops hasta 15.6 pulgadas. Material Cordura resistente al agua, organización interna con bolsillos multipropósito y correas ergonómicas ventiladas. Puerto USB lateral integrado.',
     price: 169.90,
     comparePrice: 219.90,
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/3731256/pexels-photo-3731256.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/3731256/pexels-photo-3731256.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/3731256/pexels-photo-3731256.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -706,10 +706,10 @@ export const localProducts: Product[] = [
     description: 'Gorra snapback negra con visera plana y cierre ajustable metálico. Bordado 3D de alta densidad, corona estructurada de 6 paneles y badana interior absorbente. Costuras reforzadas y ojaleres de ventilación.',
     price: 59.90,
     comparePrice: 79.90,
-    image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/6963097/pexels-photo-6963097.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/6963097/pexels-photo-6963097.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/6963097/pexels-photo-6963097.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -762,10 +762,10 @@ export const localProducts: Product[] = [
     description: 'Billetera slim en cuero nappa color café con RFID blocking integrado. 6 ranuras para tarjetas, compartimento para billetes y bolsillo con cierre para monedas. Acabado pulido con bordes biselados. Diseño compacto que cabe en cualquier bolsillo.',
     price: 79.90,
     comparePrice: 99.90,
-    image: 'https://images.unsplash.com/photo-1559563458-527698bf5295?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/12444594/pexels-photo-12444594.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1559563458-527698bf5295?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/12444594/pexels-photo-12444594.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/12444594/pexels-photo-12444594.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -790,10 +790,10 @@ export const localProducts: Product[] = [
     description: 'Reloj deportivo digital negro con pantalla LCD retroiluminada. Resistencia al agua 50m, cronómetro, alarma, cuenta pasos y modo entrenamiento. Correa de resina ajustable y carcasa robusta en policarbonato. Para cualquier aventura.',
     price: 149.90,
     comparePrice: 189.90,
-    image: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/9036176/pexels-photo-9036176.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/9036176/pexels-photo-9036176.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/9036176/pexels-photo-9036176.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -817,10 +817,10 @@ export const localProducts: Product[] = [
     description: 'Gafas de sol redondas estilo retro con montura de acetato en tono tortuga y lentes gradientes ámbar. Protección UV400 completa, brazos flexibles de metal y puente nasal ajustable con plaquetas de silicona. Vintage con protección moderna.',
     price: 109.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/28194052/pexels-photo-28194052.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/28194052/pexels-photo-28194052.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/28194052/pexels-photo-28194052.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -845,10 +845,10 @@ export const localProducts: Product[] = [
     description: 'Gorra bucket negra reversible con dos diseños en uno. Lado A: liso minimalista mate. Lado B: print exclusivo urbano geométrico. Tela de algodón orgánico resistente y ala corta para protección solar casual. Badana absorbente.',
     price: 49.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/11022095/pexels-photo-11022095.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/11022095/pexels-photo-11022095.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/11022095/pexels-photo-11022095.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -872,10 +872,10 @@ export const localProducts: Product[] = [
     description: 'Bolso messenger de cuero genuino café con cierre de hebilla y correa ajustable. Compartimento acolchado para tablet de 11 pulgadas, bolsillos interiores organizadores y cierre con cremallera YKK. Forro interior en satén con logo bordado.',
     price: 199.90,
     comparePrice: 259.90,
-    image: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.pexels.com/photos/36492563/pexels-photo-36492563.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.pexels.com/photos/36492563/pexels-photo-36492563.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop',
+      'https://images.pexels.com/photos/36492563/pexels-photo-36492563.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&fit=crop',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
