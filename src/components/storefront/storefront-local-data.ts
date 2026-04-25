@@ -15,7 +15,7 @@ export const localCategories: Category[] = [
     id: 'cat-calzado',
     name: 'Calzado',
     slug: 'calzado',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=450&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=450&fit=crop&auto=format&q=80',
     _count: { products: 10 },
   },
   {
@@ -62,10 +62,10 @@ export const localProducts: Product[] = [
     description: 'Zapatilla runner de alto rendimiento en rojo vibrante con suela amortiguada de gel y upper en malla transpirable. Diseño aerodinámico con líneas dinámicas que optimizan cada zancada. Plantilla ergonómica extraíble y suela antideslizante multidireccional.',
     price: 189.90,
     comparePrice: 249.90,
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['38', '39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
@@ -89,10 +89,10 @@ export const localProducts: Product[] = [
     description: 'Zapatilla de running con tecnología de amortiguación avanzada en tono rojo profundo. Upper en mesh de alta transpirabilidad con overlays sintéticos de soporte. Suela antideslizante con patrón de tracción multidireccional para entrenamientos intensos.',
     price: 219.90,
     comparePrice: 289.90,
-    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1562183241-b937e95585b6?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1562183241-b937e95585b6?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
@@ -202,7 +202,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
     colors: JSON.stringify([
