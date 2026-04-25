@@ -21,6 +21,7 @@ import { StorefrontProductDetail } from '@/components/storefront/storefront-prod
 import { StorefrontCart } from '@/components/storefront/storefront-cart'
 import { StorefrontCheckout } from '@/components/storefront/storefront-checkout'
 import { StorefrontFab } from '@/components/storefront/storefront-whatsapp'
+import { StorefrontBottomNav } from '@/components/storefront/storefront-bottom-nav'
 
 interface StorefrontProps {
   storeSlug?: string
@@ -153,7 +154,7 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
       {/* Header */}
       <StorefrontHeader installPwa={installPwa} />
 
-      <main className="flex-1 pt-[88px] md:pt-[96px]">
+      <main className="flex-1 pt-[88px] md:pt-[96px] pb-24 md:pb-0">
         {/* MercadoPago Checkout Status Banner */}
         {store.mpCheckoutStatus && (
           <motion.div
@@ -206,7 +207,9 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
         {hasOffers && <StorefrontOffers offerProducts={offerProducts} />}
 
         {/* Categories */}
-        <StorefrontCategories />
+        <div id="categories-section">
+          <StorefrontCategories />
+        </div>
 
         {/* Products */}
         <StorefrontProducts filteredProducts={filteredProducts} loading={store.loading} />
@@ -215,8 +218,10 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
         <StorefrontContentSections offerProducts={offerProducts} hasOffers={hasOffers} />
       </main>
 
-      {/* Footer */}
-      <StorefrontFooter />
+      {/* Footer — hidden on mobile (Bottom Nav replaces it contextually) */}
+      <footer className="hidden md:block">
+        <StorefrontFooter />
+      </footer>
 
       {/* Product Detail */}
       <StorefrontProductDetail />
@@ -229,6 +234,9 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
 
       {/* FAB Menu + Install Dialog */}
       <StorefrontFab getWhatsAppOrderUrl={getWhatsAppOrderUrl} />
+
+      {/* Bottom Navigation — mobile only, appears after scrolling */}
+      <StorefrontBottomNav />
     </div>
   )
 }

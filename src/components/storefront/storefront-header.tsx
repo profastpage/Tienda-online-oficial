@@ -136,10 +136,11 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            {/* Heart & Cart — hidden on mobile (moved to Bottom Nav) */}
             <Button
               variant="ghost"
               size="icon"
-              className="text-foreground/70 hover:text-foreground relative"
+              className="hidden md:flex text-foreground/70 hover:text-foreground relative"
               onClick={wishlist.toggleWishlist}
             >
               <Heart className={`w-4 h-4 ${wishlist.totalItems() > 0 ? 'fill-red-500 text-red-500' : ''}`} />
@@ -152,7 +153,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-foreground/70 hover:text-foreground relative"
+              className="hidden md:flex text-foreground/70 hover:text-foreground relative"
               onClick={cart.toggleCart}
             >
               <ShoppingBag className="w-4 h-4" />
