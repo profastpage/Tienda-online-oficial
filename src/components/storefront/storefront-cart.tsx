@@ -96,7 +96,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
               <SheetFooter className="border-t pt-4 px-1 flex-col gap-3">
                 <div className="w-full flex items-center justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-xl font-bold">S/ {cart.totalPrice().toFixed(2)}</span>
+                  <span className="text-xl font-bold text-foreground">S/ {cart.totalPrice().toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground/70 w-full text-left">
                   {cart.totalPrice() > 199 ? '🎉 Envío gratis en tu pedido' : `Envío S/15 · Gratis en pedidos +S/199`}

@@ -229,7 +229,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1605733160312-0f9efa3ebed2?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43']),
     colors: JSON.stringify([
@@ -308,9 +308,9 @@ export const localProducts: Product[] = [
     description: 'Botas de trekking con membrana impermeable y suela antideslizante de alta adherencia. Upper en nylon gris con refuerzos de piel sintética en talón y puntera. Tobillera alta con soporte de tobillo integrado. Ventilación superior para aventuras en cualquier terreno.',
     price: 329.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1605733160312-0f9efa3ebed2?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1605733160312-0f9efa3ebed2?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=600&h=800&fit=crop&auto=format&q=80',
       'https://images.unsplash.com/photo-1520219306100-ec4afeeefe58?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['39', '40', '41', '42', '43', '44']),
@@ -342,7 +342,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1578768079470-9e3fda1fdf76?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
     colors: JSON.stringify([
@@ -425,7 +425,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1625910513413-5fc421e0e2f0?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
     colors: JSON.stringify([
@@ -454,7 +454,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1598033129183-c4f50c736c10?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -538,7 +538,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1598033129183-c4f50c736c10?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -563,10 +563,10 @@ export const localProducts: Product[] = [
     description: 'Suéter tejido en punto cable color crema con cuello redondo. Mezcla de algodón y acrílico para calidez sin peso excesivo. Patrón textil clásico de trenzado que aporta textura y elegancia. Ideal para outfits de temporada fría con estilo.',
     price: 149.90,
     comparePrice: null,
-    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cda3a63?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1527719327859-c6ce80353573?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1434389677669-e08b4cda3a63?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1614975059251-992f11792571?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1527719327859-c6ce80353573?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
     colors: JSON.stringify([
@@ -591,9 +591,9 @@ export const localProducts: Product[] = [
     description: 'Parka acolchada negra con relleno de plumón sintético de alta densidad 300gsm. Capucha con borla desmontable, forro polar interior y bolsillos con cierre. Resistente al viento y al agua con costuras termo-selladas para temperaturas extremas.',
     price: 279.90,
     comparePrice: 359.90,
-    image: 'https://images.unsplash.com/photo-1544923246-77307dd270cb?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1605812860427-4024433a70fd?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1544923246-77307dd270cb?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1605812860427-4024433a70fd?w=600&h=800&fit=crop&auto=format&q=80',
       'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['S', 'M', 'L', 'XL', 'XXL']),
@@ -626,7 +626,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1581605405669-fcdf81165b0c?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([
@@ -706,9 +706,9 @@ export const localProducts: Product[] = [
     description: 'Gorra snapback negra con visera plana y cierre ajustable metálico. Bordado 3D de alta densidad, corona estructurada de 6 paneles y badana interior absorbente. Costuras reforzadas y ojaleres de ventilación.',
     price: 59.90,
     comparePrice: 79.90,
-    image: 'https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=600&h=800&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
-      'https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=600&h=800&fit=crop&auto=format&q=80',
       'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['Única']),
@@ -848,7 +848,7 @@ export const localProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&h=800&fit=crop&auto=format&q=80',
     images: JSON.stringify([
       'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&h=800&fit=crop&auto=format&q=80',
-      'https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=600&h=800&fit=crop&auto=format&q=80',
+      'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=600&h=800&fit=crop&auto=format&q=80',
     ]),
     sizes: JSON.stringify(['Única']),
     colors: JSON.stringify([

@@ -47,7 +47,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
       }`}
     >
       {/* Top bar */}
-      <div className="text-white text-center py-1 text-xs" style={{ backgroundColor: 'var(--store-primary)' }}>
+      <div className="text-white text-center py-1.5 text-xs font-medium" style={{ backgroundColor: 'var(--store-primary, #171717)' }}>
         {handleSc('announcement', 'text', 'ENVÍO GRATIS en pedidos mayores a S/199')}
         {handleSc('announcement', 'subtext', '') && (
           <> · <span className="hidden sm:inline">{handleSc('announcement', 'subtext', 'Pago seguro contra entrega')}</span></>
@@ -67,7 +67,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
             <a href="#" className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--store-primary)' }}>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--store-primary, #171717)' }}>
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
                 ) : (
@@ -94,7 +94,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
                 className="text-xs font-medium text-foreground/70 hover:text-foreground transition-colors relative group"
               >
                 {item}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" style={{ backgroundColor: 'var(--store-primary)' }} />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" style={{ backgroundColor: 'var(--store-primary, #171717)' }} />
               </a>
             ))}
           </nav>

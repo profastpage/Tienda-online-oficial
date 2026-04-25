@@ -68,7 +68,7 @@ export function StorefrontHero({ hasOffers }: StorefrontHeroProps) {
                 <Button
                   size="lg"
                   className="text-white rounded-full px-8 h-12 text-sm font-semibold"
-                  style={{ backgroundColor: 'var(--store-primary)' }}
+                  style={{ backgroundColor: 'var(--store-primary, #171717)' }}
                   onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   {handleSc('hero', 'btnText1', 'Ver Colección')}

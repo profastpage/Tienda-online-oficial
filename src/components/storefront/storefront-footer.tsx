@@ -16,7 +16,7 @@ export function StorefrontFooter() {
     sc(storeContent, section, key, fallback)
 
   return (
-    <footer className="text-white border-t border-neutral-800" style={{ backgroundColor: 'var(--store-primary)' }}>
+    <footer className="text-white border-t border-neutral-800" style={{ backgroundColor: 'var(--store-primary, #171717)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
           {/* Brand */}

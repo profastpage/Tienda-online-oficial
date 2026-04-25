@@ -140,17 +140,15 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
 
   return (
     <div className="min-h-screen flex flex-col bg-background" style={store.storeInfo?.fontFamily && store.storeInfo.fontFamily !== 'system-ui' ? { fontFamily: `${store.storeInfo.fontFamily}, sans-serif` } : undefined}>
-      {/* Inject CSS custom properties for store theming */}
-      {store.storeInfo && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          :root {
-            --store-primary: ${store.storeInfo.primaryColor || '#171717'};
-            --store-secondary: ${store.storeInfo.secondaryColor || '#fafafa'};
-            --store-accent: ${store.storeInfo.accentColor || '#171717'};
-            --store-font: ${store.storeInfo.fontFamily || 'system-ui'};
-          }
-        ` }} />
-      )}
+      {/* Inject CSS custom properties for store theming (always set defaults) */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        :root {
+          --store-primary: ${store.storeInfo?.primaryColor || '#171717'};
+          --store-secondary: ${store.storeInfo?.secondaryColor || '#fafafa'};
+          --store-accent: ${store.storeInfo?.accentColor || '#171717'};
+          --store-font: ${store.storeInfo?.fontFamily || 'system-ui'};
+        }
+      ` }} />
 
       {/* Header */}
       <StorefrontHeader installPwa={installPwa} />

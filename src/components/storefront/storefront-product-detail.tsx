@@ -311,8 +311,8 @@ export function StorefrontProductDetail() {
                 <Button
                   className={`flex-1 h-12 rounded-xl font-semibold text-sm transition-all ${
                     addedToCart
-                      ? 'bg-green-600 text-white'
-                      : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-white'
                   }`}
                   onClick={() => handleAddToCart(selectedProduct)}
                   disabled={!selectedSize && !addedToCart}

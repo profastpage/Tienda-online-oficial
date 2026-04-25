@@ -101,7 +101,7 @@ export function StorefrontContentSections({ offerProducts, hasOffers }: Storefro
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="relative rounded-3xl overflow-hidden text-white"
-            style={{ backgroundColor: 'var(--store-primary)' }}
+            style={{ backgroundColor: 'var(--store-primary, #171717)' }}
           >
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div className="p-8 md:p-12 lg:p-16">
@@ -236,7 +236,7 @@ export function StorefrontContentSections({ offerProducts, hasOffers }: Storefro
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
             />
-            <Button className="text-white rounded-xl px-6 h-12 font-semibold whitespace-nowrap" style={{ backgroundColor: 'var(--store-primary)' }}>
+            <Button className="text-white rounded-xl px-6 h-12 font-semibold whitespace-nowrap" style={{ backgroundColor: 'var(--store-primary, #171717)' }}>
               {handleSc('newsletter', 'btnText', 'Suscribirme')}
             </Button>
           </div>
@@ -245,7 +245,7 @@ export function StorefrontContentSections({ offerProducts, hasOffers }: Storefro
       </section>
 
       {/* Stats */}
-      <section className="py-16 text-white" style={{ backgroundColor: 'var(--store-primary)' }}>
+      <section className="py-16 text-white" style={{ backgroundColor: 'var(--store-primary, #171717)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {dynamicStats.map((stat, index) => (
@@ -284,7 +284,7 @@ export function StorefrontContentSections({ offerProducts, hasOffers }: Storefro
               <Button
                 size="lg"
                 className="text-white rounded-full px-8 h-12 font-semibold"
-                style={{ backgroundColor: 'var(--store-accent)' }}
+                style={{ backgroundColor: 'var(--store-accent, #171717)' }}
                 onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 {handleSc('cta', 'btnText', 'Ver Catálogo Completo')}
