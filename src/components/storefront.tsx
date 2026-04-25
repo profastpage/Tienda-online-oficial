@@ -1,6 +1,12 @@
 'use client'
 
 import { useEffect, useCallback, useMemo } from 'react'
+import {
+  localProducts,
+  localCategories,
+  localTestimonials,
+  localStoreContent,
+} from '@/components/storefront/storefront-local-data'
 import { motion } from 'framer-motion'
 import { ShieldCheck, Clock, AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -100,77 +106,16 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
     }
   }, [store.setMpCheckoutStatus])
 
-  // ── Fetch data with retry logic ──────────────────────────────
+  // ── Load local data instantly (no API calls) ─────────────────
   useEffect(() => {
-    let cancelled = false
-
-    async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
-      const separator = url.includes('?') ? '&' : '?'
-      const bustUrl = `${url}${separator}_cb=${Date.now()}`
-      for (let i = 0; i < retries; i++) {
-        try {
-          const res = await fetch(bustUrl, { cache: 'no-store' })
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          const contentType = res.headers.get('content-type') || ''
-          if (!contentType.includes('application/json')) {
-            throw new Error(`Response is not JSON: ${contentType}`)
-          }
-          const data = await res.json()
-          return data
-        } catch (err) {
-          console.warn(`[Storefront] Fetch ${url} attempt ${i + 1}/${retries} failed:`, err)
-          if (i < retries - 1) await new Promise(r => setTimeout(r, delay * (i + 1)))
-          else throw err
-        }
-      }
-    }
-
-    async function fetchData() {
-      try {
-        const [storeInfoData, storeContentData, productsData, categoriesData, testimonialsData, paymentMethodsData] = await Promise.all([
-          fetchWithRetry(`/api/store/info?slug=${effectiveSlug}`).catch(() => null),
-          fetchWithRetry(`/api/store-content?store=${effectiveSlug}`).catch(() => ({})),
-          fetchWithRetry(`/api/products?store=${effectiveSlug}`),
-          fetchWithRetry(`/api/categories?store=${effectiveSlug}`),
-          fetchWithRetry(`/api/testimonials?store=${effectiveSlug}`),
-          fetchWithRetry(`/api/store/payment-methods?storeId=${user?.storeId || 'kmpw0h5ig4o518kg4zsm5huo3'}`),
-        ])
-        if (cancelled) return
-        // Load store content (hero, features, stats, etc.)
-        if (storeContentData && typeof storeContentData === 'object' && !storeContentData.error) {
-          store.setStoreContent(storeContentData)
-        }
-        // Load store info into state
-        if (storeInfoData && !storeInfoData.error) {
-          store.setStoreInfo(storeInfoData)
-          store.setStoreName(storeInfoData.name || '')
-          store.setStoreLogo(storeInfoData.logo || '')
-          store.setStoreDescription(storeInfoData.description || '')
-          if (storeInfoData.whatsappNumber) {
-            const digits = storeInfoData.whatsappNumber.replace(/[^0-9]/g, '')
-            if (digits) store.setStoreWhatsApp(digits)
-          }
-        } else {
-          store.setStoreName('Mi Tienda')
-        }
-        store.setProducts(Array.isArray(productsData) ? productsData : [])
-        store.setCategories(Array.isArray(categoriesData) ? categoriesData : [])
-        store.setTestimonials(Array.isArray(testimonialsData) ? testimonialsData : [])
-        if (Array.isArray(paymentMethodsData?.methods)) {
-          store.setPaymentMethods(paymentMethodsData.methods)
-        }
-      } catch (error) {
-        console.error('[Storefront] Error fetching data:', error)
-        store.setProducts([])
-        store.setCategories([])
-        store.setTestimonials([])
-      } finally {
-        if (!cancelled) store.setLoading(false)
-      }
-    }
-    fetchData()
-    return () => { cancelled = true }
-  }, [effectiveSlug, user?.storeId, store])
+    // Products, categories, testimonials and store content load from local constants
+    store.setProducts(localProducts)
+    store.setCategories(localCategories)
+    store.setTestimonials(localTestimonials)
+    store.setStoreContent(localStoreContent)
+    store.setStoreName('Urban Style')
+    store.setLoading(false)
+  }, [store])
 
   // ── Checkout open handler ───────────────────────────────────
   const openCheckout = useCallback(() => {

@@ -105,7 +105,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   categories: [],
   testimonials: [],
   paymentMethods: [],
-  loading: true,
+  loading: false,
 
   // ── Derived store info ──────────────────────────────────────
   storeWhatsApp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
