@@ -1,5 +1,6 @@
 // Seed data fallback for production environments without database access
 // This data matches the exact format returned by Prisma queries
+// Updated: Unique Unsplash images for each product — no duplicates, coherent name-image pairing
 
 export interface SeedCategory {
   id: string
@@ -108,7 +109,12 @@ export const seedCategories: SeedCategory[] = [
   },
 ]
 
+// ═══════════════════════════════════════════════════════════════════
+// 21 UNIQUE PRODUCTS — each with its own Unsplash image
+// No image is repeated. Every image matches its product name.
+// ═══════════════════════════════════════════════════════════════════
 export const seedProducts: SeedProduct[] = [
+  // ── CAMISETAS (4 productos, 4 imágenes únicas) ──
   {
     id: 'cmnnalw0y000dnhbp5agmcaqk',
     name: 'Camiseta Urban Classic',
@@ -117,7 +123,7 @@ export const seedProducts: SeedProduct[] = [
       'Camiseta de algodón pima 100% con estampado urbano exclusivo. Corte regular fit ideal para el día a día.',
     price: 79.9,
     comparePrice: 99.9,
-    image: '/images/products/polera-oversize.png',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80&sig=1',
     categoryId: 'cmnnalw0s0001nhbpd23opcs6',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -140,7 +146,7 @@ export const seedProducts: SeedProduct[] = [
       'Polo oversize de algodón premium con caída relajada. Perfecto para combinar con joggers o jeans.',
     price: 89.9,
     comparePrice: null,
-    image: '/images/products/polera-black.png',
+    image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=800&q=80&sig=2',
     categoryId: 'cmnnalw0s0001nhbpd23opcs6',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -163,7 +169,7 @@ export const seedProducts: SeedProduct[] = [
       'Camiseta con logo bordado en el pecho. Algodón 24/1 de alta suavidad, no destiñe.',
     price: 69.9,
     comparePrice: 89.9,
-    image: '/images/products/polera-white.png',
+    image: 'https://images.unsplash.com/photo-1503341504253-dff4f37c0a0a?auto=format&fit=crop&w=800&q=80&sig=3',
     categoryId: 'cmnnalw0s0001nhbpd23opcs6',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -186,7 +192,7 @@ export const seedProducts: SeedProduct[] = [
       'Polo negro minimalista sin estampados. Algodón peinado con acabado mate, básico imperdible.',
     price: 59.9,
     comparePrice: null,
-    image: '/images/products/polera-black.png',
+    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80&sig=4',
     categoryId: 'cmnnalw0s0001nhbpd23opcs6',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -201,6 +207,8 @@ export const seedProducts: SeedProduct[] = [
     updatedAt: '2026-04-06T14:35:43.334Z',
     category: { name: 'Camisetas', slug: 'camisetas' },
   },
+
+  // ── PANTALONES (4 productos, 4 imágenes únicas) ──
   {
     id: 'cmnnalw14000lnhbpw5dlkbvd',
     name: 'Jogger Cargo Negro',
@@ -209,7 +217,7 @@ export const seedProducts: SeedProduct[] = [
       'Jogger cargo con 6 bolsillos funcionales. Tela de gabardina stretch, cintura elástica con cordón.',
     price: 129.9,
     comparePrice: 159.9,
-    image: '/images/products/cargo-black.png',
+    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80&sig=5',
     categoryId: 'cmnnalw0t0003nhbprt79pgbz',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -232,7 +240,7 @@ export const seedProducts: SeedProduct[] = [
       'Jeans de mezclilla premium 12oz con stretch. Lavado dark blue, slim fit con acabado vintage.',
     price: 149.9,
     comparePrice: null,
-    image: '/images/products/jean-dark.png',
+    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=800&q=80&sig=6',
     categoryId: 'cmnnalw0t0003nhbprt79pgbz',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -255,7 +263,7 @@ export const seedProducts: SeedProduct[] = [
       'Jogger de fleece premium con puños y cintura elástica. Ideal para deporte o uso casual.',
     price: 109.9,
     comparePrice: null,
-    image: '/images/products/jogger-black.png',
+    image: 'https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=800&q=80&sig=7',
     categoryId: 'cmnnalw0t0003nhbprt79pgbz',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -271,6 +279,31 @@ export const seedProducts: SeedProduct[] = [
     category: { name: 'Pantalones', slug: 'pantalones' },
   },
   {
+    id: 'cmnnalw1l001hnhbppn02imru',
+    name: 'Cargo Oliva Street',
+    slug: 'cargo-oliva-street',
+    description:
+      'Pantalón cargo oliva con bolsillos laterales. Tela ripstop resistente, ajuste regular, ideal para outdoor.',
+    price: 134.9,
+    comparePrice: null,
+    image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80&sig=8',
+    categoryId: 'cmnnalw0t0003nhbprt79pgbz',
+    storeId: 'd1whgpglbzf8d42et5xp',
+    isFeatured: false,
+    isNew: true,
+    discount: null,
+    sizes: '["S","M","L","XL"]',
+    colors: '[{"name":"Oliva","hex":"#4b5320"},{"name":"Negro","hex":"#1a1a1a"}]',
+    rating: 4.517028007779012,
+    reviewCount: 42,
+    inStock: true,
+    createdAt: '2026-04-06T14:35:43.354Z',
+    updatedAt: '2026-04-06T14:35:43.354Z',
+    category: { name: 'Pantalones', slug: 'pantalones' },
+  },
+
+  // ── ZAPATILLAS (3 productos, 3 imágenes únicas) ──
+  {
     id: 'cmnnalw17000rnhbplau2gqel',
     name: 'Air Runner Pro',
     slug: 'air-runner-pro',
@@ -278,7 +311,7 @@ export const seedProducts: SeedProduct[] = [
       'Zapatillas deportivas con suela de gel amortiguante. Upper de mesh transpirable, diseño moderno.',
     price: 249.9,
     comparePrice: 299.9,
-    image: '/images/products/sneakers-white.png',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80&sig=9',
     categoryId: 'cmnnalw0u0005nhbpko86legc',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -301,7 +334,7 @@ export const seedProducts: SeedProduct[] = [
       'Zapatillas high-top de cuero sintético con suela gruesa. Estilo urbano con máxima comodidad.',
     price: 199.9,
     comparePrice: null,
-    image: '/images/products/sneakers-white-v2.png',
+    image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=800&q=80&sig=10',
     categoryId: 'cmnnalw0u0005nhbpko86legc',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -324,7 +357,7 @@ export const seedProducts: SeedProduct[] = [
       'Zapatillas low-top blancas clásicas. Cuero sintético premium, suela vulcanizada anti-deslizante.',
     price: 179.9,
     comparePrice: 219.9,
-    image: '/images/products/sneakers-white.png',
+    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80&sig=11',
     categoryId: 'cmnnalw0u0005nhbpko86legc',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -339,6 +372,8 @@ export const seedProducts: SeedProduct[] = [
     updatedAt: '2026-04-06T14:35:43.342Z',
     category: { name: 'Zapatillas', slug: 'zapatillas' },
   },
+
+  // ── ACCESORIOS (3 productos, 3 imágenes únicas) ──
   {
     id: 'cmnnalw1b000xnhbpaofpaoxe',
     name: 'Gorra Snapback Urban',
@@ -347,7 +382,7 @@ export const seedProducts: SeedProduct[] = [
       'Gorra snapback con visera plana y cierre ajustable. Tela de gabardina, logo bordado 3D.',
     price: 49.9,
     comparePrice: null,
-    image: '/images/products/hoodie-gray.png',
+    image: 'https://images.unsplash.com/photo-1588850561407-ed78c334e67a?auto=format&fit=crop&w=800&q=80&sig=12',
     categoryId: 'cmnnalw0v0007nhbp4cys6b8n',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -370,7 +405,7 @@ export const seedProducts: SeedProduct[] = [
       'Mochila para laptop 15.6" con compartimento acolchado. Material resistente al agua, puerto USB lateral.',
     price: 139.9,
     comparePrice: 169.9,
-    image: '/images/products/bomber-black.png',
+    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80&sig=13',
     categoryId: 'cmnnalw0v0007nhbp4cys6b8n',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -393,7 +428,7 @@ export const seedProducts: SeedProduct[] = [
       'Cadena de acero inoxidable bañada en oro 18k. Diseño cubano link, cierre de langosta.',
     price: 39.9,
     comparePrice: null,
-    image: '/images/products/hoodie-red.png',
+    image: 'https://images.unsplash.com/photo-1611085583191-a3b181a88401?auto=format&fit=crop&w=800&q=80&sig=14',
     categoryId: 'cmnnalw0v0007nhbp4cys6b8n',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -408,6 +443,8 @@ export const seedProducts: SeedProduct[] = [
     updatedAt: '2026-04-06T14:35:43.345Z',
     category: { name: 'Accesorios', slug: 'accesorios' },
   },
+
+  // ── CHAQUETAS (3 productos, 3 imágenes únicas) ──
   {
     id: 'cmnnalw1e0013nhbpbf9phari',
     name: 'Bomber Jacket Negro',
@@ -416,7 +453,7 @@ export const seedProducts: SeedProduct[] = [
       'Bomber de nylon con forro polar. Cierre YKK, bolsillos con cremallera, acabado premium.',
     price: 199.9,
     comparePrice: 249.9,
-    image: '/images/products/bomber-black.png',
+    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80&sig=15',
     categoryId: 'cmnnalw0w0009nhbp0wcukjbh',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -439,7 +476,7 @@ export const seedProducts: SeedProduct[] = [
       'Chaqueta windbreaker ligera e impermeable. Capucha plegable, ventilación trasera, reflectivos.',
     price: 159.9,
     comparePrice: null,
-    image: '/images/products/denim-jacket.png',
+    image: 'https://images.unsplash.com/photo-1495105787522-5334e3ffa0ef?auto=format&fit=crop&w=800&q=80&sig=16',
     categoryId: 'cmnnalw0w0009nhbp0wcukjbh',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -455,6 +492,31 @@ export const seedProducts: SeedProduct[] = [
     category: { name: 'Chaquetas', slug: 'chaquetas' },
   },
   {
+    id: 'cmnnalw1k001fnhbp8dtelo2e',
+    name: 'Denim Jacket Vintage',
+    slug: 'denim-jacket-vintage',
+    description:
+      'Chaqueta denim de mezclilla lavada. Estilo cropped, botones de metal, forro de satén.',
+    price: 189.9,
+    comparePrice: 229.9,
+    image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80&sig=17',
+    categoryId: 'cmnnalw0w0009nhbp0wcukjbh',
+    storeId: 'd1whgpglbzf8d42et5xp',
+    isFeatured: true,
+    isNew: false,
+    discount: 17,
+    sizes: '["S","M","L","XL"]',
+    colors: '[{"name":"Azul Denim","hex":"#5b8db8"},{"name":"Negro","hex":"#1a1a1a"}]',
+    rating: 4.736721518602732,
+    reviewCount: 48,
+    inStock: true,
+    createdAt: '2026-04-06T14:35:43.352Z',
+    updatedAt: '2026-04-06T14:35:43.352Z',
+    category: { name: 'Chaquetas', slug: 'chaquetas' },
+  },
+
+  // ── HOODIES (4 productos, 4 imágenes únicas) ──
+  {
     id: 'cmnnalw1g0017nhbpvsrokikw',
     name: 'Hoodie Oversize Grey',
     slug: 'hoodie-oversize-grey',
@@ -462,7 +524,7 @@ export const seedProducts: SeedProduct[] = [
       'Hoodie oversize de fleece 380gsm. Capucha amplia con cordones planos, bolsillo canguro.',
     price: 119.9,
     comparePrice: 149.9,
-    image: '/images/products/hoodie-gray.png',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=800&q=80&sig=18',
     categoryId: 'cmnnalw0x000bnhbpews99jhi',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: true,
@@ -485,7 +547,7 @@ export const seedProducts: SeedProduct[] = [
       'Buzo con cierre frontal completo. Fleece suave anti-pilling, mangas raglan para mejor movilidad.',
     price: 139.9,
     comparePrice: null,
-    image: '/images/products/hoodie-red.png',
+    image: 'https://images.unsplash.com/photo-1618354691438-25bc04584c23?auto=format&fit=crop&w=800&q=80&sig=19',
     categoryId: 'cmnnalw0x000bnhbpews99jhi',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -508,7 +570,7 @@ export const seedProducts: SeedProduct[] = [
       'Suéter de lana merino premium. Punto jersey suave, cuello redondo, acabado profesional.',
     price: 109.9,
     comparePrice: 139.9,
-    image: '/images/products/sweater-beige.png',
+    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cda3a17?auto=format&fit=crop&w=800&q=80&sig=20',
     categoryId: 'cmnnalw0x000bnhbpews99jhi',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -531,7 +593,7 @@ export const seedProducts: SeedProduct[] = [
       'Suéter crema con textura vintage. Algodón macramé, costuras reforzadas, corte relajado.',
     price: 99.9,
     comparePrice: null,
-    image: '/images/products/sweater-cream.png',
+    image: 'https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?auto=format&fit=crop&w=800&q=80&sig=21',
     categoryId: 'cmnnalw0x000bnhbpews99jhi',
     storeId: 'd1whgpglbzf8d42et5xp',
     isFeatured: false,
@@ -545,52 +607,6 @@ export const seedProducts: SeedProduct[] = [
     createdAt: '2026-04-06T14:35:43.351Z',
     updatedAt: '2026-04-06T14:35:43.351Z',
     category: { name: 'Hoodies', slug: 'hoodies' },
-  },
-  {
-    id: 'cmnnalw1k001fnhbp8dtelo2e',
-    name: 'Denim Jacket Vintage',
-    slug: 'denim-jacket-vintage',
-    description:
-      'Chaqueta denim de mezclilla lavada. Estilo cropped, botones de metal, forro de satén.',
-    price: 189.9,
-    comparePrice: 229.9,
-    image: '/images/products/denim-vintage.png',
-    categoryId: 'cmnnalw0w0009nhbp0wcukjbh',
-    storeId: 'd1whgpglbzf8d42et5xp',
-    isFeatured: true,
-    isNew: false,
-    discount: 17,
-    sizes: '["S","M","L","XL"]',
-    colors: '[{"name":"Azul Denim","hex":"#5b8db8"},{"name":"Negro","hex":"#1a1a1a"}]',
-    rating: 4.736721518602732,
-    reviewCount: 48,
-    inStock: true,
-    createdAt: '2026-04-06T14:35:43.352Z',
-    updatedAt: '2026-04-06T14:35:43.352Z',
-    category: { name: 'Chaquetas', slug: 'chaquetas' },
-  },
-  {
-    id: 'cmnnalw1l001hnhbppn02imru',
-    name: 'Cargo Oliva Street',
-    slug: 'cargo-oliva-street',
-    description:
-      'Pantalón cargo oliva con bolsillos laterales. Tela ripstop resistente, ajuste regular, ideal para outdoor.',
-    price: 134.9,
-    comparePrice: null,
-    image: '/images/products/cargo-olive.png',
-    categoryId: 'cmnnalw0t0003nhbprt79pgbz',
-    storeId: 'd1whgpglbzf8d42et5xp',
-    isFeatured: false,
-    isNew: true,
-    discount: null,
-    sizes: '["S","M","L","XL"]',
-    colors: '[{"name":"Oliva","hex":"#4b5320"},{"name":"Negro","hex":"#1a1a1a"}]',
-    rating: 4.517028007779012,
-    reviewCount: 42,
-    inStock: true,
-    createdAt: '2026-04-06T14:35:43.354Z',
-    updatedAt: '2026-04-06T14:35:43.354Z',
-    category: { name: 'Pantalones', slug: 'pantalones' },
   },
 ]
 
