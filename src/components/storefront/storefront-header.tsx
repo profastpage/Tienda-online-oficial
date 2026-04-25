@@ -184,14 +184,6 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-            >
-              <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 absolute" />
-              <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
-            </button>
             {/* Install App - always show */}
             <button
               onClick={installPwa}

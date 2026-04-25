@@ -41,7 +41,7 @@ export function StorefrontCategories() {
               onClick={() => setActiveCategory(activeCategory === cat.slug ? null : cat.slug)}
               className={`group relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer transition-all duration-300 ${
                 activeCategory === cat.slug
-                  ? 'ring-2 ring-neutral-900 ring-offset-2'
+                  ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 ring-offset-2 dark:ring-offset-neutral-900'
                   : 'hover:shadow-lg'
               }`}
             >

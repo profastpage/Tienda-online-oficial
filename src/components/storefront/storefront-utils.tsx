@@ -135,8 +135,8 @@ export function SwipeableProductImage({ product, onClick }: { product: Product; 
       {/* Wishlist button with pulse animation */}
       <motion.div
         className="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
-        whileTap={{ scale: 1.3 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        whileTap={{ scale: 1.2 }}
+        transition={{ type: 'spring', stiffness: 350, damping: 20 }}
       >
         <Button
           variant="ghost"

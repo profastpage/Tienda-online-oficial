@@ -73,8 +73,8 @@ export function WelcomePopup() {
             exit={{ opacity: 0, scale: 0.85, y: 30 }}
             transition={{
               type: 'spring',
-              stiffness: 300,
-              damping: 25,
+              stiffness: 250,
+              damping: 28,
             }}
             className="
               relative w-full max-w-md
@@ -114,7 +114,7 @@ export function WelcomePopup() {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.2 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.2 }}
                 className="relative mx-auto w-16 h-16 mb-4"
               >
                 <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-xl" />
@@ -207,7 +207,7 @@ export function WelcomePopup() {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                     className="mx-auto w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4"
                   >
                     <svg className="w-7 h-7 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

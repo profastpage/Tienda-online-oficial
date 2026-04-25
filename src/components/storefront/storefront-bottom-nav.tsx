@@ -152,10 +152,10 @@ export function StorefrontBottomNav() {
               <motion.button
                 key={tab.id}
                 onClick={tab.action}
-                whileTap={{ scale: 0.82 }}
+                whileTap={{ scale: 0.88 }}
                 transition={{
                   type: 'spring',
-                  stiffness: 500,
+                  stiffness: 400,
                   damping: 25,
                 }}
                 className="
@@ -165,14 +165,6 @@ export function StorefrontBottomNav() {
                 "
               >
                 <div className="relative">
-                  <motion.div
-                    whileTap={{ scale: 0.85 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 600,
-                      damping: 20,
-                    }}
-                  >
                     <Icon
                       className={`
                         w-[21px] h-[21px] transition-colors duration-200
@@ -193,14 +185,13 @@ export function StorefrontBottomNav() {
                       `}
                       strokeWidth={isActive || hasBadge ? 2.2 : 1.7}
                     />
-                  </motion.div>
 
                   {/* Badge counter */}
                   {hasBadge && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                       className="
                         absolute -top-1.5 -right-2.5
                         min-w-[16px] h-[16px] px-1
@@ -253,7 +244,7 @@ export function StorefrontBottomNav() {
                     }}
                     transition={{
                       type: 'spring',
-                      stiffness: 400,
+                      stiffness: 300,
                       damping: 30,
                     }}
                   />

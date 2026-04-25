@@ -83,7 +83,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                         </div>
                       </div>
                       <button
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex-shrink-0"
                         onClick={() => cart.removeItem(item.id, item.size)}
                         title="Eliminar producto"
                       >
@@ -197,7 +197,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                       </div>
                       {/* Action icons - minimal row */}
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 transition-colors"
+                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-900 transition-colors"
                           onClick={() => {
                             cart.addItem({ id: item.id, name: item.name, price: item.price, image: item.image, size: '', color: '' })
                             toast({ title: 'Agregado al carrito', description: item.name, duration: 800 })
@@ -206,7 +206,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                         >
                           <ShoppingCart className="w-4 h-4" />
                         </button>
-                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-green-50 text-neutral-500 hover:text-green-600 transition-colors"
+                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-green-50 dark:hover:bg-green-950/30 text-neutral-500 hover:text-green-600 transition-colors"
                           onClick={() => {
                             const waMsg = encodeURIComponent(`¡Hola! Me interesa:\n📦 ${item.name}\n💰 S/ ${item.price.toFixed(2)}`)
                             window.open(`https://wa.me/${storeWhatsApp}?text=${waMsg}`, '_blank')
@@ -215,7 +215,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                         >
                           <MessageCircle className="w-4 h-4" />
                         </button>
-                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-red-50 text-neutral-500 hover:text-red-500 transition-colors"
+                        <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-950/30 text-neutral-500 hover:text-red-500 transition-colors"
                           onClick={() => wishlist.removeItem(item.id)}
                           title="Eliminar"
                         >

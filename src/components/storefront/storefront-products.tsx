@@ -56,7 +56,7 @@ function AnimatedProductCard({
       viewport={{ once: true, margin: '-40px' }}
       transition={{
         duration: 0.5,
-        delay: Math.min(index * 0.04, 0.3),
+        delay: Math.min(index * 0.03, 0.25),
         ease: [0.22, 1, 0.36, 1],
       }}
       className="group"
