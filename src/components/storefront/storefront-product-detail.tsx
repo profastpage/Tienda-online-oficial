@@ -252,7 +252,7 @@ export function StorefrontProductDetail() {
                   <span className="text-lg text-muted-foreground/70 line-through">
                     S/ {selectedProduct.comparePrice.toFixed(2)}
                   </span>
-                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-xs">
+                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/30 text-xs">
                     -{selectedProduct.discount}%
                   </Badge>
                 </>

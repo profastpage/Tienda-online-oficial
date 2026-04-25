@@ -334,16 +334,16 @@ Gracias!`)
                   {paymentMethods.map((method) => {
                     const isSelected = selectedPaymentMethod === method.id
                     const typeColors: Record<string, string> = {
-                      yape: 'border-purple-300 bg-purple-50',
-                      plin: 'border-teal-300 bg-teal-50',
-                      efectivo: 'border-green-300 bg-green-50',
-                      transferencia: 'border-blue-300 bg-blue-50',
-                      tarjeta: 'border-orange-300 bg-orange-50',
-                      niubiz: 'border-red-300 bg-red-50',
-                      mercadopago: 'border-sky-300 bg-sky-50',
-                      otro: 'border-neutral-300 bg-neutral-50',
+                      yape: 'border-purple-300 bg-purple-50 dark:border-purple-600 dark:bg-purple-900/30',
+                      plin: 'border-teal-300 bg-teal-50 dark:border-teal-600 dark:bg-teal-900/30',
+                      efectivo: 'border-green-300 bg-green-50 dark:border-green-600 dark:bg-green-900/30',
+                      transferencia: 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/30',
+                      tarjeta: 'border-orange-300 bg-orange-50 dark:border-orange-600 dark:bg-orange-900/30',
+                      niubiz: 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/30',
+                      mercadopago: 'border-sky-300 bg-sky-50 dark:border-sky-600 dark:bg-sky-900/30',
+                      otro: 'border-neutral-300 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800',
                     }
-                    const selectedColor = typeColors[method.type] || 'border-amber-300 bg-amber-50'
+                    const selectedColor = typeColors[method.type] || 'border-amber-300 bg-amber-50 dark:border-amber-600 dark:bg-amber-900/30'
                     const typeEmojis: Record<string, string> = {
                       yape: '💜', plin: '💚', efectivo: '💵', transferencia: '🏦',
                       tarjeta: '💳', niubiz: '🔴', mercadopago: '💙', otro: '💰',

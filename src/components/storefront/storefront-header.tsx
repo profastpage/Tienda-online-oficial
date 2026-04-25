@@ -1,10 +1,12 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Search, ShoppingBag, Menu, X, LogIn, LogOut, Sun, Moon, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
@@ -18,7 +20,7 @@ interface StorefrontHeaderProps {
 }
 
 export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const router = useRouter()
   const cart = useCartStore()
   const wishlist = useWishlistStore()
@@ -34,6 +36,20 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
   const setMobileMenuOpen = useStorefrontStore((s) => s.setMobileMenuOpen)
   const scrollY = useStorefrontStore((s) => s.scrollY)
   const canInstallPwa = useStorefrontStore((s) => s.canInstallPwa)
+
+  // Hydration guard — prevents SSR/client mismatch for theme-dependent UI
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const isDark = mounted && resolvedTheme === 'dark'
+
+  // Premium theme toggle — triggers smooth CSS transition
+  const toggleTheme = () => {
+    const html = document.documentElement
+    html.classList.add('theme-transition')
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+    setTimeout(() => html.classList.remove('theme-transition'), 600)
+  }
 
   const handleSc = (section: string, key: string, fallback: string = '') =>
     sc(storeContent, section, key, fallback)
@@ -56,7 +72,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-12 md:h-14">
-          {/* Logo — min-w-0 + truncate prevents overflow on mobile */}
+          {/* Logo — with dark mode glow effect */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Button
               variant="ghost"
@@ -66,7 +82,16 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-            <a href="#" className="flex items-center gap-2 min-w-0">
+            <a
+              href="#"
+              className="flex items-center gap-2 min-w-0"
+              style={{
+                filter: isDark
+                  ? 'drop-shadow(0 0 8px rgba(255,255,255,0.5)) drop-shadow(0 0 20px rgba(255,255,255,0.15))'
+                  : 'drop-shadow(0 1px 2px rgba(0,0,0,0.08))',
+                transition: 'filter 0.5s ease',
+              }}
+            >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--store-primary, #171717)' }}>
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="w-full h-full object-cover" />
@@ -105,11 +130,20 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               variant="ghost"
               size="icon"
               className="text-foreground/70 hover:text-foreground"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={toggleTheme}
               aria-label="Toggle dark mode"
             >
-              <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <AnimatePresence mode="wait">
+                {isDark ? (
+                  <motion.div key="moon" initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} exit={{ rotate: 90, scale: 0 }} transition={{ duration: 0.2 }}>
+                    <Moon className="w-4 h-4" />
+                  </motion.div>
+                ) : (
+                  <motion.div key="sun" initial={{ rotate: 90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} exit={{ rotate: -90, scale: 0 }} transition={{ duration: 0.2 }}>
+                    <Sun className="w-4 h-4" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Button>
             {user ? (
               <div className="flex items-center gap-1">
@@ -166,7 +200,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu (Drawer) */}
       {mobileMenuOpen && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -175,6 +209,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
           className="md:hidden border-t bg-background"
         >
           <div className="px-4 py-3">
+            {/* Search bar */}
             <div className="flex items-center relative mb-3">
               <Search className="absolute left-3 w-4 h-4 text-muted-foreground/70" />
               <Input
@@ -184,7 +219,61 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {/* Install App - always show */}
+
+            {/* ── Dark Mode Toggle Switch ── */}
+            <div className="flex items-center justify-between px-3 py-2.5 mb-2">
+              <div className="flex items-center gap-2.5">
+                {isDark ? (
+                  <Moon className="w-4 h-4 text-indigo-400" />
+                ) : (
+                  <Sun className="w-4 h-4 text-amber-500" />
+                )}
+                <span className="text-sm font-medium text-foreground/80">
+                  Aspecto: {isDark ? 'Oscuro' : 'Claro'}
+                </span>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isDark}
+                aria-label="Cambiar modo oscuro"
+                onClick={toggleTheme}
+                className={`
+                  relative w-[52px] h-[28px] rounded-full shrink-0
+                  transition-colors duration-500 ease
+                  border
+                  ${isDark
+                    ? 'bg-indigo-600 border-indigo-500'
+                    : 'bg-amber-100 border-amber-200'
+                  }
+                `}
+              >
+                <motion.div
+                  layout
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className={`
+                    absolute top-[3px] w-[20px] h-[20px] rounded-full
+                    flex items-center justify-center
+                    shadow-md
+                    transition-colors duration-500 ease
+                    ${isDark
+                      ? 'left-[27px] bg-white text-indigo-600'
+                      : 'left-[3px] bg-amber-400 text-white'
+                    }
+                  `}
+                >
+                  {isDark ? (
+                    <Moon className="w-3 h-3" />
+                  ) : (
+                    <Sun className="w-3 h-3" />
+                  )}
+                </motion.div>
+              </button>
+            </div>
+
+            <Separator className="mb-2 opacity-50" />
+
+            {/* Install App */}
             <button
               onClick={installPwa}
               className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"

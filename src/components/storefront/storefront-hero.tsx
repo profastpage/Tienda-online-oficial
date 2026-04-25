@@ -127,7 +127,7 @@ export function StorefrontHero({ hasOffers }: StorefrontHeroProps) {
                     }`}
                   />
                 )) : (
-                  <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-700 flex items-center justify-center">
                     <ShoppingBag className="w-16 h-16 text-neutral-400" />
                   </div>
                 )}

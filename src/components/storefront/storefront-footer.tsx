@@ -97,16 +97,16 @@ export function StorefrontFooter() {
                 {paymentMethods.length > 0 ? (
                   paymentMethods.map((method) => {
                     const typeColors: Record<string, string> = {
-                      yape: 'bg-purple-100 text-purple-700',
-                      plin: 'bg-teal-100 text-teal-700',
-                      efectivo: 'bg-green-100 text-green-700',
-                      transferencia: 'bg-blue-100 text-blue-700',
-                      tarjeta: 'bg-orange-100 text-orange-700',
-                      niubiz: 'bg-red-100 text-red-700',
-                      mercadopago: 'bg-sky-100 text-sky-700',
-                      otro: 'bg-neutral-100 text-neutral-700',
+                      yape: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+                      plin: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+                      efectivo: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                      transferencia: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                      tarjeta: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                      niubiz: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                      mercadopago: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+                      otro: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
                     }
-                    const colorClass = typeColors[method.type] || 'bg-neutral-100 text-neutral-700'
+                    const colorClass = typeColors[method.type] || 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
                     return (
                       <span key={method.id} className={`text-[10px] px-2 py-1 rounded font-medium ${colorClass}`}>
                         {method.name}
@@ -130,7 +130,7 @@ export function StorefrontFooter() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-400">
           <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
             <p>{handleSc('footer', 'copyright', `© ${new Date().getFullYear()} ${storeName || 'Mi Tienda'}. Todos los derechos reservados.`)}</p>
-            <span className="hidden sm:inline text-neutral-600">·</span>
+            <span className="hidden sm:inline text-neutral-500">·</span>
             <a href={handleSc('footer', 'creditsUrl', 'https://tienda-online-oficial.vercel.app/')} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
               {handleSc('footer', 'creditsText', 'Creado y desarrollado por Tienda Online')}
             </a>
