@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, LayoutGrid, Heart, ShoppingBag } from 'lucide-react'
+import { Home, LayoutGrid, ShoppingBag, Heart, MoreHorizontal } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useStorefrontStore } from './storefront-store'
@@ -23,33 +23,26 @@ export function StorefrontBottomNav() {
   const wishlist = useWishlistStore()
   const scrollY = useStorefrontStore((s) => s.scrollY)
   const mobileMenuOpen = useStorefrontStore((s) => s.mobileMenuOpen)
+  const setMobileMenuOpen = useStorefrontStore((s) => s.setMobileMenuOpen)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
 
   const cartCount = cart.totalItems()
   const wishCount = wishlist.totalItems()
 
-  // Active tab tracking based on scroll position
+  // Active tab tracking
   const [activeTab, setActiveTab] = useState('home')
-  const lastScrollY = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      const y = window.scrollY
-      // Auto-detect which section the user is viewing
       const categoriesEl = document.getElementById('categories-section')
-      const productsEl = document.getElementById('products')
-      if (categoriesEl && productsEl) {
+      if (categoriesEl) {
         const catTop = categoriesEl.getBoundingClientRect().top
-        const prodTop = productsEl.getBoundingClientRect().top
-        if (prodTop < 300) {
-          // We're in products — but no specific tab for that, keep last
-        } else if (catTop < 300) {
+        if (catTop < 300) {
           setActiveTab('categories')
         } else {
           setActiveTab('home')
         }
       }
-      lastScrollY.current = y
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
@@ -66,10 +59,14 @@ export function StorefrontBottomNav() {
     setActiveTab('categories')
     setActiveCategory(null)
     const el = document.getElementById('categories-section')
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [setActiveCategory])
+
+  const openCart = useCallback(() => {
+    triggerHaptic(15)
+    setActiveTab('cart')
+    cart.toggleCart()
+  }, [cart])
 
   const openFavorites = useCallback(() => {
     triggerHaptic(15)
@@ -77,11 +74,11 @@ export function StorefrontBottomNav() {
     wishlist.toggleWishlist()
   }, [wishlist])
 
-  const openCart = useCallback(() => {
-    triggerHaptic(15)
-    setActiveTab('cart')
-    cart.toggleCart()
-  }, [cart])
+  const openMore = useCallback(() => {
+    triggerHaptic(10)
+    setActiveTab('more')
+    setMobileMenuOpen(true)
+  }, [setMobileMenuOpen])
 
   const tabs = [
     {
@@ -99,6 +96,13 @@ export function StorefrontBottomNav() {
       badge: null as number | null,
     },
     {
+      id: 'cart',
+      label: 'Carrito',
+      icon: ShoppingBag,
+      action: openCart,
+      badge: cartCount > 0 ? cartCount : null,
+    },
+    {
       id: 'favorites',
       label: 'Favoritos',
       icon: Heart,
@@ -106,14 +110,15 @@ export function StorefrontBottomNav() {
       badge: wishCount > 0 ? wishCount : null,
     },
     {
-      id: 'cart',
-      label: 'Carrito',
-      icon: ShoppingBag,
-      action: openCart,
-      badge: cartCount > 0 ? cartCount : null,
+      id: 'more',
+      label: 'Más',
+      icon: MoreHorizontal,
+      action: openMore,
+      badge: null as number | null,
     },
   ]
 
+  // Hide when mobile drawer is open
   if (mobileMenuOpen) return null
 
   return (
@@ -121,50 +126,27 @@ export function StorefrontBottomNav() {
       className={`
         fixed bottom-0 left-0 right-0 z-50 md:hidden
         transition-transform duration-300 ease-out
-        ${scrollY > 100 ? 'translate-y-0' : 'translate-y-full'}
+        ${scrollY > 60 ? 'translate-y-0' : 'translate-y-full'}
       `}
     >
-      {/* Glassmorphism container */}
+      {/* iOS-style Glassmorphism container */}
       <div
         className="
-          bg-background/80 backdrop-blur-xl border-t
-          shadow-[0_-4px_30px_rgba(0,0,0,0.08)]
-          dark:shadow-[0_-4px_30px_rgba(0,0,0,0.3)]
+          bg-white/70 dark:bg-black/70
+          backdrop-blur-md
+          border-t border-gray-200/50 dark:border-gray-800/50
+          shadow-[0_-1px_20px_rgba(0,0,0,0.06)]
+          dark:shadow-[0_-1px_20px_rgba(0,0,0,0.3)]
         "
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
-        <div className="flex items-center justify-around px-1 pt-1.5 pb-2 relative">
-          {/* Animated active indicator bar */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              className="absolute top-0 h-[2.5px] rounded-full bg-foreground"
-              initial={{ width: 0, x: '50%', left: '50%', opacity: 0 }}
-              animate={{
-                width: 32,
-                opacity: 1,
-                left: `${(tabs.findIndex((t) => t.id === activeTab) / (tabs.length - 1)) * 100}%`,
-                x: '-50%',
-              }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-                duration: 0.3,
-              }}
-              style={{ backgroundColor: 'var(--store-primary, #171717)' }}
-            />
-          </AnimatePresence>
-
+        <div className="flex items-center justify-around px-0.5 pt-1.5 pb-1 relative">
           {tabs.map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
-            const hasActiveState =
-              (tab.id === 'favorites' && wishCount > 0) ||
-              (tab.id === 'cart' && cartCount > 0)
+            const hasBadge = tab.badge !== null && tab.badge > 0
 
             return (
               <motion.button
@@ -176,11 +158,11 @@ export function StorefrontBottomNav() {
                   stiffness: 500,
                   damping: 25,
                 }}
-                className={`
+                className="
                   relative flex flex-col items-center justify-center gap-0.5
-                  min-w-[60px] py-1 px-2 rounded-xl
+                  flex-1 py-1 px-1
                   transition-colors duration-200
-                `}
+                "
               >
                 <div className="relative">
                   <motion.div
@@ -193,21 +175,28 @@ export function StorefrontBottomNav() {
                   >
                     <Icon
                       className={`
-                        w-[22px] h-[22px] transition-colors duration-200
-                        ${isActive || hasActiveState
-                          ? 'text-foreground'
-                          : 'text-muted-foreground/60'
+                        w-[21px] h-[21px] transition-colors duration-200
+                        ${isActive
+                          ? tab.id === 'favorites'
+                            ? 'text-red-500'
+                            : 'text-foreground'
+                          : 'text-gray-400 dark:text-gray-500'
                         }
-                        ${tab.id === 'favorites' && wishCount > 0
+                        ${hasBadge && tab.id === 'favorites'
                           ? 'text-red-500'
                           : ''
                         }
+                        ${hasBadge && tab.id === 'cart'
+                          ? 'text-foreground'
+                          : ''
+                        }
                       `}
-                      strokeWidth={isActive || hasActiveState ? 2.2 : 1.8}
+                      strokeWidth={isActive || hasBadge ? 2.2 : 1.7}
                     />
                   </motion.div>
+
                   {/* Badge counter */}
-                  {tab.badge !== null && (
+                  {hasBadge && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -217,7 +206,7 @@ export function StorefrontBottomNav() {
                         min-w-[16px] h-[16px] px-1
                         flex items-center justify-center
                         rounded-full text-[9px] font-bold
-                        text-white shadow-sm
+                        text-white
                       "
                       style={{
                         backgroundColor:
@@ -226,25 +215,49 @@ export function StorefrontBottomNav() {
                             : 'var(--store-primary, #171717)',
                       }}
                     >
-                      {tab.badge > 99 ? '99+' : tab.badge}
+                      {tab.badge! > 99 ? '99+' : tab.badge}
                     </motion.span>
                   )}
                 </div>
+
+                {/* Label */}
                 <span
                   className={`
                     text-[10px] leading-none font-medium transition-colors duration-200
-                    ${isActive || hasActiveState
-                      ? 'text-foreground'
-                      : 'text-muted-foreground/50'
+                    ${isActive
+                      ? tab.id === 'favorites'
+                        ? 'text-red-500'
+                        : 'text-foreground'
+                      : 'text-gray-400 dark:text-gray-500'
                     }
-                    ${tab.id === 'favorites' && wishCount > 0
+                    ${hasBadge && tab.id === 'favorites'
                       ? 'text-red-500'
+                      : ''
+                    }
+                    ${hasBadge && tab.id === 'cart'
+                      ? 'text-foreground'
                       : ''
                     }
                   `}
                 >
                   {tab.label}
                 </span>
+
+                {/* Active dot indicator */}
+                {isActive && (
+                  <motion.div
+                    layoutId="bottom-nav-dot"
+                    className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-foreground"
+                    style={{
+                      backgroundColor: tab.id === 'favorites' ? '#ef4444' : 'var(--store-primary, #171717)',
+                    }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 400,
+                      damping: 30,
+                    }}
+                  />
+                )}
               </motion.button>
             )
           })}

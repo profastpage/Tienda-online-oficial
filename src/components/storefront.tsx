@@ -155,7 +155,7 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
       {/* Header */}
       <StorefrontHeader installPwa={installPwa} />
 
-      <main className="flex-1 pt-[88px] md:pt-[96px] pb-24 md:pb-0">
+      <main className="flex-1 pt-[88px] md:pt-[96px] pb-28 md:pb-0">
         {/* MercadoPago Checkout Status Banner */}
         {store.mpCheckoutStatus && (
           <motion.div

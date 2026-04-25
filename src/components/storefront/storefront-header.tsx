@@ -99,8 +99,8 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             ))}
           </nav>
 
-          {/* Actions — shrink-0 prevents icon area from being squeezed */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Actions — desktop only. Mobile: all moved to Bottom Nav + Drawer */}
+          <div className="hidden md:flex items-center gap-1.5 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -113,7 +113,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             </Button>
             {user ? (
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => router.push(user.role === 'admin' ? '/admin' : '/cliente')}>
+                <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-xs font-medium text-foreground/70 hover:text-foreground" onClick={() => router.push(user.role === 'admin' ? '/admin' : '/cliente')}>
                   <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[9px] font-bold">{user.name.charAt(0)}</div>
                   <span className="max-w-[80px] truncate">{user.name}</span>
                 </Button>
@@ -124,10 +124,10 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             ) : (
               <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground" onClick={() => router.push('/login')}>
                 <LogIn className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline text-xs font-medium">Ingresar</span>
+                <span className="text-xs font-medium">Ingresar</span>
               </Button>
             )}
-            <div className="hidden sm:flex items-center relative">
+            <div className="flex items-center relative">
               <Search className="absolute left-3 w-3.5 h-3.5 text-muted-foreground/70" />
               <Input
                 placeholder="Buscar productos..."
@@ -136,11 +136,10 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {/* Heart & Cart — hidden on mobile (moved to Bottom Nav) */}
             <Button
               variant="ghost"
               size="icon"
-              className="hidden md:flex text-foreground/70 hover:text-foreground relative"
+              className="text-foreground/70 hover:text-foreground relative"
               onClick={wishlist.toggleWishlist}
             >
               <Heart className={`w-4 h-4 ${wishlist.totalItems() > 0 ? 'fill-red-500 text-red-500' : ''}`} />
@@ -153,7 +152,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden md:flex text-foreground/70 hover:text-foreground relative"
+              className="text-foreground/70 hover:text-foreground relative"
               onClick={cart.toggleCart}
             >
               <ShoppingBag className="w-4 h-4" />

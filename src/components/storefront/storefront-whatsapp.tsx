@@ -87,7 +87,7 @@ export function StorefrontFab({ getWhatsAppOrderUrl }: StorefrontFabProps) {
       </Dialog>
 
       {/* Unified FAB Menu */}
-      <div data-fab-menu className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+      <div data-fab-menu className="fixed bottom-[90px] right-6 z-40 flex flex-col items-end gap-3">
         {/* Expanded action buttons - fan out above */}
         <AnimatePresence>
           {fabOpen && (
