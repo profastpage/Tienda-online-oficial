@@ -49,19 +49,37 @@ export function StorefrontProductDetail() {
   const productDetailTouchEnd = useRef(0)
   const isNavigatingRef = useRef(false)
 
-  // Close modal and navigate back to /demo
+  // Close modal and go back (soft navigation)
   const closeProductAndGoBack = useCallback(() => {
     if (isNavigatingRef.current) return
     isNavigatingRef.current = true
     setSelectedProduct(null)
     setSelectedSize('')
     setSelectedColor('')
-    // If we're on a product slug route, navigate back to /demo
+    // Use router.back() for fluid close — this triggers popstate
+    // which the @modal intercepting route handles to dismiss the modal
     if (pathname.startsWith('/demo/') && pathname !== '/demo') {
-      router.push('/demo', { scroll: false })
+      router.back()
     }
     setTimeout(() => { isNavigatingRef.current = false }, 300)
   }, [setSelectedProduct, setSelectedSize, setSelectedColor, router, pathname])
+
+  // Lock body scroll when modal is open, restore on close
+  useEffect(() => {
+    if (!selectedProduct) return
+    const scrollY = window.scrollY
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [selectedProduct])
 
   // Listen for browser back button to close modal
   useEffect(() => {
@@ -111,7 +129,7 @@ export function StorefrontProductDetail() {
       setSelectedSize('')
       setSelectedColor('')
       if (pathname.startsWith('/demo/') && pathname !== '/demo') {
-        router.push('/demo', { scroll: false })
+        router.back()
       }
     }, 1500)
   }, [selectedSize, selectedColor, cart, setAddedToCart, setSelectedProduct, setSelectedSize, setSelectedColor, pathname, router])

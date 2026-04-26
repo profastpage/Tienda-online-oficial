@@ -1,7 +1,7 @@
 'use client'
 
 import { ShoppingBag, Heart, ShoppingCart, MessageCircle, Trash2, Minus, Plus, Flame, LayoutGrid } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { useCartStore } from '@/stores/cart-store'
@@ -23,13 +23,6 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
 
   const storeWhatsApp = useStorefrontStore((s) => s.storeWhatsApp)
   const products = useStorefrontStore((s) => s.products)
-  const openProduct = useStorefrontStore((s) => s.openProduct)
-  const router = useRouter()
-
-  const handleOpenProduct = (product: typeof products[0]) => {
-    openProduct(product)
-    router.push(`/demo/${product.slug}`, { scroll: false })
-  }
 
   return (
     <>
@@ -190,14 +183,15 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                   {wishlist.items.map((item) => (
                     <div key={item.id} className="flex gap-3">
                       {/* Product image - clickable to view */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
-                        onClick={() => {
-                          const prod = products.find((p) => p.id === item.id)
-                          if (prod) { handleOpenProduct(prod); wishlist.closeWishlist() }
-                        }}
+                      <Link
+                        href={`/demo/${item.slug}`}
+                        scroll={false}
+                        prefetch={false}
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer block"
+                        onClick={() => wishlist.closeWishlist()}
                       >
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                      </div>
+                      </Link>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm text-foreground truncate">{item.name}</h4>
                         <p className="text-sm font-bold text-foreground mt-0.5">S/ {item.price.toFixed(2)}</p>

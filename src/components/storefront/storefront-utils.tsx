@@ -41,7 +41,7 @@ export function AnimatedCounter({ target, suffix = '' }: { target: string; suffi
 }
 
 // ═══ Swipeable Product Image (Instagram-style) ═══
-export function SwipeableProductImage({ product, onClick }: { product: Product; onClick?: () => void }) {
+export function SwipeableProductImage({ product }: { product: Product }) {
   const [currentView, setCurrentView] = useState(0)
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
@@ -88,7 +88,6 @@ export function SwipeableProductImage({ product, onClick }: { product: Product; 
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={onClick}
     >
       <img
         src={product.image}
@@ -179,10 +178,6 @@ export function SwipeableProductImage({ product, onClick }: { product: Product; 
           <Button
             size="sm"
             className="flex-1 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-xs font-semibold"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClick?.()
-            }}
           >
             Ver Detalles
           </Button>

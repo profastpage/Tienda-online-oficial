@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { useStorefrontStore } from './storefront-store'
@@ -40,11 +41,9 @@ function SkeletonProductCard() {
 function AnimatedProductCard({
   product,
   index,
-  openProduct,
 }: {
   product: Product
   index: number
-  openProduct: (p: Product) => void
 }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -74,7 +73,6 @@ function AnimatedProductCard({
           dark:hover:shadow-[8px_8px_24px_rgba(0,0,0,0.35),-4px_-4px_16px_rgba(255,255,255,0.04)]
           hover:-translate-y-1
         "
-        onClick={() => openProduct(product)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -98,7 +96,7 @@ function AnimatedProductCard({
           />
 
           {/* SwipeableProductImage overlays — shown on top */}
-          <SwipeableProductImage product={product} onClick={() => openProduct(product)} />
+          <SwipeableProductImage product={product} />
         </div>
 
         {/* Product Info */}
@@ -168,20 +166,12 @@ interface StorefrontProductsProps {
 }
 
 export function StorefrontProducts({ filteredProducts, loading }: StorefrontProductsProps) {
-  const router = useRouter()
   const pathname = usePathname()
   const categories = useStorefrontStore((s) => s.categories)
   const activeCategory = useStorefrontStore((s) => s.activeCategory)
   const searchQuery = useStorefrontStore((s) => s.searchQuery)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
   const setSearchQuery = useStorefrontStore((s) => s.setSearchQuery)
-  const openProduct = useStorefrontStore((s) => s.openProduct)
-
-  const handleOpenProduct = (product: Product) => {
-    openProduct(product)
-    // Shallow routing — update URL without page reload
-    router.push(`/demo/${product.slug}`, { scroll: false })
-  }
 
   return (
     <section id="products" className="py-16 bg-muted">
@@ -223,12 +213,17 @@ export function StorefrontProducts({ filteredProducts, loading }: StorefrontProd
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredProducts.map((product, index) => (
-              <AnimatedProductCard
+              <Link
                 key={product.id}
-                product={product}
-                index={index}
-                openProduct={handleOpenProduct}
-              />
+                href={`/demo/${product.slug}`}
+                scroll={false}
+                prefetch={false}
+              >
+                <AnimatedProductCard
+                  product={product}
+                  index={index}
+                />
+              </Link>
             ))}
           </div>
         )}
