@@ -43,12 +43,8 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
 
   const isDark = mounted && resolvedTheme === 'dark'
 
-  // Fast theme toggle — triggers optimized CSS transition
   const toggleTheme = () => {
-    const html = document.documentElement
-    html.classList.add('theme-transition')
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
-    setTimeout(() => html.classList.remove('theme-transition'), 300)
   }
 
   const handleSc = (section: string, key: string, fallback: string = '') =>
@@ -84,7 +80,7 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
             </Button>
             <a
               href="#"
-              className="flex items-center gap-2 min-w-0 logo-glow"
+              className="flex items-center gap-2 min-w-0"
               style={{
                 filter: isDark
                   ? 'drop-shadow(0 0 8px rgba(255,255,255,0.5)) drop-shadow(0 0 20px rgba(255,255,255,0.15))'

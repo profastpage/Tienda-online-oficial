@@ -121,22 +121,6 @@
   }
 }
 
-/* Fast dark mode transition — only color, bg and borders (GPU-friendly) */
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
-  transition: background-color 0.2s ease-in-out,
-              color 0.2s ease-in-out,
-              border-color 0.2s ease-in-out !important;
-  transition-delay: 0s !important;
-}
-
-/* Logo glow — independent transition, not coupled to global */
-.logo-glow {
-  transition: filter 0.3s ease-in-out;
-}
-
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
