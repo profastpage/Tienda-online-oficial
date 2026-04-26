@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStorefrontStore } from '@/components/storefront/storefront-store'
 
 // ═══════════════════════════════════════════════════════════════════
@@ -23,8 +23,12 @@ import { useStorefrontStore } from '@/components/storefront/storefront-store'
 export default function InterceptedProductModal({ slug }: { slug: string }) {
   const products = useStorefrontStore((s) => s.products)
   const openProduct = useStorefrontStore((s) => s.openProduct)
+  const selectedProduct = useStorefrontStore((s) => s.selectedProduct)
+  const hasOpenedRef = useRef(false)
 
   useEffect(() => {
+    // Prevent double-open on StrictMode re-render
+    if (hasOpenedRef.current) return
     if (!slug || !products?.length) return
 
     // Buscar el producto completo del store (tiene sizes, colors, images, etc.)
@@ -34,10 +38,14 @@ export default function InterceptedProductModal({ slug }: { slug: string }) {
     })
 
     if (product) {
-      openProduct(product)
+      // Only open if it's a different product than already selected
+      if (!selectedProduct || selectedProduct?.slug !== product?.slug) {
+        hasOpenedRef.current = true
+        openProduct(product)
+      }
     }
-  }, [slug, products, openProduct])
+  }, [slug, products, openProduct, selectedProduct])
 
-  // El modal visual se renderiza vía <StorefrontProductDetail /> dentro de <Storefront />
+  // The visual modal is rendered by <StorefrontProductDetail /> inside <Storefront />
   return null
 }
