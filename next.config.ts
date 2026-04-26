@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.pexels.com' },
     ],
   },
-  serverExternalPackages: ['@prisma/adapter-libsql', '@libsql/client'],
+  serverExternalPackages: ['@prisma/adapter-libsql', '@libsql/client', 'z-ai-web-dev-sdk'],
   async headers() {
     return [
       {
