@@ -119,19 +119,22 @@ export function StorefrontProductDetail() {
   }, [setSelectedProduct, setSelectedSize, setSelectedColor, router, pathname])
 
   // Lock body scroll when modal is open, restore on close
+  // Uses overflow:hidden only (NO position:fixed) to avoid visual jump
+  // Scroll position is preserved by the browser's native scroll restoration
   useEffect(() => {
     if (!selectedProduct) return
+    // Save current scroll position
     const scrollY = window.scrollY
+    // Lock scroll without position:fixed (avoids layout shift)
     document.body.style.overflow = 'hidden'
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.width = '100%'
+    document.body.style.touchAction = 'none'
     return () => {
       document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      window.scrollTo(0, scrollY)
+      document.body.style.touchAction = ''
+      // Restore scroll position after a frame to avoid visual jump
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY)
+      })
     }
   }, [selectedProduct])
 

@@ -6,6 +6,8 @@ import {
 } from '@/lib/server-product-data'
 
 const SITE_URL = 'https://tienda-online-oficial.vercel.app'
+const STORE_NAME = 'Tienda Online Oficial'
+const STORE_TAGLINE = 'Tu tienda de moda en línea. Calzado, ropa y accesorios.'
 
 interface LayoutProps {
   params: Promise<{ slug: string }>
@@ -19,21 +21,21 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 
     if (!product) {
       return {
-        title: 'Urban Style | Tienda Online',
-        description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios de las mejores marcas.',
+        title: `${STORE_NAME} | Tienda Online`,
+        description: STORE_TAGLINE,
         openGraph: {
-          title: 'Urban Style | Tienda Online',
-          description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios.',
+          title: `${STORE_NAME} | Tienda Online`,
+          description: STORE_TAGLINE,
           url: `${SITE_URL}/demo/${slug}`,
-          siteName: 'Urban Style',
-          images: [{ url: FALLBACK_PRODUCT_IMAGE, width: 1344, height: 768, alt: 'Urban Style' }],
+          siteName: STORE_NAME,
+          images: [{ url: FALLBACK_PRODUCT_IMAGE, width: 1344, height: 768, alt: STORE_NAME }],
           locale: 'es_PE',
           type: 'website',
         },
         twitter: {
           card: 'summary_large_image',
-          title: 'Urban Style | Tienda Online',
-          description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios.',
+          title: `${STORE_NAME} | Tienda Online`,
+          description: STORE_TAGLINE,
           images: [FALLBACK_PRODUCT_IMAGE],
         },
       }
@@ -47,13 +49,13 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
       : `S/ ${product.price.toFixed(2)}`
 
     return {
-      title: `${product.name} | Urban Style`,
+      title: `${product.name} | ${STORE_NAME}`,
       description: product.description,
       openGraph: {
-        title: `${product.name} | Urban Style`,
+        title: `${product.name} | ${STORE_NAME}`,
         description: product.description.slice(0, 200),
         url: productUrl,
-        siteName: 'Urban Style',
+        siteName: STORE_NAME,
         images: [
           {
             url: validatedImage,
@@ -67,7 +69,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${product.name} | Urban Style`,
+        title: `${product.name} | ${STORE_NAME}`,
         description: `${product.description.slice(0, 150)} — ${priceLabel}`,
         images: [validatedImage],
       },
@@ -77,8 +79,8 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     }
   } catch {
     return {
-      title: 'Urban Style | Tienda Online',
-      description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios.',
+      title: `${STORE_NAME} | Tienda Online`,
+      description: STORE_TAGLINE,
     }
   }
 }
