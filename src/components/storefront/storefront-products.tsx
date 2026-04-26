@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -170,8 +170,14 @@ export function StorefrontProducts({ filteredProducts, loading }: StorefrontProd
   const categories = useStorefrontStore((s) => s.categories)
   const activeCategory = useStorefrontStore((s) => s.activeCategory)
   const searchQuery = useStorefrontStore((s) => s.searchQuery)
+  const openProduct = useStorefrontStore((s) => s.openProduct)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
   const setSearchQuery = useStorefrontStore((s) => s.setSearchQuery)
+
+  // Optimistic instant modal open — bypasses intercepted route delay
+  const handleProductClick = useCallback((product: Product) => {
+    openProduct(product)
+  }, [openProduct])
 
   return (
     <section id="products" className="py-16 bg-muted">
@@ -217,7 +223,8 @@ export function StorefrontProducts({ filteredProducts, loading }: StorefrontProd
                 key={product.id}
                 href={`/demo/${product.slug}`}
                 scroll={false}
-                prefetch={false}
+                prefetch={true}
+                onClick={() => handleProductClick(product)}
               >
                 <AnimatedProductCard
                   product={product}

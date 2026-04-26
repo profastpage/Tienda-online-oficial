@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { useStorefrontStore } from '@/components/storefront/storefront-store'
 
 // ═══════════════════════════════════════════════════════════════════
@@ -26,7 +26,7 @@ export default function InterceptedProductModal({ slug }: { slug: string }) {
   const selectedProduct = useStorefrontStore((s) => s.selectedProduct)
   const hasOpenedRef = useRef(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Prevent double-open on StrictMode re-render
     if (hasOpenedRef.current) return
     if (!slug || !products?.length) return

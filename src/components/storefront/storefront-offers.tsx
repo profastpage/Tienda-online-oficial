@@ -18,6 +18,7 @@ interface StorefrontOffersProps {
 export function StorefrontOffers({ offerProducts }: StorefrontOffersProps) {
   const storeContent = useStorefrontStore((s) => s.storeContent)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
+  const openProduct = useStorefrontStore((s) => s.openProduct)
   const wishlist = useWishlistStore()
   const { toast } = useToast()
 
@@ -81,8 +82,9 @@ export function StorefrontOffers({ offerProducts }: StorefrontOffersProps) {
                   <Link
                     href={`/demo/${product.slug}`}
                     scroll={false}
-                    prefetch={false}
+                    prefetch={true}
                     className="block h-full"
+                    onClick={() => openProduct(product)}
                   >
                     <div className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-border h-full flex flex-col">
                       {/* Product Image with swipe hint */}

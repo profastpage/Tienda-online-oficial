@@ -186,7 +186,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                       <Link
                         href={`/demo/${item.slug}`}
                         scroll={false}
-                        prefetch={false}
+                        prefetch={true}
                         className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer block"
                         onClick={() => wishlist.closeWishlist()}
                       >
