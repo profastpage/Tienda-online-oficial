@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://tiendaonlineoficial.com";
-const SITE_IMAGE = `${SITE_URL}/images/hero/banner.png`;
+const SITE_URL = "https://tienda-online-oficial.vercel.app";
+const SITE_IMAGE = `${SITE_URL}/og-default.png`;
 
 export const metadata: Metadata = {
   title: "Tienda Online Oficial | Crea tu Tienda en Minutos",
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
     siteName: "Tienda Online Oficial",
     images: [
       {
-        url: "https://tienda-online-oficial.vercel.app/tu-imagen-preview.jpg",
-        width: 1200,
-        height: 630,
+        url: SITE_IMAGE,
+        width: 1344,
+        height: 768,
         alt: "Tienda Online Oficial - Lanza tu tienda en minutos",
       },
     ],
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     title: "Lanza tu Tienda Online en Minutos 🚀",
     description:
       "La plataforma más rápida para vender cualquier producto. Catálogo profesional, pedidos por WhatsApp y gestión desde tu móvil. ¡Prueba la demo!",
-    images: ["https://tienda-online-oficial.vercel.app/tu-imagen-preview.jpg"],
+    images: [SITE_IMAGE],
   },
   manifest: "/manifest.json",
   other: {
