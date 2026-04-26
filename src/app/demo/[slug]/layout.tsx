@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import {
   getProductBySlug,
   getProductImage,
@@ -18,14 +17,13 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     const { slug } = await params
     const product = getProductBySlug(slug)
 
-    // Slug inválido o no encontrado → metadata mínima (no crashea)
     if (!product) {
       return {
-        title: 'Producto no encontrado | Urban Style',
-        description: 'El producto que buscas no existe o fue removido.',
+        title: 'Urban Style | Tienda Online',
+        description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios de las mejores marcas.',
         openGraph: {
-          title: 'Producto no encontrado | Urban Style',
-          description: 'El producto que buscas no existe o fue removido.',
+          title: 'Urban Style | Tienda Online',
+          description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios.',
           url: `${SITE_URL}/demo/${slug}`,
           siteName: 'Urban Style',
           images: [{ url: FALLBACK_PRODUCT_IMAGE, width: 1344, height: 768, alt: 'Urban Style' }],
@@ -34,8 +32,8 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
         },
         twitter: {
           card: 'summary_large_image',
-          title: 'Producto no encontrado | Urban Style',
-          description: 'El producto que buscas no existe o fue removido.',
+          title: 'Urban Style | Tienda Online',
+          description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios.',
           images: [FALLBACK_PRODUCT_IMAGE],
         },
       }
@@ -77,8 +75,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
         canonical: productUrl,
       },
     }
-  } catch (error) {
-    // Si algo falla en metadata, devolver un fallback seguro (nunca crashear)
+  } catch {
     return {
       title: 'Urban Style | Tienda Online',
       description: 'Tu tienda de moda favorita. Calzado, ropa y accesorios.',
@@ -86,14 +83,8 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   }
 }
 
-export default async function DemoSlugLayout({ params, children }: LayoutProps) {
-  const { slug } = await params
-
-  // Validación del slug en el servidor
-  const product = getProductBySlug(slug)
-  if (!product) {
-    notFound()
-  }
-
+// Layout SIMPLE: solo pasa children. NO llama notFound().
+// El page.tsx se encarga de decidir qué mostrar.
+export default function DemoSlugLayout({ children }: LayoutProps) {
   return <>{children}</>
 }

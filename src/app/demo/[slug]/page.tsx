@@ -1,23 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import { useParams, useRouter, usePathname } from 'next/navigation'
-import dynamic from 'next/dynamic'
-
-// ── Import the server-safe product data (works in both server & client) ──
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Storefront from '@/components/storefront'
+import { useStorefrontStore } from '@/components/storefront/storefront-store'
 import { getProductBySlug } from '@/lib/server-product-data'
 
-// ── Dynamic import with SSR disabled to prevent hydration crashes ──
-// The Storefront component uses heavy client-side deps (zustand, framer-motion, etc.)
-const Storefront = dynamic(() => import('@/components/storefront'), { ssr: false })
-
-// ── Loading skeleton shown while Storefront hydrates ──
+// ── Skeleton que se muestra mientras carga el Storefront ────────
 function StorefrontSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header skeleton */}
       <div className="h-[88px] bg-background/80 backdrop-blur-sm border-b border-border/50" />
-      {/* Content skeleton */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="h-10 w-64 bg-muted rounded-xl mb-8 animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -37,107 +30,67 @@ function StorefrontSkeleton() {
   )
 }
 
-// ── Product not found component ──
-function ProductNotFound({ slug }: { slug: string }) {
-  const router = useRouter()
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="max-w-md w-full text-center">
-        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Producto no encontrado</h1>
-        <p className="text-muted-foreground mb-8 leading-relaxed">
-          El producto <span className="font-mono text-sm bg-muted px-2 py-0.5 rounded">/{slug}</span> no existe o fue removido de la tienda.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={() => router.push('/demo')}
-            className="px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-sm transition-colors"
-          >
-            Ir a la tienda
-          </button>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 border border-border hover:bg-muted rounded-xl font-medium text-sm transition-colors"
-          >
-            Ir al inicio
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Main page component ──────────────────────────────────────────
+// ── Componente principal ────────────────────────────────────────
 export default function DemoProductPage() {
   const params = useParams()
   const router = useRouter()
-  const pathname = usePathname()
   const slug = params.slug as string
 
-  // Local state to track if product is valid (safe for initial render)
-  const [isValid, setIsValid] = useState<boolean | null>(null)
-  const [hasMounted, setHasMounted] = useState(false)
+  // ── Lectura directa del Zustand store (import estático, no dinámico) ──
+  const products = useStorefrontStore((s) => s.products)
+  const openProduct = useStorefrontStore((s) => s.openProduct)
+  const selectedProduct = useStorefrontStore((s) => s.selectedProduct)
+  const setSelectedProduct = useStorefrontStore((s) => s.setSelectedProduct)
 
-  // Safe server-safe lookup (no zustand, no client deps)
-  const product = useMemo(() => {
-    if (!slug) return null
-    return getProductBySlug(slug)
-  }, [slug])
+  // ── Estado local para manejar la carga inicial ──
+  const [isReady, setIsReady] = useState(false)
 
-  // Validate slug and open product after mount
+  // ── Validar slug y abrir producto después del mount ──
   useEffect(() => {
-    setHasMounted(true)
-
-    if (!product) {
-      setIsValid(false)
+    if (!slug) {
+      setIsReady(true)
       return
     }
 
-    setIsValid(true)
+    // 1. Validar que el slug exista en los datos
+    const meta = getProductBySlug(slug)
+    if (!meta) {
+      // Slug inválido → redirigir a /demo sin crash
+      setIsReady(true)
+      return
+    }
 
-    // Dynamically import the zustand store ONLY on the client after mount
-    // to avoid hydration issues
-    import('@/components/storefront/storefront-store').then(({ useStorefrontStore }) => {
-      const store = useStorefrontStore.getState()
-      // Only open if not already showing this product
-      if (!store.selectedProduct || store.selectedProduct.slug !== slug) {
-        // Find the full product data from the store (has sizes, colors, etc.)
-        const fullProduct = store.products.find((p) => p.slug === slug)
-        if (fullProduct) {
-          useStorefrontStore.getState().openProduct(fullProduct)
-        }
+    // 2. Buscar el producto completo del store (tiene sizes, colors, etc.)
+    const fullProduct = products.find(
+      (p) => p.slug === slug || p.slug === meta.slug
+    )
+
+    if (fullProduct) {
+      // Solo abrir si no es el mismo producto ya seleccionado
+      if (!selectedProduct || selectedProduct.slug !== fullProduct.slug) {
+        openProduct(fullProduct)
       }
-    }).catch(() => {
-      // If store import fails, the Storefront component will handle it
-    })
-  }, [slug, product])
+    }
 
-  // Listen for browser back to close modal
+    // 3. Marcar como listo para renderizar
+    setIsReady(true)
+  }, [slug, products, openProduct, selectedProduct])
+
+  // ── Browser back → cerrar modal y volver a /demo ──
   useEffect(() => {
-    if (!hasMounted) return
+    if (!selectedProduct) return
     const handlePopState = () => {
-      import('@/components/storefront/storefront-store').then(({ useStorefrontStore }) => {
-        useStorefrontStore.getState().setSelectedProduct(null)
-      }).catch(() => {})
+      setSelectedProduct(null)
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [hasMounted])
+  }, [selectedProduct, setSelectedProduct])
 
-  // ── Before mount: show skeleton (prevents flash of wrong content) ──
-  if (!hasMounted) {
+  // ── Antes de estar listo: mostrar skeleton ──
+  if (!isReady) {
     return <StorefrontSkeleton />
   }
 
-  // ── Product not found ──
-  if (!isValid || !product) {
-    return <ProductNotFound slug={slug} />
-  }
-
-  // ── Valid product: render Storefront (modal will auto-open via useEffect) ──
+  // ── Renderizar la tienda completa (el modal del producto se abre vía useEffect) ──
   return <Storefront />
 }

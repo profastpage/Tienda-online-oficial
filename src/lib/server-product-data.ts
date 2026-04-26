@@ -329,10 +329,17 @@ const productMap: Record<string, ProductMeta> = {
 // ── Todos los slugs válidos (para generateStaticParams y validación) ──
 export const VALID_PRODUCT_SLUGS = Object.keys(productMap)
 
-// ── Lookup seguro: retorna null si no existe ─────────────────────
+// ── Normalización de slug: minúsculas, trim, reemplaza espacios ──
+export function normalizeSlug(slug: string): string {
+  if (!slug) return ''
+  return slug.toLowerCase().trim().replace(/\s+/g, '-')
+}
+
+// ── Lookup seguro: acepta slug con mayúsculas o espacios ────────
 export function getProductBySlug(slug: string): ProductMeta | null {
   try {
-    return productMap[slug] ?? null
+    const normalized = normalizeSlug(slug)
+    return productMap[normalized] ?? null
   } catch {
     return null
   }
