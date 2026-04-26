@@ -57,17 +57,17 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Tienda Online Oficial | Tu Tienda Profesional en Minutos",
+    title: "Lanza tu Tienda Online en Minutos 🚀",
     description:
-      "Crea tu tienda online con catálogo digital, carrito, WhatsApp y push notifications. La plataforma #1 en Perú para emprendedores.",
-    url: SITE_URL,
+      "La plataforma más rápida para vender cualquier producto. Catálogo profesional, pedidos por WhatsApp y gestión desde tu móvil. ¡Prueba la demo!",
+    url: "https://tienda-online-oficial.vercel.app",
     siteName: "Tienda Online Oficial",
     images: [
       {
-        url: SITE_IMAGE,
+        url: "https://tienda-online-oficial.vercel.app/tu-imagen-preview.jpg",
         width: 1200,
         height: 630,
-        alt: "Tienda Online Oficial - Crea tu tienda profesional en minutos",
+        alt: "Tienda Online Oficial - Lanza tu tienda en minutos",
       },
     ],
     locale: "es_PE",
@@ -75,10 +75,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tienda Online Oficial | Tu Tienda Profesional en Minutos",
+    title: "Lanza tu Tienda Online en Minutos 🚀",
     description:
-      "Crea tu tienda online con catálogo, carrito, WhatsApp y push. La plataforma #1 en Perú.",
-    images: [SITE_IMAGE],
+      "La plataforma más rápida para vender cualquier producto. Catálogo profesional, pedidos por WhatsApp y gestión desde tu móvil. ¡Prueba la demo!",
+    images: ["https://tienda-online-oficial.vercel.app/tu-imagen-preview.jpg"],
   },
   manifest: "/manifest.json",
   other: {
