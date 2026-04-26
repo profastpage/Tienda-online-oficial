@@ -1,96 +1,45 @@
-'use client'
+import { notFound } from 'next/navigation'
+import { getProductBySlug, normalizeSlug } from '@/lib/server-product-data'
+import ProductPageClient from './product-page-client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Storefront from '@/components/storefront'
-import { useStorefrontStore } from '@/components/storefront/storefront-store'
-import { getProductBySlug } from '@/lib/server-product-data'
+// ═══════════════════════════════════════════════════════════════════
+// SERVER COMPONENT — Manejo seguro de params como Promesa (Next.js 15+)
+// ═══════════════════════════════════════════════════════════════════
+//
+// 1. await params → Next.js 15+ requiere que params sea awaited
+// 2. normalizeSlug() → maneja mayúsculas, espacios, trim
+// 3. notFound() → muestra 404 si el slug no existe (no crash del sistema)
+// 4. Renderiza Client Component con el slug validado
+//
 
-// ── Skeleton que se muestra mientras carga el Storefront ────────
-function StorefrontSkeleton() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="h-[88px] bg-background/80 backdrop-blur-sm border-b border-border/50" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="h-10 w-64 bg-muted rounded-xl mb-8 animate-pulse" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl overflow-hidden bg-card border border-border/50">
-              <div className="aspect-square bg-muted animate-pulse" />
-              <div className="p-4 space-y-3">
-                <div className="h-3 w-14 bg-muted rounded-full animate-pulse" />
-                <div className="h-4 w-full bg-muted rounded-full animate-pulse" />
-                <div className="h-5 w-20 bg-muted rounded-full animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+interface PageProps {
+  params: Promise<{ slug: string }>
 }
 
-// ── Componente principal ────────────────────────────────────────
-export default function DemoProductPage() {
-  const params = useParams()
-  const router = useRouter()
-  const slug = params.slug as string
+export default async function DemoProductPage({ params }: PageProps) {
+  // 1. Await params (Next.js 15+ breaking change)
+  const { slug: rawSlug } = await params
 
-  // ── Lectura directa del Zustand store (import estático, no dinámico) ──
-  const products = useStorefrontStore((s) => s.products)
-  const openProduct = useStorefrontStore((s) => s.openProduct)
-  const selectedProduct = useStorefrontStore((s) => s.selectedProduct)
-  const setSelectedProduct = useStorefrontStore((s) => s.setSelectedProduct)
+  // 2. Normalizar: toLowerCase, trim, espacios → guiones
+  const slug = normalizeSlug(rawSlug)
 
-  // ── Estado local para manejar la carga inicial ──
-  const [isReady, setIsReady] = useState(false)
-
-  // ── Validar slug y abrir producto después del mount ──
-  useEffect(() => {
-    if (!slug) {
-      setIsReady(true)
-      return
-    }
-
-    // 1. Validar que el slug exista en los datos
-    const meta = getProductBySlug(slug)
-    if (!meta) {
-      // Slug inválido → redirigir a /demo sin crash
-      setIsReady(true)
-      return
-    }
-
-    // 2. Buscar el producto completo del store (tiene sizes, colors, etc.)
-    const fullProduct = products.find(
-      (p) => p.slug === slug || p.slug === meta.slug
-    )
-
-    if (fullProduct) {
-      // Solo abrir si no es el mismo producto ya seleccionado
-      if (!selectedProduct || selectedProduct.slug !== fullProduct.slug) {
-        openProduct(fullProduct)
-      }
-    }
-
-    // 3. Marcar como listo para renderizar
-    setIsReady(true)
-  }, [slug, products, openProduct, selectedProduct])
-
-  // ── Browser back → cerrar modal y volver a /demo ──
-  useEffect(() => {
-    if (!selectedProduct) return
-    const handlePopState = () => {
-      setSelectedProduct(null)
-    }
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [selectedProduct, setSelectedProduct])
-
-  // ── Antes de estar listo: mostrar skeleton ──
-  if (!isReady) {
-    return <StorefrontSkeleton />
+  // 3. Búsqueda segura — si no existe, 404 del sistema (no error de server)
+  if (!slug) {
+    notFound()
   }
 
-  // ── Renderizar la tienda completa (el modal del producto se abre vía useEffect) ──
-  return <Storefront />
+  const product = getProductBySlug(slug)
+
+  if (!product) {
+    notFound()
+  }
+
+  // 4. Renderizar Client Component con el slug validado
+  return <ProductPageClient slug={product.slug} productName={product.name} />
+}
+
+// generateStaticParams para que Next.js pre-genere las 30 rutas en build
+export async function generateStaticParams() {
+  const { VALID_PRODUCT_SLUGS } = await import('@/lib/server-product-data')
+  return VALID_PRODUCT_SLUGS.map((slug) => ({ slug }))
 }

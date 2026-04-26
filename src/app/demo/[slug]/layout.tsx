@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
           },
         ],
         locale: 'es_PE',
-        type: 'product',
+        type: 'website',
       },
       twitter: {
         card: 'summary_large_image',
