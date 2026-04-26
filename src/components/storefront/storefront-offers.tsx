@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { Flame, ChevronRight, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,11 +16,17 @@ interface StorefrontOffersProps {
 }
 
 export function StorefrontOffers({ offerProducts }: StorefrontOffersProps) {
+  const router = useRouter()
   const storeContent = useStorefrontStore((s) => s.storeContent)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
   const openProduct = useStorefrontStore((s) => s.openProduct)
   const wishlist = useWishlistStore()
   const { toast } = useToast()
+
+  const handleOpenProduct = (product: Product) => {
+    openProduct(product)
+    router.push(`/demo/${product.slug}`, { scroll: false })
+  }
 
   const handleSc = (section: string, key: string, fallback: string = '') =>
     sc(storeContent, section, key, fallback)
@@ -80,7 +87,7 @@ export function StorefrontOffers({ offerProducts }: StorefrontOffersProps) {
                 >
                   <div
                     className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-border h-full flex flex-col"
-                    onClick={() => openProduct(product)}
+                    onClick={() => handleOpenProduct(product)}
                   >
                     {/* Product Image with swipe hint */}
                     <div className="relative aspect-square overflow-hidden bg-muted">

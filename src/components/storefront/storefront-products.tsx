@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { useStorefrontStore } from './storefront-store'
@@ -167,12 +168,20 @@ interface StorefrontProductsProps {
 }
 
 export function StorefrontProducts({ filteredProducts, loading }: StorefrontProductsProps) {
+  const router = useRouter()
+  const pathname = usePathname()
   const categories = useStorefrontStore((s) => s.categories)
   const activeCategory = useStorefrontStore((s) => s.activeCategory)
   const searchQuery = useStorefrontStore((s) => s.searchQuery)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
   const setSearchQuery = useStorefrontStore((s) => s.setSearchQuery)
   const openProduct = useStorefrontStore((s) => s.openProduct)
+
+  const handleOpenProduct = (product: Product) => {
+    openProduct(product)
+    // Shallow routing — update URL without page reload
+    router.push(`/demo/${product.slug}`, { scroll: false })
+  }
 
   return (
     <section id="products" className="py-16 bg-muted">
@@ -218,7 +227,7 @@ export function StorefrontProducts({ filteredProducts, loading }: StorefrontProd
                 key={product.id}
                 product={product}
                 index={index}
-                openProduct={openProduct}
+                openProduct={handleOpenProduct}
               />
             ))}
           </div>

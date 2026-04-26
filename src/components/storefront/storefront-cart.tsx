@@ -1,6 +1,7 @@
 'use client'
 
 import { ShoppingBag, Heart, ShoppingCart, MessageCircle, Trash2, Minus, Plus, Flame, LayoutGrid } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { useCartStore } from '@/stores/cart-store'
@@ -23,6 +24,12 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
   const storeWhatsApp = useStorefrontStore((s) => s.storeWhatsApp)
   const products = useStorefrontStore((s) => s.products)
   const openProduct = useStorefrontStore((s) => s.openProduct)
+  const router = useRouter()
+
+  const handleOpenProduct = (product: typeof products[0]) => {
+    openProduct(product)
+    router.push(`/demo/${product.slug}`, { scroll: false })
+  }
 
   return (
     <>
@@ -186,7 +193,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
                         onClick={() => {
                           const prod = products.find((p) => p.id === item.id)
-                          if (prod) { openProduct(prod); wishlist.closeWishlist() }
+                          if (prod) { handleOpenProduct(prod); wishlist.closeWishlist() }
                         }}
                       >
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />

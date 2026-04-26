@@ -1,6 +1,7 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight, Heart, ShoppingBag, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,9 +32,38 @@ export function StorefrontProductDetail() {
   const wishlist = useWishlistStore()
   const { toast } = useToast()
 
+  const router = useRouter()
+  const pathname = usePathname()
   const galleryRef = useRef<HTMLDivElement>(null)
   const productDetailTouchStart = useRef(0)
   const productDetailTouchEnd = useRef(0)
+  const isNavigatingRef = useRef(false)
+
+  // Close modal and navigate back to /demo
+  const closeProductAndGoBack = useCallback(() => {
+    if (isNavigatingRef.current) return
+    isNavigatingRef.current = true
+    setSelectedProduct(null)
+    setSelectedSize('')
+    setSelectedColor('')
+    // If we're on a product slug route, navigate back to /demo
+    if (pathname.startsWith('/demo/') && pathname !== '/demo') {
+      router.push('/demo', { scroll: false })
+    }
+    setTimeout(() => { isNavigatingRef.current = false }, 300)
+  }, [setSelectedProduct, setSelectedSize, setSelectedColor, router, pathname])
+
+  // Listen for browser back button to close modal
+  useEffect(() => {
+    if (!selectedProduct) return
+    const handlePopState = () => {
+      setSelectedProduct(null)
+      setSelectedSize('')
+      setSelectedColor('')
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [selectedProduct, setSelectedProduct, setSelectedSize, setSelectedColor])
 
   const scrollToGalleryImage = useCallback((index: number) => {
     setSelectedImageView(index)
@@ -70,15 +100,18 @@ export function StorefrontProductDetail() {
       setSelectedProduct(null)
       setSelectedSize('')
       setSelectedColor('')
+      if (pathname.startsWith('/demo/') && pathname !== '/demo') {
+        router.push('/demo', { scroll: false })
+      }
     }, 1500)
-  }, [selectedSize, selectedColor, cart, setAddedToCart, setSelectedProduct, setSelectedSize, setSelectedColor])
+  }, [selectedSize, selectedColor, cart, setAddedToCart, setSelectedProduct, setSelectedSize, setSelectedColor, pathname, router])
 
   if (!selectedProduct) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={() => !addedToCart && setSelectedProduct(null)}
+      onClick={() => !addedToCart && closeProductAndGoBack()}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <motion.div
@@ -90,11 +123,7 @@ export function StorefrontProductDetail() {
       >
         <button
           className="absolute top-4 right-4 z-10 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-background transition-colors"
-          onClick={() => {
-            setSelectedProduct(null)
-            setSelectedSize('')
-            setSelectedColor('')
-          }}
+          onClick={closeProductAndGoBack}
         >
           <X className="w-5 h-5 text-foreground/70" />
         </button>
