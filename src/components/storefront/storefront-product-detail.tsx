@@ -14,6 +14,16 @@ import { useStorefrontStore } from './storefront-store'
 import { getProductImages } from './storefront-types'
 import type { Product } from './storefront-types'
 
+// Fallback image for broken product images
+const IMG_FALLBACK = '/og-default.png'
+
+function handleImgError(e: React.SyntheticEvent<HTMLImageElement>) {
+  if (e.currentTarget.src !== IMG_FALLBACK) {
+    e.currentTarget.src = IMG_FALLBACK
+    e.currentTarget.onerror = null // prevent infinite loop
+  }
+}
+
 export function StorefrontProductDetail() {
   const selectedProduct = useStorefrontStore((s) => s.selectedProduct)
   const selectedSize = useStorefrontStore((s) => s.selectedSize)
@@ -157,6 +167,7 @@ export function StorefrontProductDetail() {
                     src={imgs[selectedImageView] || selectedProduct.image}
                     alt={`${selectedProduct.name} - Imagen ${selectedImageView + 1}`}
                     className="w-full h-full object-cover transition-all duration-500"
+                    onError={handleImgError}
                   />
                   {/* View indicator */}
                   {imgs.length > 1 && (
@@ -205,6 +216,7 @@ export function StorefrontProductDetail() {
                           src={img}
                           alt={`Imagen ${idx + 1}`}
                           className="w-full h-full object-cover"
+                          onError={handleImgError}
                         />
                         {selectedImageView === idx && (
                           <div className="absolute inset-0 bg-neutral-900/20" />
