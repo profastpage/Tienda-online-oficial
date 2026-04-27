@@ -36,13 +36,32 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
   const { toast } = useToast()
 
   // ── Derived data ────────────────────────────────────────────
-  const filteredProducts = useMemo(() =>
-    store.products.filter((p) => {
+  const filteredProducts = useMemo(() => {
+    let products = store.products.filter((p) => {
       const matchCategory = !store.activeCategory || p.category.slug === store.activeCategory
       const matchSearch = !store.searchQuery || p.name.toLowerCase().includes(store.searchQuery.toLowerCase())
       return matchCategory && matchSearch
-    }),
-    [store.products, store.activeCategory, store.searchQuery]
+    })
+    // Apply sorting
+    switch (store.sortOption) {
+      case 'price-asc':
+        products = [...products].sort((a, b) => a.price - b.price)
+        break
+      case 'price-desc':
+        products = [...products].sort((a, b) => b.price - a.price)
+        break
+      case 'newest':
+        products = [...products].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
+        break
+      case 'name-asc':
+        products = [...products].sort((a, b) => a.name.localeCompare(b.name))
+        break
+      default: // 'recommended' — keep original order
+        break
+    }
+    return products
+  },
+    [store.products, store.activeCategory, store.searchQuery, store.sortOption]
   )
 
   const offerProducts = useMemo(() =>
@@ -155,7 +174,7 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
       {/* Header */}
       <StorefrontHeader installPwa={installPwa} />
 
-      <main className="flex-1 pt-[88px] md:pt-[96px] pb-28 md:pb-0">
+      <main className="flex-1 pt-[88px] md:pt-[96px] pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
         {/* MercadoPago Checkout Status Banner */}
         {store.mpCheckoutStatus && (
           <motion.div
@@ -222,6 +241,24 @@ export default function Storefront({ storeSlug: initialSlug }: StorefrontProps =
       {/* Footer — hidden on mobile (Bottom Nav replaces it contextually) */}
       <footer className="hidden md:block">
         <StorefrontFooter />
+      </footer>
+
+      {/* Mobile Mini Footer */}
+      <footer className="md:hidden bg-muted border-t py-4 px-4">
+        <div className="flex flex-col items-center gap-3">
+          {/* Payment methods */}
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            {['💵 Efectivo', '💜 Yape', '💚 Plin', '💙 MercadoPago'].map((m) => (
+              <span key={m} className="text-[10px] px-2 py-1 rounded-md bg-background text-muted-foreground font-medium">
+                {m}
+              </span>
+            ))}
+          </div>
+          {/* Trust text */}
+          <p className="text-[11px] text-muted-foreground text-center">
+            Envío gratis · Contra entrega · Garantía 30 días
+          </p>
+        </div>
       </footer>
 
       {/* Product Detail */}

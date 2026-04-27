@@ -67,7 +67,7 @@ export function StorefrontCheckout() {
   const customerEmail = useStorefrontStore((s) => s.customerEmail)
   const customerPhone = useStorefrontStore((s) => s.customerPhone)
   const customerAddress = useStorefrontStore((s) => s.customerAddress)
-  const customerDistrict = useStorefrontStore((s) => s.customerAddress)
+  const customerDistrict = useStorefrontStore((s) => s.customerDistrict)
   const orderNotes = useStorefrontStore((s) => s.orderNotes)
   const termsAccepted = useStorefrontStore((s) => s.termsAccepted)
   const paymentMethods = useStorefrontStore((s) => s.paymentMethods)
@@ -82,6 +82,7 @@ export function StorefrontCheckout() {
   const setCustomerEmail = useStorefrontStore((s) => s.setCustomerEmail)
   const setCustomerPhone = useStorefrontStore((s) => s.setCustomerPhone)
   const setCustomerAddress = useStorefrontStore((s) => s.setCustomerAddress)
+  const setCustomerDistrict = useStorefrontStore((s) => s.setCustomerDistrict)
   const setOrderNotes = useStorefrontStore((s) => s.setOrderNotes)
   const setTermsAccepted = useStorefrontStore((s) => s.setTermsAccepted)
   const setSelectedPaymentMethod = useStorefrontStore((s) => s.setSelectedPaymentMethod)
@@ -146,6 +147,7 @@ export function StorefrontCheckout() {
           customerEmail,
           customerPhone: formattedPhone,
           customerAddress,
+          customerDistrict,
           items: cart.items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -227,6 +229,7 @@ export function StorefrontCheckout() {
           customerEmail,
           customerPhone: formattedPhone,
           customerAddress,
+          customerDistrict,
           items: cart.items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -378,6 +381,20 @@ Gracias!`)
             </div>
 
             <div className="space-y-1.5">
+              <Label htmlFor="customerDistrict" className="text-xs font-medium">
+                Distrito <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="customerDistrict"
+                placeholder="Ej: Miraflores, San Juan de Lurigancho..."
+                value={customerDistrict}
+                onChange={(e) => setCustomerDistrict(e.target.value)}
+                className="h-10 rounded-lg text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground">Necesario para calcular el envío</p>
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="orderNotes" className="text-xs font-medium">
                 Notas del pedido <span className="text-muted-foreground font-normal">(opcional)</span>
               </Label>
@@ -398,7 +415,7 @@ Gracias!`)
               <Button
                 className="rounded-lg h-10 text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold"
                 onClick={() => setCheckoutStep(2)}
-                disabled={!customerName.trim() || !customerPhone.trim() || customerPhone.replace(/\D/g, '').length < 9 || !customerAddress.trim()}
+                disabled={!customerName.trim() || !customerPhone.trim() || customerPhone.replace(/\D/g, '').length < 9 || !customerAddress.trim() || !customerDistrict.trim()}
               >
                 Continuar al pago
                 <ChevronRight className="w-4 h-4 ml-1" />

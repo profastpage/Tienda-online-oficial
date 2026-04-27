@@ -26,6 +26,7 @@ interface StorefrontState {
   // ── Navigation & UI ─────────────────────────────────────────
   activeCategory: string | null
   searchQuery: string
+  sortOption: string
   mobileMenuOpen: boolean
   scrollY: number
   currentHero: number
@@ -40,6 +41,7 @@ interface StorefrontState {
   selectedProduct: Product | null
   selectedSize: string
   selectedColor: string
+  selectedQuantity: number
   addedToCart: boolean
   selectedImageView: number
 
@@ -51,6 +53,7 @@ interface StorefrontState {
   customerEmail: string
   customerPhone: string
   customerAddress: string
+  customerDistrict: string
   orderNotes: string
   termsAccepted: boolean
   selectedPaymentMethod: string
@@ -72,6 +75,7 @@ interface StorefrontState {
   // ── Actions: UI ─────────────────────────────────────────────
   setActiveCategory: (cat: string | null) => void
   setSearchQuery: (q: string) => void
+  setSortOption: (s: string) => void
   setMobileMenuOpen: (open: boolean) => void
   setScrollY: (y: number) => void
   setCurrentHero: (h: number) => void
@@ -86,6 +90,7 @@ interface StorefrontState {
   setSelectedProduct: (p: Product | null) => void
   setSelectedSize: (s: string) => void
   setSelectedColor: (c: string) => void
+  setSelectedQuantity: (q: number) => void
   setAddedToCart: (a: boolean) => void
   setSelectedImageView: (i: number) => void
   openProduct: (product: Product) => void
@@ -97,6 +102,7 @@ interface StorefrontState {
   setCustomerName: (n: string) => void
   setCustomerPhone: (p: string) => void
   setCustomerAddress: (a: string) => void
+  setCustomerDistrict: (d: string) => void
   setOrderNotes: (n: string) => void
   setTermsAccepted: (a: boolean) => void
   setSelectedPaymentMethod: (m: string) => void
@@ -122,6 +128,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   // ── Navigation & UI ─────────────────────────────────────────
   activeCategory: null,
   searchQuery: '',
+  sortOption: 'recommended',
   mobileMenuOpen: false,
   scrollY: 0,
   currentHero: 0,
@@ -136,6 +143,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   selectedProduct: null,
   selectedSize: '',
   selectedColor: '',
+  selectedQuantity: 1,
   addedToCart: false,
   selectedImageView: 0,
 
@@ -147,6 +155,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   customerEmail: '',
   customerPhone: '',
   customerAddress: '',
+  customerDistrict: '',
   orderNotes: '',
   termsAccepted: false,
   selectedPaymentMethod: '',
@@ -168,6 +177,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   // ── Actions: UI ─────────────────────────────────────────────
   setActiveCategory: (cat) => set({ activeCategory: cat }),
   setSearchQuery: (q) => set({ searchQuery: q }),
+  setSortOption: (s) => set({ sortOption: s }),
   setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
   setScrollY: (y) => set({ scrollY: y }),
   setCurrentHero: (h) => set({ currentHero: h }),
@@ -182,6 +192,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   setSelectedProduct: (p) => set({ selectedProduct: p }),
   setSelectedSize: (s) => set({ selectedSize: s }),
   setSelectedColor: (c) => set({ selectedColor: c }),
+  setSelectedQuantity: (q) => set({ selectedQuantity: q }),
   setAddedToCart: (a) => set({ addedToCart: a }),
   setSelectedImageView: (i) => set({ selectedImageView: i }),
   openProduct: (product) =>
@@ -189,6 +200,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
       selectedProduct: product,
       selectedSize: '',
       selectedColor: '',
+      selectedQuantity: 1,
       addedToCart: false,
       selectedImageView: 0,
     }),
@@ -201,6 +213,7 @@ export const useStorefrontStore = create<StorefrontState>()((set) => ({
   setCustomerEmail: (e) => set({ customerEmail: e }),
   setCustomerPhone: (p) => set({ customerPhone: p }),
   setCustomerAddress: (a) => set({ customerAddress: a }),
+  setCustomerDistrict: (d) => set({ customerDistrict: d }),
   setOrderNotes: (n) => set({ orderNotes: n }),
   setTermsAccepted: (a) => set({ termsAccepted: a }),
   setSelectedPaymentMethod: (m) => set({ selectedPaymentMethod: m }),

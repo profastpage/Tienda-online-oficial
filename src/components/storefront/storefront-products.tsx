@@ -4,12 +4,19 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { ArrowUpDown, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStorefrontStore } from './storefront-store'
 import { SwipeableProductImage } from './storefront-utils'
 import type { Product } from './storefront-types'
 
-// ═══ Shimmer Skeleton Card ═══
+const SORT_OPTIONS = [
+  { value: 'recommended', label: 'Recomendados' },
+  { value: 'price-asc', label: 'Precio: Menor a Mayor' },
+  { value: 'price-desc', label: 'Precio: Mayor a Menor' },
+  { value: 'newest', label: 'Más nuevos' },
+  { value: 'name-asc', label: 'Nombre: A-Z' },
+] as const
 function SkeletonProductCard() {
   return (
     <div
@@ -86,6 +93,7 @@ function AnimatedProductCard({
           <img
             src={product.image}
             alt={product.name}
+            loading="lazy"
             onLoad={() => setImageLoaded(true)}
             className={`
               w-full h-full object-cover
@@ -170,9 +178,14 @@ export function StorefrontProducts({ filteredProducts, loading }: StorefrontProd
   const categories = useStorefrontStore((s) => s.categories)
   const activeCategory = useStorefrontStore((s) => s.activeCategory)
   const searchQuery = useStorefrontStore((s) => s.searchQuery)
+  const sortOption = useStorefrontStore((s) => s.sortOption)
   const openProduct = useStorefrontStore((s) => s.openProduct)
   const setActiveCategory = useStorefrontStore((s) => s.setActiveCategory)
   const setSearchQuery = useStorefrontStore((s) => s.setSearchQuery)
+  const setSortOption = useStorefrontStore((s) => s.setSortOption)
+  const [sortOpen, setSortOpen] = useState(false)
+
+  const currentSort = SORT_OPTIONS.find(o => o.value === sortOption)
 
   // Optimistic instant modal open — bypasses intercepted route delay
   const handleProductClick = useCallback((product: Product) => {
@@ -208,6 +221,39 @@ export function StorefrontProducts({ filteredProducts, loading }: StorefrontProd
               Ver todos los productos
             </Button>
           )}
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs font-medium rounded-full"
+              onClick={() => setSortOpen(!sortOpen)}
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              {currentSort?.label || 'Ordenar'}
+              <ChevronDown className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+            </Button>
+            {sortOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-20 bg-popover border rounded-xl shadow-lg py-1 min-w-[200px]">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setSortOption(opt.value); setSortOpen(false) }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                        sortOption === opt.value
+                          ? 'bg-accent text-accent-foreground font-medium'
+                          : 'hover:bg-accent/50 text-foreground/70'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </motion.div>
 
         {loading ? (

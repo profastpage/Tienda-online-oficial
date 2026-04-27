@@ -138,7 +138,7 @@ export function WelcomePopup() {
                 transition={{ delay: 0.4 }}
                 className="mt-2 text-white/70 text-sm"
               >
-                Tu cupon de bienvenida te espera
+                Tu cupón de bienvenida te espera
               </motion.p>
             </div>
 
@@ -151,7 +151,7 @@ export function WelcomePopup() {
                   transition={{ delay: 0.5 }}
                 >
                   <p className="text-center text-foreground text-sm leading-relaxed mb-6">
-                    Suscribete y obtén un{' '}
+                    Suscríbete y obtén un{' '}
                     <span className="font-bold text-amber-600 dark:text-amber-400 text-base">
                       10% DE DESCUENTO
                     </span>{' '}
@@ -216,7 +216,7 @@ export function WelcomePopup() {
                   </motion.div>
                   <h3 className="font-bold text-foreground text-lg">Cupon Activado</h3>
                   <div className="mt-3 inline-block bg-amber-50 dark:bg-amber-900/20 border border-dashed border-amber-500 rounded-xl px-6 py-3">
-                    <p className="text-amber-700 dark:text-amber-400 text-xs font-medium uppercase tracking-wider">Tu cupon es</p>
+                    <p className="text-amber-700 dark:text-amber-400 text-xs font-medium uppercase tracking-wider">Tu cupón es</p>
                     <p className="text-2xl font-black text-amber-600 dark:text-amber-400 tracking-wider mt-0.5">BIENVENIDO10</p>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">

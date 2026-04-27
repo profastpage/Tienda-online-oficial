@@ -1,6 +1,6 @@
 'use client'
 
-import { ShoppingBag, Heart, ShoppingCart, MessageCircle, Trash2, Minus, Plus, Flame, LayoutGrid } from 'lucide-react'
+import { ShoppingBag, Heart, ShoppingCart, MessageCircle, Trash2, Minus, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
@@ -58,7 +58,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                   {cart.items.map((item) => (
                     <div key={`${item.id}-${item.size}`} className="flex gap-4">
                       <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={item.image} alt={item.name} loading="lazy" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm text-foreground truncate">{item.name}</h4>
@@ -121,30 +121,12 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                   </svg>
                   Pedir por WhatsApp
                 </button>
-                <Button
-                  className="w-full h-12 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
-                  onClick={() => {
-                    cart.closeCart()
-                    if (hasOffers) {
-                      document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' })
-                    } else {
-                      document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
-                    }
-                  }}
-                >
-                  {hasOffers ? (
-                    <><Flame className="w-5 h-5 mr-2" /> Ver Ofertas</>
-                  ) : (
-                    <><LayoutGrid className="w-5 h-5 mr-2" /> Ver Categorías</>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-12 rounded-xl font-semibold text-sm"
+                <button
+                  className="w-full h-9 rounded-lg text-xs text-muted-foreground hover:text-red-500 transition-colors"
                   onClick={cart.clearCart}
                 >
                   Vaciar carrito
-                </Button>
+                </button>
               </SheetFooter>
             </>
           )}
@@ -190,7 +172,7 @@ export function StorefrontCart({ openCheckout, hasOffers, getWhatsAppOrderUrl, o
                         className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 cursor-pointer block"
                         onClick={() => wishlist.closeWishlist()}
                       >
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={item.image} alt={item.name} loading="lazy" className="w-full h-full object-cover" />
                       </Link>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm text-foreground truncate">{item.name}</h4>

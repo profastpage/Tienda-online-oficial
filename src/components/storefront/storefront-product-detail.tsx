@@ -3,7 +3,7 @@
 import { useRef, useCallback, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, Heart, ShoppingBag, MessageCircle } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Heart, ShoppingBag, MessageCircle, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -81,6 +81,7 @@ export function StorefrontProductDetail() {
   const selectedProduct = useStorefrontStore((s) => s.selectedProduct)
   const selectedSize = useStorefrontStore((s) => s.selectedSize)
   const selectedColor = useStorefrontStore((s) => s.selectedColor)
+  const selectedQuantity = useStorefrontStore((s) => s.selectedQuantity)
   const addedToCart = useStorefrontStore((s) => s.addedToCart)
   const selectedImageView = useStorefrontStore((s) => s.selectedImageView)
   const storeWhatsApp = useStorefrontStore((s) => s.storeWhatsApp)
@@ -88,6 +89,7 @@ export function StorefrontProductDetail() {
   const setSelectedProduct = useStorefrontStore((s) => s.setSelectedProduct)
   const setSelectedSize = useStorefrontStore((s) => s.setSelectedSize)
   const setSelectedColor = useStorefrontStore((s) => s.setSelectedColor)
+  const setSelectedQuantity = useStorefrontStore((s) => s.setSelectedQuantity)
   const setAddedToCart = useStorefrontStore((s) => s.setAddedToCart)
   const setSelectedImageView = useStorefrontStore((s) => s.setSelectedImageView)
 
@@ -109,6 +111,7 @@ export function StorefrontProductDetail() {
     setSelectedProduct(null)
     setSelectedSize('')
     setSelectedColor('')
+    setSelectedQuantity(1)
     // Use router.back() for fluid close — this triggers popstate
     // which the @modal intercepting route handles to dismiss the modal
     if (pathname.startsWith('/demo/') && pathname !== '/demo') {
@@ -144,10 +147,11 @@ export function StorefrontProductDetail() {
       setSelectedProduct(null)
       setSelectedSize('')
       setSelectedColor('')
+      setSelectedQuantity(1)
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [selectedProduct, setSelectedProduct, setSelectedSize, setSelectedColor])
+  }, [selectedProduct, setSelectedProduct, setSelectedSize, setSelectedColor, setSelectedQuantity])
 
   const scrollToGalleryImage = useCallback((index: number) => {
     setSelectedImageView(index)
@@ -170,25 +174,29 @@ export function StorefrontProductDetail() {
     if (!selectedSize) return
     const sizes = JSON.parse(product.sizes) as string[]
     const colors = JSON.parse(product.colors) as { name: string; hex: string }[]
-    cart.addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      size: selectedSize || sizes[0],
-      color: selectedColor || colors[0]?.name || '',
-    })
+    // Add the selected quantity of items
+    for (let i = 0; i < selectedQuantity; i++) {
+      cart.addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        size: selectedSize || sizes[0],
+        color: selectedColor || colors[0]?.name || '',
+      })
+    }
     setAddedToCart(true)
     setTimeout(() => {
       setAddedToCart(false)
       setSelectedProduct(null)
       setSelectedSize('')
       setSelectedColor('')
+      setSelectedQuantity(1)
       if (pathname.startsWith('/demo/') && pathname !== '/demo') {
         router.back()
       }
     }, 1500)
-  }, [selectedSize, selectedColor, cart, setAddedToCart, setSelectedProduct, setSelectedSize, setSelectedColor, pathname, router])
+  }, [selectedSize, selectedColor, selectedQuantity, cart, setAddedToCart, setSelectedProduct, setSelectedSize, setSelectedColor, setSelectedQuantity, pathname, router])
 
   return (
     <AnimatePresence mode="wait">
@@ -440,11 +448,35 @@ export function StorefrontProductDetail() {
                   </div>
                 )}
 
+                {/* Quantity Selector */}
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-foreground mb-2">Cantidad</p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+                      disabled={selectedQuantity <= 1}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="w-12 text-center text-base font-bold text-foreground">{selectedQuantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedQuantity(Math.min(10, selectedQuantity + 1))}
+                      disabled={selectedQuantity >= 10}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Add to cart + WhatsApp */}
                 <div className="mt-auto pt-6">
                   <div className="flex gap-2">
                     <Button
-                      className={`flex-1 h-12 rounded-xl font-semibold text-sm transition-all ${
+                      className={`flex-1 h-12 rounded-xl font-semibold text-sm transition-all relative overflow-hidden ${
                         addedToCart
                           ? 'bg-green-600 hover:bg-green-700 text-white'
                           : 'bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-white'
@@ -454,9 +486,14 @@ export function StorefrontProductDetail() {
                     >
                       {addedToCart ? (
                         <span className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                          <motion.svg
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                            className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </motion.svg>
                           Agregado
                         </span>
                       ) : (
@@ -466,6 +503,19 @@ export function StorefrontProductDetail() {
                         </span>
                       )}
                     </Button>
+                    {/* Floating notification */}
+                    <AnimatePresence>
+                      {addedToCart && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shadow-lg z-10"
+                        >
+                          Agregado al carrito ✓
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     {storeWhatsApp && (
                       <Button
                         className="h-12 w-12 rounded-xl bg-green-600 hover:bg-green-700 text-white shrink-0"

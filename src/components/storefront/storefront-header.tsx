@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Search, ShoppingBag, Menu, X, LogIn, LogOut, Sun, Moon, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,13 @@ import { sc } from './storefront-types'
 
 interface StorefrontHeaderProps {
   installPwa: () => void
+}
+
+const NAV_LINKS: Record<string, string> = {
+  'Inicio': '',
+  'Catálogo': '#products',
+  'Novedades': '#ofertas',
+  'Nosotros': '#categories',
 }
 
 export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
@@ -49,6 +56,21 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
 
   const handleSc = (section: string, key: string, fallback: string = '') =>
     sc(storeContent, section, key, fallback)
+
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, target: string) => {
+    e.preventDefault()
+    setMobileMenuOpen(false)
+    if (!target) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      const el = document.querySelector(target)
+      if (el) {
+        const offset = 88
+        const top = el.getBoundingClientRect().top + window.scrollY - offset
+        window.scrollTo({ top, behavior: 'smooth' })
+      }
+    }
+  }, [setMobileMenuOpen])
 
   return (
     <header
@@ -107,10 +129,11 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
-            {['Inicio', 'Catálogo', 'Novedades', 'Nosotros'].map((item) => (
+            {Object.entries(NAV_LINKS).map(([item, target]) => (
               <a
                 key={item}
-                href="#"
+                href={target || '#'}
+                onClick={(e) => handleNavClick(e, target)}
                 className="text-xs font-medium text-foreground/70 hover:text-foreground transition-colors relative group"
               >
                 {item}
@@ -209,10 +232,24 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               <Search className="absolute left-3 w-4 h-4 text-muted-foreground/70" />
               <Input
                 placeholder="Buscar productos..."
-                className="pl-9 h-9 text-sm bg-muted border-border rounded-full"
+                className="pl-9 h-10 text-sm bg-muted border-border rounded-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    setMobileMenuOpen(false)
+                  }
+                }}
               />
+              {searchQuery && (
+                <button
+                  className="absolute right-3 w-5 h-5 flex items-center justify-center rounded-full bg-muted-foreground/20 hover:bg-muted-foreground/30 text-foreground"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
             {/* ── Dark Mode Toggle Switch ── */}
@@ -280,10 +317,11 @@ export function StorefrontHeader({ installPwa }: StorefrontHeaderProps) {
               )}
             </button>
             <nav className="space-y-1">
-              {['Inicio', 'Catálogo', 'Novedades', 'Nosotros'].map((item) => (
+              {Object.entries(NAV_LINKS).map(([item, target]) => (
                 <a
                   key={item}
-                  href="#"
+                  href={target || '#'}
+                  onClick={(e) => handleNavClick(e, target)}
                   className="block px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                 >
                   {item}
