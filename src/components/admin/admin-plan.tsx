@@ -18,6 +18,8 @@ import {
   AlertTriangle,
   Building2,
   Star,
+  Truck,
+  Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -89,7 +91,9 @@ const PLAN_TIERS: PlanTier[] = [
       tema: true,
       ssl: true,
       responsive: true,
-      mercadopago: false,
+      mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: false,
       custom_domain: false,
       inventory: false,
@@ -115,6 +119,8 @@ const PLAN_TIERS: PlanTier[] = [
       ssl: true,
       responsive: true,
       mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: false,
       custom_domain: false,
       inventory: true,
@@ -140,6 +146,8 @@ const PLAN_TIERS: PlanTier[] = [
       ssl: true,
       responsive: true,
       mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: true,
       custom_domain: true,
       inventory: true,
@@ -164,6 +172,8 @@ const PLAN_TIERS: PlanTier[] = [
       ssl: true,
       responsive: true,
       mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: true,
       custom_domain: true,
       inventory: true,
@@ -187,6 +197,8 @@ const FEATURE_LABELS: Record<string, { label: string; icon: React.ElementType }>
   ssl: { label: 'SSL gratuito', icon: Globe },
   responsive: { label: 'Responsive móvil', icon: Zap },
   mercadopago: { label: 'MercadoPago', icon: CreditCard },
+  contra_entrega: { label: 'Contra Entrega', icon: Truck },
+  yape_plin: { label: 'Yape / Plin', icon: Smartphone },
   analytics: { label: 'Analíticas avanzadas', icon: BarChart3 },
   custom_domain: { label: 'Dominio personalizado', icon: Globe },
   inventory: { label: 'Control de inventario', icon: Package },
@@ -201,7 +213,7 @@ const FEATURE_LABELS: Record<string, { label: string; icon: React.ElementType }>
 }
 
 // Only show key features in the admin plan comparison
-const KEY_FEATURES = ['mercadopago', 'analytics', 'custom_domain', 'inventory', 'bulk_import', 'priority_support', 'ai_assistant', 'push_notifications']
+const KEY_FEATURES = ['mercadopago', 'contra_entrega', 'yape_plin', 'analytics', 'custom_domain', 'inventory', 'bulk_import', 'priority_support', 'ai_assistant', 'push_notifications']
 
 const PLAN_BADGE_STYLES: Record<string, string> = {
   basico: 'bg-neutral-100 text-neutral-700 border-neutral-200',

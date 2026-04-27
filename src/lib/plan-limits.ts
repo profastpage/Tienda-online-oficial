@@ -34,7 +34,9 @@ export const PLANS: Record<string, PlanConfig> = {
       imagesPerProduct: 1,
     },
     features: {
-      mercadopago: false,
+      mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: false,
       custom_domain: false,
       inventory: false,
@@ -62,6 +64,8 @@ export const PLANS: Record<string, PlanConfig> = {
     },
     features: {
       mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: false,
       custom_domain: false,
       inventory: true,
@@ -89,6 +93,8 @@ export const PLANS: Record<string, PlanConfig> = {
     },
     features: {
       mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: true,
       custom_domain: true,
       inventory: true,
@@ -116,6 +122,8 @@ export const PLANS: Record<string, PlanConfig> = {
     },
     features: {
       mercadopago: true,
+      contra_entrega: true,
+      yape_plin: true,
       analytics: true,
       custom_domain: true,
       inventory: true,
