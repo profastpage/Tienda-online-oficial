@@ -5,23 +5,15 @@
 // ═══════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAuth } from '@/lib/api-auth'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { requireAuth } from '@/lib/api-auth'
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify existing auth
-    const authHeader = req.headers.get('authorization')
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-    if (!token) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-    }
+    const auth = await requireAuth(req)
+    if (auth.error) return auth.error
 
-    const user = await verifyAuth(token)
-    if (!user) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
-    }
-
+    const user = auth.user
+    const { getPayloadHMR } = await import('@payloadcms/next/utilities')
     const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
 
     // Find or create Payload user
@@ -34,7 +26,6 @@ export async function POST(req: NextRequest) {
     let payloadUserId = existing.docs?.[0]?.id
 
     if (!payloadUserId) {
-      // Create Payload user (sync from existing auth)
       const randomPassword = `sync-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
       const created = await payload.localAPI({
         url: '/api/store-users',
@@ -42,10 +33,10 @@ export async function POST(req: NextRequest) {
         data: {
           email: user.email,
           password: randomPassword,
-          name: user.name,
+          name: user.name || user.email,
           storeId: user.storeId || '',
           storeName: user.storeName || '',
-          role: user.role,
+          role: user.role || 'admin',
         },
       })
       payloadUserId = created.id
