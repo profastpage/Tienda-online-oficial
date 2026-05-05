@@ -111,6 +111,7 @@ export default function VisualEditorCore({ storeSlug, user }: { storeSlug: strin
             layout,
           })
         } else {
+          // No page found — create default layout
           setPageData({
             title: 'Página Principal',
             pageType: 'home',
@@ -123,10 +124,43 @@ export default function VisualEditorCore({ storeSlug, user }: { storeSlug: strin
             ],
           })
         }
+      } else {
+        // API returned non-OK status (500, 503, etc.)
+        // Show editor with default blocks anyway so user can still design
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }))
+        console.warn('[VisualEditor] API error:', res.status, errorData.error)
+        setPageData({
+          title: 'Página Principal',
+          pageType: 'home',
+          isPublished: true,
+          layout: [
+            createDefaultBlock('hero-block', 0),
+            createDefaultBlock('product-gallery-block', 1),
+            createDefaultBlock('features-block', 2),
+            createDefaultBlock('spacer-block', 3),
+          ],
+        })
+        toast({
+          title: 'Modo offline',
+          description: 'No se pudo conectar a la base de datos. Puedes editar y guardar más tarde.',
+          variant: 'destructive',
+        })
       }
     } catch (err) {
       console.error('[VisualEditor] Fetch error:', err)
-      toast({ title: 'Error al cargar la página', variant: 'destructive' })
+      // Even on network error, show the editor with default blocks
+      setPageData({
+        title: 'Página Principal',
+        pageType: 'home',
+        isPublished: true,
+        layout: [
+          createDefaultBlock('hero-block', 0),
+          createDefaultBlock('product-gallery-block', 1),
+          createDefaultBlock('features-block', 2),
+          createDefaultBlock('spacer-block', 3),
+        ],
+      })
+      toast({ title: 'Error de conexión', description: 'El editor funciona en modo offline. Puedes diseñar y guardar cuando se restaure la conexión.', variant: 'destructive' })
     } finally {
       setLoading(false)
     }

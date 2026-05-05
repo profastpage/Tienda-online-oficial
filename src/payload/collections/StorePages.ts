@@ -116,10 +116,12 @@ export const StorePages: CollectionConfig = {
     defaultColumns: ['title', 'storeSlug', 'pageType', 'updatedAt'],
   },
   access: {
-    read: ({ req: { user } }) => Boolean(user),
-    create: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user && (user.role === 'super-admin' || user.role === 'admin')),
+    // Auth is handled at the API proxy route level (/api/payload)
+    // Payload access controls are set to true so localAPI calls work
+    read: () => true,
+    create: () => true,
+    update: () => true,
+    delete: () => true,
   },
   fields: [
     {

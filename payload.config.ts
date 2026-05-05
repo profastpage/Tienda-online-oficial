@@ -28,6 +28,12 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 export default buildConfig({
   // ─── DATABASE: Supabase PostgreSQL ───
   db: postgresAdapter({
+    // Auto-create tables on first connection (no manual migration needed)
+    migrationDir: path.resolve(__dirname, 'src/payload/migrations'),
+    // Ensure schema exists on startup
+    ...(SUPABASE_DB_URL ? {
+      push: false,
+    } : {}),
     pool: {
       connectionString: SUPABASE_DB_URL || 'postgresql://postgres:postgres@localhost:5432/payload',
       max: 5,
@@ -102,8 +108,18 @@ export default buildConfig({
     },
   },
 
-  // ─── ON INIT: register S3 storage + init Supabase buckets ───
+  // ─── ON INIT: auto-migrate + register S3 storage + init Supabase buckets ───
   onInit: async (payload) => {
+    // Auto-push schema to database (creates/updates tables as needed)
+    if (SUPABASE_DB_URL) {
+      try {
+        await payload.db.schema.push({})
+        console.log('[Payload] Database schema pushed successfully')
+      } catch (err) {
+        console.warn('[Payload] Schema push failed (tables may already exist):', (err as Error).message)
+      }
+    }
+
     // Dynamically load S3 storage plugin when Supabase is configured
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
@@ -148,5 +164,6 @@ export default buildConfig({
 
     console.log('[Payload] CMS initialized')
     console.log(`[Payload] DB: ${SUPABASE_DB_URL ? 'Supabase PostgreSQL' : 'Local PostgreSQL'}`)
+    console.log(`[Payload] Schema auto-migrate: ${SUPABASE_DB_URL ? 'enabled' : 'disabled'}`)
   },
 })

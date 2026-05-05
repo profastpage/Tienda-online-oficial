@@ -2,7 +2,8 @@
 // Supabase Setup API Route
 // POST /api/supabase/setup
 //
-// Initializes Supabase storage buckets and verifies DB connection
+// Initializes Supabase storage buckets, verifies DB connection,
+// and runs Payload schema migration to create tables
 // ═══════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -39,7 +40,23 @@ export async function POST(request: NextRequest) {
       results.database = { status: 'not_configured', message: 'SUPABASE_DB_URL not set' }
     }
 
-    // 2. Initialize Supabase Storage buckets
+    // 2. Initialize Payload CMS and push schema (creates/updates all tables)
+    if (dbUrl) {
+      try {
+        const { getPayloadHMR } = await import('@payloadcms/next/utilities')
+        const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
+
+        // Push schema to create all tables (store_pages, content_blocks, media, store_users, etc.)
+        await payload.db.schema.push({})
+        results.payload = { status: 'connected', schema: 'pushed' }
+        console.log('[Setup] Payload schema pushed successfully')
+      } catch (err: any) {
+        results.payload = { status: 'error', message: err.message }
+        console.error('[Setup] Payload schema push failed:', err.message)
+      }
+    }
+
+    // 3. Initialize Supabase Storage buckets
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -73,17 +90,8 @@ export async function POST(request: NextRequest) {
       results.storage = { status: 'error', message: err.message }
     }
 
-    // 3. Test Payload CMS connection (using getPayloadHMR instead of getPayloadClient)
-    try {
-      const { getPayloadHMR } = await import('@payloadcms/next/utilities')
-      const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
-      const result = await payload.find({ collection: 'store-users', limit: 1 })
-      results.payload = { status: 'connected', collections: Array.isArray(result.docs) }
-    } catch (err: any) {
-      results.payload = { status: 'skipped', message: 'Payload se inicializa al primer request' }
-    }
-
     const allSuccess = results.database?.status === 'connected' &&
+      results.payload?.status !== 'error' &&
       results.storage?.status !== 'error'
 
     return NextResponse.json({

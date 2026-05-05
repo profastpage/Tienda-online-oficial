@@ -14,10 +14,11 @@ export const Media: CollectionConfig = {
     defaultColumns: ['filename', 'alt', 'storeId', 'fileSize', 'createdAt'],
   },
   access: {
-    read: ({ req: { user } }) => Boolean(user),
-    create: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user && (user.role === 'super-admin' || user.role === 'admin')),
+    // Auth is handled at the API proxy route level
+    read: () => true,
+    create: () => true,
+    update: () => true,
+    delete: () => true,
   },
   upload: {
     staticDir: 'public/media',

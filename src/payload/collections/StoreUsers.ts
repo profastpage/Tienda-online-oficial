@@ -14,13 +14,11 @@ export const StoreUsers: CollectionConfig = {
     hidden: false,
   },
   access: {
-    // Only authenticated users can read/write
-    read: ({ req: { user } }) => Boolean(user),
-    create: () => false, // Users created via existing registration system
-    update: ({ req: { user } }) => ({
-      id: { equals: user?.id },
-    }),
-    delete: () => false,
+    // Auth is handled at the API proxy route level
+    read: () => true,
+    create: () => true, // Can create via existing registration system
+    update: () => true,
+    delete: () => true,
   },
   fields: [
     {

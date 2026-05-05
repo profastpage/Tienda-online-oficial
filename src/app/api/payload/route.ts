@@ -11,9 +11,14 @@ let payloadInstance: any = null
 
 async function getPayload() {
   if (payloadInstance) return payloadInstance
-  const { getPayloadHMR } = await import('@payloadcms/next/utilities')
-  payloadInstance = await getPayloadHMR({ configPath: 'payload.config.ts' })
-  return payloadInstance
+  try {
+    const { getPayloadHMR } = await import('@payloadcms/next/utilities')
+    payloadInstance = await getPayloadHMR({ configPath: 'payload.config.ts' })
+    return payloadInstance
+  } catch (err) {
+    console.error('[Payload API] Failed to initialize Payload:', err)
+    throw err
+  }
 }
 
 // Verify auth and get storeId
@@ -33,28 +38,39 @@ async function authenticate(req: NextRequest): Promise<{ authorized: boolean; st
   }
 }
 
-// Auto-filter queries by storeId (multi-tenant)
-function applyStoreFilter(searchParams: URLSearchParams, storeId: string): void {
-  const existingWhere = searchParams.get('where')
-  if (existingWhere) {
-    searchParams.set('where', JSON.stringify({
-      and: [
-        JSON.parse(existingWhere),
-        { storeId: { equals: storeId } },
-      ],
-    }))
-  } else {
-    searchParams.set('where', JSON.stringify({ storeId: { equals: storeId } }))
+// Parse bracket-notation where params from URL into a nested object
+// e.g. where[storeSlug][equals]=urban-style → { storeSlug: { equals: 'urban-style' } }
+function parseBracketWhereParams(searchParams: URLSearchParams): Record<string, any> | null {
+  const where: Record<string, any> = {}
+  let found = false
+
+  for (const [key, value] of searchParams.entries()) {
+    if (!key.startsWith('where[')) continue
+    // Match patterns like: where[field][operator] or where[field]
+    const match = key.match(/^where\[([^\]]+)\](?:\[([^\]]+)\])?$/)
+    if (match) {
+      found = true
+      const [, field, operator] = match
+      if (operator) {
+        // where[field][operator] = value
+        if (!where[field]) where[field] = {}
+        where[field][operator] = isNaN(Number(value)) ? value : Number(value)
+      } else {
+        // where[field] = value
+        where[field] = isNaN(Number(value)) ? value : Number(value)
+      }
+    }
   }
+
+  return found ? where : null
 }
 
 export async function GET(req: NextRequest) {
-  const payload = await getPayload()
   const { searchParams } = new URL(req.url)
   const path = searchParams.get('path') || ''
 
   // Store content endpoints can be public (for storefront rendering)
-  const isPublicEndpoint = path.includes('/api/store-pages') && !path.includes('/api/store-pages/')
+  const isPublicEndpoint = path.includes('/api/store-pages') || path.includes('/api/content-blocks')
 
   const auth = await authenticate(req)
 
@@ -63,40 +79,77 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // For collections that need multi-tenant filtering
-    if (auth.storeId && (path.includes('/api/content-blocks') || path.includes('/api/store-pages'))) {
-      applyStoreFilter(searchParams, auth.storeId)
+    const payload = await getPayload()
+
+    // Build where clause from bracket-notation URL params
+    let whereClause: Record<string, any> = {}
+
+    // First, parse bracket notation: where[storeSlug][equals]=...
+    const bracketWhere = parseBracketWhereParams(searchParams)
+    if (bracketWhere) {
+      Object.assign(whereClause, bracketWhere)
     }
 
-    const reqOptions: any = { req }
-    const where = searchParams.get('where')
-    if (where) {
+    // Then, check for JSON where param (legacy support)
+    const jsonWhere = searchParams.get('where')
+    if (jsonWhere) {
       try {
-        reqOptions.where = JSON.parse(where)
-        searchParams.delete('where')
-      } catch { /* ignore */ }
+        const parsed = JSON.parse(jsonWhere)
+        Object.assign(whereClause, parsed)
+      } catch { /* ignore malformed JSON */ }
     }
 
+    // For multi-tenant: inject storeId filter for authenticated users
+    if (auth.authorized && auth.storeId && (path.includes('/api/content-blocks') || path.includes('/api/store-pages'))) {
+      whereClause.storeId = { equals: auth.storeId }
+    }
+
+    // Build query params
     const params: Record<string, any> = {}
+    if (Object.keys(whereClause).length > 0) {
+      params.where = whereClause
+    }
+
     searchParams.forEach((value, key) => {
-      if (key !== 'path') {
-        if (['limit', 'page', 'sort', 'depth'].includes(key)) {
-          params[key] = isNaN(Number(value)) ? value : Number(value)
-        } else {
-          params[key] = value
-        }
+      if (key === 'path' || key.startsWith('where[') || key === 'where') return
+      if (['limit', 'page', 'sort', 'depth'].includes(key)) {
+        params[key] = isNaN(Number(value)) ? value : Number(value)
+      } else {
+        params[key] = value
       }
     })
+
+    // Use a Payload-like request context with user info for access control
+    const payloadReq: any = { user: auth.authorized ? { id: auth.userId, storeId: auth.storeId, role: auth.role } : null }
 
     const response = await payload.localAPI({
       url: path,
       ...params,
-      ...reqOptions,
+      req: payloadReq,
+      fallbackErrorHandler: true,
     })
     return Response.json(response)
   } catch (error: any) {
-    console.error('[Payload API] GET error:', error.message)
-    return Response.json({ error: error.message }, { status: error.status || 500 })
+    console.error('[Payload API] GET error:', error?.message || error)
+
+    // Provide user-friendly error messages
+    let message = 'Error interno del servidor'
+    let status = 500
+
+    if (error?.message?.includes('does not exist') || error?.message?.includes('relation')) {
+      message = 'Las tablas de la base de datos no existen. El sistema las creará automáticamente en el próximo intento.'
+      status = 503
+    } else if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('connect')) {
+      message = 'No se pudo conectar a la base de datos. Verifica las variables de entorno SUPABASE_DB_URL.'
+      status = 503
+    } else if (error?.message?.includes('authentication') || error?.message?.includes('auth')) {
+      message = 'Error de autenticación con la base de datos.'
+      status = 401
+    } else if (error?.message) {
+      message = error.message
+    }
+
+    return Response.json({ error: message, details: error?.message }, { status })
   }
 }
 
@@ -115,12 +168,15 @@ export async function POST(req: NextRequest) {
     body.storeId = auth.storeId
   }
 
+  const payloadReq: any = { user: { id: auth.userId, storeId: auth.storeId, role: auth.role } }
+
   try {
     const response = await payload.localAPI({
       url: path,
       method: 'POST',
       data: body,
-      req,
+      req: payloadReq,
+      fallbackErrorHandler: true,
     })
     return Response.json(response)
   } catch (error: any) {
@@ -140,12 +196,15 @@ export async function PUT(req: NextRequest) {
   const path = searchParams.get('path') || ''
   const body = await req.json()
 
+  const payloadReq: any = { user: { id: auth.userId, storeId: auth.storeId, role: auth.role } }
+
   try {
     const response = await payload.localAPI({
       url: path,
       method: 'PUT',
       data: body,
-      req,
+      req: payloadReq,
+      fallbackErrorHandler: true,
     })
     return Response.json(response)
   } catch (error: any) {
@@ -164,11 +223,14 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const path = searchParams.get('path') || ''
 
+  const payloadReq: any = { user: { id: auth.userId, storeId: auth.storeId, role: auth.role } }
+
   try {
     const response = await payload.localAPI({
       url: path,
       method: 'DELETE',
-      req,
+      req: payloadReq,
+      fallbackErrorHandler: true,
     })
     return Response.json(response)
   } catch (error: any) {
@@ -188,12 +250,15 @@ export async function PATCH(req: NextRequest) {
   const path = searchParams.get('path') || ''
   const body = await req.json()
 
+  const payloadReq: any = { user: { id: auth.userId, storeId: auth.storeId, role: auth.role } }
+
   try {
     const response = await payload.localAPI({
       url: path,
       method: 'PATCH',
       data: body,
-      req,
+      req: payloadReq,
+      fallbackErrorHandler: true,
     })
     return Response.json(response)
   } catch (error: any) {

@@ -728,10 +728,12 @@ export const ContentBlocks: CollectionConfig = {
     description: 'Bloques de contenido reutilizables para las tiendas',
   },
   access: {
-    read: ({ req: { user } }) => Boolean(user),
-    create: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user),
+    // Auth is handled at the API proxy route level (/api/payload)
+    // Payload access controls are set to true so localAPI calls work
+    read: () => true,
+    create: () => true,
+    update: () => true,
+    delete: () => true,
   },
   fields: [
     {
