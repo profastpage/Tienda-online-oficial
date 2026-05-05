@@ -24,6 +24,7 @@ import {
   Palette,
   Sun,
   Moon,
+  Sparkles,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -55,6 +56,8 @@ const navItems: NavItem[] = [
   { id: 'plan', label: 'Mi Plan', icon: Crown, href: '/admin/mi-plan' },
   { id: 'ai', label: 'Asistente IA', icon: Bot, href: '/admin/asistente-ia' },
 ]
+
+// Note: "Editor Visual" link is added dynamically below the nav items using storeSlug
 
 const sectionTitles: Record<AdminSection, string> = {
   dashboard: 'Dashboard',
@@ -135,7 +138,18 @@ function SidebarNav({
 
         {/* Ver Mi Tienda - Official Store Button */}
         {storeSlug && (
-          <div className="px-3 mt-4">
+          <div className="px-3 mt-4 space-y-2">
+            {/* Editor Visual - NEW Payload CMS 3.0 */}
+            <a
+              href={`/${storeSlug}/visual-editor`}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150 group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md"
+            >
+              <Sparkles className="w-4.5 h-4.5 flex-shrink-0" />
+              <span className="flex-1 text-left">Editor Visual</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            </a>
+            <p className="text-[10px] text-blue-500 px-1">Editor visual inline (Payload CMS)</p>
+            {/* Ver Mi Tienda */}
             <a
               href={`/${storeSlug}`}
               target="_blank"
@@ -146,7 +160,7 @@ function SidebarNav({
               <span className="flex-1 text-left">Ver Mi Tienda</span>
               <ExternalLink className="w-3.5 h-3.5 opacity-70" />
             </a>
-            <p className="text-[10px] text-neutral-400 mt-1.5 px-1">tienda-online-oficial.vercel.app/{storeSlug}</p>
+            <p className="text-[10px] text-neutral-400 mt-0 px-1">tienda-online-oficial.vercel.app/{storeSlug}</p>
           </div>
         )}
       </ScrollArea>

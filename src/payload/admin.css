@@ -1,0 +1,7 @@
+/* Payload CMS Admin Panel Custom Styles */
+/* Matches the existing store editor UI */
+
+:root {
+  --payload-brand: #171717;
+  --payload-brand-light: #fafafa;
+}

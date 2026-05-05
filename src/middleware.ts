@@ -34,9 +34,14 @@ function checkRateLimit(ip: string, max: number = 60, windowMs: number = 60000):
 
 // Check if path matches /:slug/editordetienda pattern
 function isEditorDeTiendaPath(pathname: string): boolean {
-  // Match /something/editordetienda but not at root level static files
   const segments = pathname.split('/').filter(Boolean)
   return segments.length === 2 && segments[1] === 'editordetienda'
+}
+
+// Check if path matches /:slug/visual-editor pattern
+function isVisualEditorPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean)
+  return segments.length === 2 && segments[1] === 'visual-editor'
 }
 
 // Routes that should be public (no auth required)
@@ -63,6 +68,7 @@ const PUBLIC_PATHS = [
   '/api/upload',
   '/api/chat',
   '/api/route',
+  '/api/payload',
   '/api/payments/mercadopago/webhook',
   '/api/payments/mercadopago/success',
   '/api/payments/mercadopago/failure',
@@ -149,8 +155,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect /[slug]/editordetienda pages — require authentication
-  if (isEditorDeTiendaPath(pathname)) {
+  // Protect /[slug]/editordetienda and /[slug]/visual-editor pages — require authentication
+  if (isEditorDeTiendaPath(pathname) || isVisualEditorPath(pathname)) {
     const cookieToken = request.cookies.get('auth-token')?.value
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
