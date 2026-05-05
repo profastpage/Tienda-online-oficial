@@ -3,7 +3,7 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: true, // TODO: framer-motion v12 type defs incompatible
+    ignoreBuildErrors: true, // framer-motion v12 type defs incompatible
   },
   reactStrictMode: true,
   allowedDevOrigins: process.env.NODE_ENV === 'development'
@@ -14,33 +14,24 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'images.pexels.com' },
+      // Supabase Storage
+      { protocol: 'https', hostname: '*.supabase.co' },
     ],
   },
   serverExternalPackages: [
     '@prisma/adapter-libsql',
     '@libsql/client',
     'z-ai-web-dev-sdk',
-    // Payload CMS dependencies that need to be externalized
+    // Payload CMS - server-only packages
     'payload',
-    '@payloadcms/db-sqlite',
     '@payloadcms/db-postgres',
-    'better-sqlite3',
+    '@payloadcms/storage-s3',
+    '@supabase/supabase-js',
+    'pg',
   ],
-  // Payload CMS 3.0 integration
-  experimental: {
-    turbo: {
-      // Only include Payload CMS in server bundles
-      rules: {
-        '@payloadcms/db-sqlite': {
-          loaders: ['default'],
-        },
-      },
-    },
-  },
   async headers() {
     return [
       {
-        // Allow framing for visual editor iframe, deny for everything else
         source: '/:slug*/visual-editor',
         headers: [
           { key: 'X-Frame-Options', value: 'ALLOW-FROM *' },

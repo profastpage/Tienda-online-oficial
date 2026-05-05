@@ -1,43 +1,55 @@
 import { buildConfig } from 'payload'
-import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import path from 'path'
 import { StorePages } from './src/payload/collections/StorePages'
 import { ContentBlocks } from './src/payload/collections/ContentBlocks'
 import { Media } from './src/payload/collections/Media'
+import { StoreUsers } from './src/payload/collections/StoreUsers'
 
 // ═══════════════════════════════════════════════════════════
 // Payload CMS 3.0 Configuration
 // Multi-tenant Visual Inline Editing System
+// Database: PostgreSQL on Supabase
+// Storage: Supabase Storage (S3-compatible)
 // ═══════════════════════════════════════════════════════════
+
+const MEDIA_BUCKET = 'store-media'
 
 const appURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+// Supabase PostgreSQL connection
+// Format: postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+const SUPABASE_DB_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || ''
+
+// Supabase Storage (S3-compatible) credentials
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
 export default buildConfig({
-  // Use Postgres in production (Vercel), SQLite for local dev
-  db: process.env.PAYLOAD_DATABASE_URI
-    ? postgresAdapter({
-        pool: {
-          connectionString: process.env.PAYLOAD_DATABASE_URI!,
-        },
-      })
-    : sqliteAdapter({
-        client: {
-          url: path.resolve(process.cwd(), 'payload-data.db'),
-        },
-      }),
+  // ─── DATABASE: Supabase PostgreSQL ───
+  db: postgresAdapter({
+    pool: {
+      connectionString: SUPABASE_DB_URL || 'postgresql://postgres:postgres@localhost:5432/payload',
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    },
+    ...(SUPABASE_DB_URL ? {
+      ssl: { rejectUnauthorized: false },
+    } : {}),
+  }),
 
-  // Collections (no auth collection - using external auth bridge)
-  collections: [StorePages, ContentBlocks, Media],
+  // ─── COLLECTIONS ───
+  collections: [StoreUsers, StorePages, ContentBlocks, Media],
 
-  // Globals
-  globals: [],
+  // ─── PLUGINS (loaded dynamically to avoid build-time errors) ───
+  plugins: [],
 
-  // Admin panel configuration
+  // ─── ADMIN PANEL ───
   admin: {
     css: path.join(__dirname, 'src/payload/admin.css'),
     meta: {
-      titleSuffix: ' · CMS Visual',
+      titleSuffix: ' - CMS Visual',
       description: 'Editor visual de tiendas - Payload CMS 3.0',
       icons: [
         {
@@ -47,11 +59,9 @@ export default buildConfig({
         },
       ],
     },
-    // No built-in auth - we use external auth bridge
-    // The admin panel is accessed via the Visual Editor
   },
 
-  // Live preview breakpoints
+  // ─── LIVE PREVIEW ───
   livePreview: {
     breakpoints: [
       { label: 'Mobile', name: 'mobile', width: 390, height: 844 },
@@ -60,31 +70,29 @@ export default buildConfig({
     ],
   },
 
-  // Secret for Payload JWT tokens
-  secret: process.env.PAYLOAD_SECRET || 'dev-secret-change-in-production-abc123',
+  // ─── SECURITY ───
+  secret: process.env.PAYLOAD_SECRET || process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production-abc123',
 
-  // TypeScript
+  // ─── TYPESCRIPT ───
   typescript: {
     outputFile: path.resolve(__dirname, 'src/payload-types.ts'),
   },
 
-  // Localization
+  // ─── LOCALIZATION ───
   localization: {
     locales: [
-      { code: 'es', label: 'Español' },
+      { code: 'es', label: 'Espanol' },
       { code: 'en', label: 'English' },
     ],
     defaultLocale: 'es',
     fallback: true,
   },
 
-  // CORS - allow all origins for the visual editor iframe
+  // ─── CORS & CSRF ───
   cors: [appURL, '*'],
-
-  // CSRF
   csrf: [appURL],
 
-  // Default collection access (public - auth handled by API route)
+  // ─── DEFAULT ACCESS (public - auth handled at API route level) ───
   defaults: {
     access: {
       read: () => true,
@@ -92,5 +100,53 @@ export default buildConfig({
       update: () => true,
       delete: () => true,
     },
+  },
+
+  // ─── ON INIT: register S3 storage + init Supabase buckets ───
+  onInit: async (payload) => {
+    // Dynamically load S3 storage plugin when Supabase is configured
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const { s3Storage } = await import('@payloadcms/storage-s3')
+        // Register the S3 plugin at runtime
+        payload.addPlugin({
+          name: 'supabase-storage',
+          ...s3Storage({
+            collections: {
+              media: {
+                prefix: 'media',
+                generateFileURL: ({ filename, prefix }: { filename: string; prefix?: string }) => {
+                  return `${SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${prefix || 'media'}/${filename}`
+                },
+              },
+            },
+            bucket: MEDIA_BUCKET,
+            config: {
+              endpoint: `${SUPABASE_URL.replace('https://', '')}/storage/v1/s3`,
+              credentials: {
+                accessKeyId: SUPABASE_SERVICE_ROLE_KEY,
+                secretAccessKey: SUPABASE_SERVICE_ROLE_KEY,
+              },
+              region: 'auto',
+              forcePathStyle: true,
+            },
+          }),
+        })
+        console.log('[Payload] Supabase S3 Storage plugin registered')
+      } catch (err) {
+        console.warn('[Payload] S3 Storage plugin not loaded:', (err as Error).message)
+      }
+
+      // Initialize storage buckets
+      try {
+        const { initSupabaseStorage } = await import('./src/lib/supabase')
+        await initSupabaseStorage()
+      } catch (err) {
+        console.warn('[Payload] Supabase Storage init skipped:', (err as Error).message)
+      }
+    }
+
+    console.log('[Payload] CMS initialized')
+    console.log(`[Payload] DB: ${SUPABASE_DB_URL ? 'Supabase PostgreSQL' : 'Local PostgreSQL'}`)
   },
 })

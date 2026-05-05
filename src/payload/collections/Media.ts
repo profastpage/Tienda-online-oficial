@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════
-// Media Collection - Image/File Storage
-// Uses Cloudinary for production (via existing setup)
-// Falls back to local storage for development
+// Media Collection - File Storage
+// Uses Supabase Storage (S3-compatible) in production
+// Falls back to local filesystem for development
 // ═══════════════════════════════════════════════════════════
 
 import { CollectionConfig } from 'payload'
@@ -9,8 +9,9 @@ import { CollectionConfig } from 'payload'
 export const Media: CollectionConfig = {
   slug: 'media',
   admin: {
-    description: 'Imágenes y archivos multimedia',
+    description: 'Imagenes y archivos multimedia',
     useAsTitle: 'filename',
+    defaultColumns: ['filename', 'alt', 'storeId', 'fileSize', 'createdAt'],
   },
   access: {
     read: ({ req: { user } }) => Boolean(user),
@@ -20,32 +21,23 @@ export const Media: CollectionConfig = {
   },
   upload: {
     staticDir: 'public/media',
-    mimeTypes: ['image/*', 'video/mp4', 'application/pdf'],
+    mimeTypes: [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'image/avif',
+      'video/mp4',
+      'video/webm',
+      'application/pdf',
+    ],
     imageSizes: [
-      {
-        name: 'thumbnail',
-        width: 300,
-        height: 300,
-        position: 'centre',
-      },
-      {
-        name: 'card',
-        width: 600,
-        height: 600,
-        position: 'centre',
-      },
-      {
-        name: 'hero',
-        width: 1200,
-        height: 600,
-        position: 'centre',
-      },
-      {
-        name: 'large',
-        width: 1920,
-        height: 1080,
-        position: 'centre',
-      },
+      { name: 'thumbnail', width: 300, height: 300, position: 'centre' },
+      { name: 'card', width: 600, height: 600, position: 'centre' },
+      { name: 'hero', width: 1200, height: 600, position: 'centre' },
+      { name: 'large', width: 1920, height: 1080, position: 'centre' },
+      { name: 'og', width: 1200, height: 630, position: 'centre' },
     ],
   },
   fields: [
@@ -59,7 +51,7 @@ export const Media: CollectionConfig = {
     {
       name: 'caption',
       type: 'textarea',
-      label: 'Descripción',
+      label: 'Descripcion',
     },
     {
       name: 'storeId',
@@ -70,10 +62,24 @@ export const Media: CollectionConfig = {
         description: 'Tienda a la que pertenece este archivo',
       },
     },
+    {
+      name: 'folder',
+      type: 'select',
+      label: 'Carpeta',
+      defaultValue: 'general',
+      options: [
+        { label: 'General', value: 'general' },
+        { label: 'Productos', value: 'products' },
+        { label: 'Banners', value: 'banners' },
+        { label: 'Heroes', value: 'heroes' },
+        { label: 'Logos', value: 'logos' },
+        { label: 'Avatares', value: 'avatars' },
+        { label: 'Documentos', value: 'documents' },
+      ],
+    },
   ],
   hooks: {
     beforeChange: [
-      // Auto-set storeId from authenticated user
       async ({ data, req }) => {
         if (req.user && !data.storeId) {
           data.storeId = (req.user as any).storeId || ''

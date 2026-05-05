@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════
 // Payload CMS Client - For API calls from Next.js
+// Database: PostgreSQL on Supabase
 // ═══════════════════════════════════════════════════════════
 
 import { getPayloadClient } from 'payload/next'
 
-// Re-export the Payload client getter
 export const getPayload = getPayloadClient
 
 // Helper to fetch store page data (used by storefront)
@@ -22,7 +22,6 @@ export async function getStorePage(storeSlug: string, pageType: string = 'home')
       },
       limit: 1,
     })
-
     return pages.docs[0] || null
   } catch (error) {
     console.error('[Payload] Error fetching store page:', error)
@@ -45,7 +44,6 @@ export async function getStoreContentBlocks(storeId: string) {
       sort: 'sortOrder',
       limit: 50,
     })
-
     return blocks.docs
   } catch (error) {
     console.error('[Payload] Error fetching content blocks:', error)
