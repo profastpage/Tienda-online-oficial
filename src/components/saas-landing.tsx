@@ -48,6 +48,10 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { useToast } from '@/hooks/use-toast'
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { PortfolioSection } from '@/components/portfolio-section'
+import { PortfolioModal } from '@/components/portfolio-modal'
+import { PortfolioTimeline } from '@/components/portfolio-timeline'
+import type { PortfolioProject } from '@/lib/portfolio-data'
 
 // ─── WhatsApp Icon SVG ─────────────────────────────────────────────
 function WhatsAppIcon({ className = 'w-5 h-5' }: { className?: string }) {
@@ -67,16 +71,12 @@ function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: str
   const cleanedTarget = target.replace(/^[+%]/, '').replace(/[%]$/, '')
   const isPlainNumber = /^\d+$/.test(cleanedTarget) && cleanedTarget.length > 0
 
-  if (!isPlainNumber) {
-    return <span ref={ref}>{target}{suffix}</span>
-  }
-
-  const numericTarget = parseInt(cleanedTarget)
+  const numericTarget = isPlainNumber ? parseInt(cleanedTarget) : 0
   const [count, setCount] = useState(0)
   const isInView = useInView(ref, { once: true })
 
   useEffect(() => {
-    if (!isInView) return
+    if (!isPlainNumber || !isInView) return
     const duration = 2000
     const steps = 60
     const increment = numericTarget / steps
@@ -91,7 +91,11 @@ function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: str
       }
     }, duration / steps)
     return () => clearInterval(timer)
-  }, [numericTarget, isInView])
+  }, [numericTarget, isInView, isPlainNumber])
+
+  if (!isPlainNumber) {
+    return <span ref={ref}>{target}{suffix}</span>
+  }
 
   const prefix = target.match(/^[^0-9]*/)?.[0] || ''
   const postfix = target.match(/[^0-9]*$/)?.[0] || suffix
@@ -212,23 +216,23 @@ function CountdownBanner() {
 // ─── Trust Banner ─────────────────────────────────────────────────
 function TrustBanner() {
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:gap-10 text-sm text-neutral-600 dark:text-neutral-300">
+    <div className="bg-neutral-900 border-y border-neutral-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:items-center sm:justify-center sm:gap-6 sm:gap-10 text-sm text-neutral-300">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-green-500" />
-          <span className="font-medium">Pagos seguros</span>
+          <span className="font-medium text-white">Pagos seguros</span>
         </div>
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-amber-500" />
-          <span className="font-medium">Activación inmediata</span>
+          <span className="font-medium text-white">Activación inmediata</span>
         </div>
         <div className="flex items-center gap-2">
           <Headphones className="w-4 h-4 text-blue-500" />
-          <span className="font-medium">Soporte 24/7</span>
+          <span className="font-medium text-white">Soporte 24/7</span>
         </div>
         <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 text-purple-500" />
-          <span className="font-medium">Sin tarjeta requerida</span>
+          <span className="font-medium text-white">Sin tarjeta requerida</span>
         </div>
       </div>
     </div>
@@ -478,7 +482,7 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={i}
           className={`w-4 h-4 ${
-            i < rating ? 'text-amber-400 fill-amber-400' : 'text-neutral-200 fill-neutral-200 dark:text-neutral-700 dark:fill-neutral-700'
+            i < rating ? 'text-amber-400 fill-amber-400' : 'text-neutral-700 fill-neutral-700'
           }`}
         />
       ))}
@@ -494,6 +498,7 @@ export default function SaasLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [canInstallPwa, setCanInstallPwa] = useState(false)
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
+  const [selectedPortfolioProject, setSelectedPortfolioProject] = useState<PortfolioProject | null>(null)
 
   // Lead form state
   const [formData, setFormData] = useState({
@@ -586,6 +591,7 @@ export default function SaasLanding() {
 
   const navLinks = [
     { label: 'Características', href: '#features' },
+    { label: 'Portafolio', href: '#portfolio' },
     { label: 'Cómo Funciona', href: '#how-it-works' },
     { label: 'Precios', href: '#pricing' },
     { label: 'Testimonios', href: '#testimonials' },
@@ -594,13 +600,13 @@ export default function SaasLanding() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900 selection:bg-amber-500/30">
+    <div className="min-h-screen flex flex-col bg-neutral-950 selection:bg-amber-500/30">
       {/* ═══ Countdown Timer Banner ═══ */}
       <CountdownBanner />
 
       {/* ═══ Shared Mobile Menu Sheet ═══ */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-80 bg-white dark:bg-neutral-900">
+        <SheetContent side="left" className="w-80 bg-neutral-950 border-neutral-800">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
@@ -615,7 +621,7 @@ export default function SaasLanding() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors"
+                className="block px-4 py-3 text-neutral-300 hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors"
               >
                 {link.label}
               </a>
@@ -623,20 +629,20 @@ export default function SaasLanding() {
             <Separator className="my-3" />
             <button
               onClick={() => { router.push('/login'); setMobileMenuOpen(false) }}
-              className="block w-full text-left px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors"
+              className="block w-full text-left px-4 py-3 text-neutral-300 hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors"
             >
               Iniciar Sesión
             </button>
             <button
               onClick={() => { router.push('/registro'); setMobileMenuOpen(false) }}
-              className="block w-full text-left px-4 py-3 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 rounded-lg text-sm font-medium transition-colors"
+              className="block w-full text-left px-4 py-3 text-amber-400 hover:bg-amber-950 rounded-lg text-sm font-medium transition-colors"
             >
               Registrarse
             </button>
             {canInstallPwa && (
               <button
                 onClick={() => { installPwa(); setMobileMenuOpen(false) }}
-                className="flex items-center gap-2 w-full text-left px-4 py-3 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center gap-2 w-full text-left px-4 py-3 text-green-500 hover:bg-green-950 rounded-lg text-sm font-medium transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Instalar App
@@ -646,7 +652,7 @@ export default function SaasLanding() {
             <a
               href="/demo"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-3 text-neutral-300 hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors"
             >
               <Store className="w-4 h-4" />
               Ver Demo
@@ -842,8 +848,8 @@ export default function SaasLanding() {
           </motion.div>
         </div>
 
-        {/* Bottom fade to white */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-32 bg-gradient-to-t from-white dark:from-neutral-900 to-transparent" />
+        {/* Bottom fade to dark */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-32 bg-gradient-to-t from-neutral-950 to-transparent" />
 
         {/* Top nav bar - mobile-first compact */}
         <div className="absolute top-0 left-0 right-0 z-10 bg-black/20 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
@@ -885,9 +891,9 @@ export default function SaasLanding() {
       <TrustBanner />
 
       {/* ═══════════════════ BRAND LOGOS MARQUEE ═══════════════════ */}
-      <section className="py-8 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-700">
+      <section className="py-8 bg-neutral-900 border-b border-neutral-800">
         <FadeInUp>
-          <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-widest font-semibold mb-6">
+          <p className="text-center text-xs text-neutral-500 uppercase tracking-widest font-semibold mb-6">
             Marcas que confían en nosotros
           </p>
         </FadeInUp>
@@ -898,7 +904,7 @@ export default function SaasLanding() {
                 {brands.map((brand) => (
                   <span
                     key={`${setIdx}-${brand}`}
-                    className="text-2xl font-bold text-neutral-300 dark:text-neutral-600 whitespace-nowrap tracking-wider select-none"
+                    className="text-2xl font-bold text-neutral-600 whitespace-nowrap tracking-wider select-none"
                   >
                     {brand}
                   </span>
@@ -910,16 +916,16 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ FEATURES SECTION ═══════════════════ */}
-      <section id="features" className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-neutral-900">
+      <section id="features" className="py-12 sm:py-16 lg:py-20 bg-neutral-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
-            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
+            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-500/10 text-amber-400 hover:bg-amber-500/10">
               Características
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Todo lo que necesitas para vender online
             </h2>
-            <p className="mt-4 text-neutral-500 dark:text-neutral-400 text-lg max-w-2xl mx-auto">
+            <p className="mt-4 text-neutral-400 text-lg max-w-2xl mx-auto">
               Herramientas profesionales diseñadas para que tu negocio destaque en el mundo digital.
             </p>
           </FadeInUp>
@@ -927,13 +933,13 @@ export default function SaasLanding() {
           <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => (
               <StaggerItem key={feature.title}>
-                <Card className="group h-full border-neutral-100 dark:border-neutral-800 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300 py-0 gap-0">
+                <Card className="group h-full border-neutral-800 hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300 py-0 gap-0">
                   <CardContent className="p-6">
-                    <div className="w-12 h-12 bg-amber-50 dark:bg-amber-950 rounded-2xl flex items-center justify-center text-amber-600 mb-4 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                    <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 mb-4 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
                       {feature.icon}
                     </div>
-                    <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-2">{feature.title}</h3>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed">{feature.description}</p>
+                    <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
+                    <p className="text-neutral-400 text-sm leading-relaxed">{feature.description}</p>
                   </CardContent>
                 </Card>
               </StaggerItem>
@@ -942,17 +948,23 @@ export default function SaasLanding() {
         </div>
       </section>
 
+      {/* ═══ PORTFOLIO SECTION ═══ */}
+      <PortfolioSection onSelectProject={setSelectedPortfolioProject} />
+
+      {/* ═══ TIMELINE SECTION ═══ */}
+      <PortfolioTimeline />
+
       {/* ═══════════════════ HOW IT WORKS ═══════════════════ */}
-      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 bg-neutral-50 dark:bg-neutral-950">
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
-            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
-              Cómo Funciona
+            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-500/10 text-amber-400 hover:bg-amber-500/10">
+              Proceso de Trabajo
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Tu tienda lista en 3 simples pasos
             </h2>
-            <p className="mt-4 text-neutral-500 dark:text-neutral-400 text-lg max-w-2xl mx-auto">
+            <p className="mt-4 text-neutral-400 text-lg max-w-2xl mx-auto">
               Sin complicaciones, sin código, sin esperas. Empieza a vender hoy mismo.
             </p>
           </FadeInUp>
@@ -962,20 +974,20 @@ export default function SaasLanding() {
               <StaggerItem key={step.title}>
                 <div className="text-center">
                   <div className="relative inline-flex">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-neutral-800 rounded-3xl flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10 border border-neutral-100 dark:border-neutral-800">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-neutral-800 rounded-3xl flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10 border border-neutral-700">
                       {step.icon}
                     </div>
                     <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                       {step.step}
                     </div>
                   </div>
-                  <h3 className="mt-6 text-xl font-bold text-neutral-900 dark:text-neutral-100">{step.title}</h3>
-                  <p className="mt-3 text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed max-w-xs mx-auto">
+                  <h3 className="mt-6 text-xl font-bold text-white">{step.title}</h3>
+                  <p className="mt-3 text-neutral-400 text-sm leading-relaxed max-w-xs mx-auto">
                     {step.description}
                   </p>
                   {index < steps.length - 1 && (
                     <div className="hidden md:flex justify-center mt-4">
-                      <ArrowRight className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
+                      <ArrowRight className="w-5 h-5 text-neutral-600" />
                     </div>
                   )}
                 </div>
@@ -1023,16 +1035,16 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ PRICING SECTION ═══════════════════ */}
-      <section id="pricing" className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-neutral-900">
+      <section id="pricing" className="py-12 sm:py-16 lg:py-20 bg-neutral-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
-            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
+            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-500/10 text-amber-400 hover:bg-amber-500/10">
               Precios
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Planes para cada etapa de tu negocio
             </h2>
-            <p className="mt-4 text-neutral-500 dark:text-neutral-400 text-lg max-w-2xl mx-auto">
+            <p className="mt-4 text-neutral-400 text-lg max-w-2xl mx-auto">
               Invierte en tu negocio desde el día uno. Setup incluido en todos los planes. Sin contratos de permanencia.
             </p>
           </FadeInUp>
@@ -1050,7 +1062,7 @@ export default function SaasLanding() {
                   className={`relative h-full flex flex-col ${
                     plan.highlighted
                       ? 'border-amber-500 shadow-xl shadow-amber-500/10 ring-2 ring-amber-500/20'
-                      : 'border-neutral-100 dark:border-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-700 hover:shadow-md'
+                      : 'border-neutral-800 hover:border-neutral-700 hover:shadow-md'
                   } transition-all duration-300 py-0 gap-0 cursor-pointer`}
                 >
                   {(plan.highlighted || plan.badge) && (
@@ -1066,16 +1078,16 @@ export default function SaasLanding() {
                   </CardHeader>
                   <CardContent className="flex-1 pt-2">
                     <div className="mb-6">
-                      <span className={`text-4xl font-bold ${plan.highlighted ? 'text-amber-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
+                      <span className={`text-4xl font-bold ${plan.highlighted ? 'text-amber-600' : 'text-white'}`}>
                         {plan.price}
                       </span>
                       {plan.period && (
-                        <span className="text-neutral-400 dark:text-neutral-500 text-sm ml-1">{plan.period}</span>
+                        <span className="text-neutral-500 text-sm ml-1">{plan.period}</span>
                       )}
                       {plan.setupFee && (
                         <div className="mt-1">
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">+ pago único de instalación </span>
-                          <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300">{plan.setupFee}</span>
+                          <span className="text-sm text-neutral-400">+ pago único de instalación </span>
+                          <span className="text-sm font-bold text-neutral-300">{plan.setupFee}</span>
                         </div>
                       )}
                     </div>
@@ -1083,10 +1095,10 @@ export default function SaasLanding() {
                     <ul className="space-y-3">
                       {plan.features.slice(0, 6).map((feature) => (
                         <li key={feature} className="flex items-start gap-2.5 text-sm">
-                          <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${plan.highlighted ? 'bg-amber-100 dark:bg-amber-900' : 'bg-green-100 dark:bg-green-900'}`}>
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${plan.highlighted ? 'bg-amber-900' : 'bg-green-900'}`}>
                             <Check className={`w-2.5 h-2.5 ${plan.highlighted ? 'text-amber-600' : 'text-green-600'}`} />
                           </div>
-                          <span className="text-neutral-600 dark:text-neutral-300">{feature}</span>
+                          <span className="text-neutral-300">{feature}</span>
                         </li>
                       ))}
                       <li className="text-xs text-amber-600 font-medium pt-1">
@@ -1116,32 +1128,32 @@ export default function SaasLanding() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute inset-0 z-20 bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl border border-amber-200 dark:border-amber-800 p-6 overflow-y-auto max-h-[520px] flex flex-col"
+                      className="absolute inset-0 z-20 bg-neutral-800 rounded-2xl shadow-2xl border border-amber-800 p-6 overflow-y-auto max-h-[520px] flex flex-col"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">Todo lo que incluye el plan {plan.name}</h3>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{plan.description}</p>
+                          <h3 className="text-lg font-bold text-white">Todo lo que incluye el plan {plan.name}</h3>
+                          <p className="text-sm text-neutral-400">{plan.description}</p>
                         </div>
                         <button
                           onClick={() => setExpandedPlan(null)}
-                          className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-800 flex items-center justify-center transition-colors shrink-0 ml-2"
+                          className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-800 flex items-center justify-center transition-colors shrink-0 ml-2"
                         >
-                          <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          <X className="w-4 h-4 text-neutral-400" />
                         </button>
                       </div>
                       <div className="mb-4">
-                        <span className={`text-3xl font-bold ${plan.highlighted ? 'text-amber-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
+                        <span className={`text-3xl font-bold ${plan.highlighted ? 'text-amber-600' : 'text-white'}`}>
                           {plan.price}
                         </span>
                         {plan.period && (
-                          <span className="text-neutral-400 dark:text-neutral-500 text-sm ml-1">{plan.period}</span>
+                          <span className="text-neutral-500 text-sm ml-1">{plan.period}</span>
                         )}
                         {plan.setupFee && (
                           <div className="mt-1">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">+ pago único de instalación </span>
-                            <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300">{plan.setupFee}</span>
+                            <span className="text-sm text-neutral-400">+ pago único de instalación </span>
+                            <span className="text-sm font-bold text-neutral-300">{plan.setupFee}</span>
                           </div>
                         )}
                       </div>
@@ -1150,10 +1162,10 @@ export default function SaasLanding() {
                           const isSpecial = feature.startsWith('📱') || feature.startsWith('🔔') || feature.startsWith('🤖') || feature.startsWith('💬') || feature.startsWith('✅')
                           return (
                             <li key={feature} className="flex items-start gap-2.5 text-sm">
-                              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isSpecial ? 'bg-amber-100 dark:bg-amber-900' : 'bg-green-100 dark:bg-green-900'}`}>
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isSpecial ? 'bg-amber-900' : 'bg-green-900'}`}>
                                 <Check className={`w-3 h-3 ${isSpecial ? 'text-amber-600' : 'text-green-600'}`} />
                               </div>
-                              <span className={`text-neutral-700 dark:text-neutral-300 ${isSpecial ? 'font-medium' : ''}`}>{feature}</span>
+                              <span className={`text-neutral-300 ${isSpecial ? 'font-medium' : ''}`}>{feature}</span>
                             </li>
                           )
                         })}
@@ -1179,39 +1191,39 @@ export default function SaasLanding() {
           {/* Money-Back Guarantee Badge */}
           <FadeInUp delay={0.3} className="mt-12">
             <div className="max-w-lg mx-auto">
-              <div className="flex flex-col sm:flex-row items-center gap-4 p-6 bg-amber-50 dark:bg-amber-950 rounded-2xl border border-amber-100 dark:border-amber-800">
-                <div className="shrink-0 w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-2xl flex items-center justify-center">
+              <div className="flex flex-col sm:flex-row items-center gap-4 p-6 bg-amber-950 rounded-2xl border border-amber-800">
+                <div className="shrink-0 w-16 h-16 bg-amber-900 rounded-2xl flex items-center justify-center">
                   <Shield className="w-8 h-8 text-amber-600" />
                 </div>
                 <div className="text-center sm:text-left">
-                  <h4 className="font-bold text-neutral-900 dark:text-neutral-100 text-base">Garantía de Devolución de 7 Días</h4>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-1">Si no estás satisfecho, te devolvemos tu dinero. Sin preguntas, sin complicaciones.</p>
+                  <h4 className="font-bold text-white text-base">Garantía de Devolución de 7 Días</h4>
+                  <p className="text-sm text-neutral-300 mt-1">Si no estás satisfecho, te devolvemos tu dinero. Sin preguntas, sin complicaciones.</p>
                 </div>
               </div>
             </div>
           </FadeInUp>
 
           <FadeInUp delay={0.4} className="text-center mt-8">
-            <p className="text-sm text-neutral-400 dark:text-neutral-500">
-              Todos los planes incluyen <span className="text-neutral-600 dark:text-neutral-300 font-medium">SSL gratuito</span>,{' '}
-              <span className="text-neutral-600 dark:text-neutral-300 font-medium">backups automáticos</span> y{' '}
-              <span className="text-neutral-600 dark:text-neutral-300 font-medium">actualizaciones</span>.
+            <p className="text-sm text-neutral-500">
+              Todos los planes incluyen <span className="text-neutral-300 font-medium">SSL gratuito</span>,{' '}
+              <span className="text-neutral-300 font-medium">backups automáticos</span> y{' '}
+              <span className="text-neutral-300 font-medium">actualizaciones</span>.
             </p>
           </FadeInUp>
         </div>
       </section>
 
       {/* ═══════════════════ TESTIMONIALS SECTION ═══════════════════ */}
-      <section id="testimonials" className="py-12 sm:py-16 lg:py-20 bg-neutral-50 dark:bg-neutral-950">
+      <section id="testimonials" className="py-12 sm:py-16 lg:py-20 bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
-            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
+            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-950 text-amber-400 hover:bg-amber-950">
               Testimonios
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Lo que dicen nuestros clientes
             </h2>
-            <p className="mt-4 text-neutral-500 dark:text-neutral-400 text-lg max-w-2xl mx-auto">
+            <p className="mt-4 text-neutral-400 text-lg max-w-2xl mx-auto">
               Miles de emprendedores ya confían en nuestra plataforma para hacer crecer su negocio.
             </p>
           </FadeInUp>
@@ -1219,10 +1231,10 @@ export default function SaasLanding() {
           <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             {testimonials.map((testimonial) => (
               <StaggerItem key={testimonial.name} className="max-w-sm mx-auto sm:max-w-none">
-                <Card className="h-full border-neutral-100 dark:border-neutral-800 hover:shadow-md transition-shadow duration-300 py-0 gap-0">
+                <Card className="h-full border-neutral-800 hover:shadow-md transition-shadow duration-300 py-0 gap-0">
                   <CardContent className="p-6">
                     <StarRating rating={testimonial.rating} />
-                    <p className="mt-4 text-neutral-600 dark:text-neutral-300 text-sm leading-relaxed">
+                    <p className="mt-4 text-neutral-300 text-sm leading-relaxed">
                       &ldquo;{testimonial.content}&rdquo;
                     </p>
                     <Separator className="my-4" />
@@ -1242,8 +1254,8 @@ export default function SaasLanding() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm truncate">{testimonial.name}</p>
-                        <p className="text-neutral-400 dark:text-neutral-500 text-xs truncate">{testimonial.role}</p>
+                        <p className="font-semibold text-white text-sm truncate">{testimonial.name}</p>
+                        <p className="text-neutral-500 text-xs truncate">{testimonial.role}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1255,16 +1267,16 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ FAQ SECTION ═══════════════════ */}
-      <section id="faq" className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-neutral-900">
+      <section id="faq" className="py-12 sm:py-16 lg:py-20 bg-neutral-950">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeInUp className="text-center mb-14">
-            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
+            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-950 text-amber-400 hover:bg-amber-950">
               Preguntas Frecuentes
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               ¿Tienes preguntas?
             </h2>
-            <p className="mt-4 text-neutral-500 dark:text-neutral-400 text-lg max-w-2xl mx-auto">
+            <p className="mt-4 text-neutral-400 text-lg max-w-2xl mx-auto">
               Encuentra respuestas a las dudas más comunes sobre nuestra plataforma.
             </p>
           </FadeInUp>
@@ -1272,11 +1284,11 @@ export default function SaasLanding() {
           <FadeInUp delay={0.2}>
             <Accordion type="single" collapsible className="w-full">
               {faqItems.map((item, index) => (
-                <AccordionItem key={index} value={`faq-${index}`} className="border-neutral-200 dark:border-neutral-700">
-                  <AccordionTrigger className="text-left text-neutral-900 dark:text-neutral-100 font-semibold hover:text-amber-600 hover:no-underline [&[data-state=open]]:text-amber-600">
+                <AccordionItem key={index} value={`faq-${index}`} className="border-neutral-700">
+                  <AccordionTrigger className="text-left text-white font-semibold hover:text-amber-600 hover:no-underline [&[data-state=open]]:text-amber-600">
                     {item.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  <AccordionContent className="text-neutral-300 leading-relaxed">
                     {item.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -1287,19 +1299,19 @@ export default function SaasLanding() {
       </section>
 
       {/* ═══════════════════ CONTACT / LEAD FORM SECTION ═══════════════════ */}
-      <section id="contact" className="py-12 sm:py-16 lg:py-20 bg-neutral-50 dark:bg-neutral-950">
+      <section id="contact" className="py-12 sm:py-16 lg:py-20 bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
             {/* Left - CTA */}
             <FadeInUp>
               <div>
-                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950">
+                <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-amber-950 text-amber-400 hover:bg-amber-950">
                   Contacto
                 </Badge>
-                <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
                   ¿Listo para crear tu tienda online?
                 </h2>
-                <p className="mt-4 text-neutral-500 dark:text-neutral-400 text-lg leading-relaxed">
+                <p className="mt-4 text-neutral-400 text-lg leading-relaxed">
                   Únete a más de 200 tiendas que ya están vendiendo más con nuestra plataforma.
                   Invierte en tu negocio hoy y escala sin límites.
                 </p>
@@ -1317,7 +1329,7 @@ export default function SaasLanding() {
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 h-13 rounded-full border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-900 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors text-base font-medium"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 h-13 rounded-full border border-neutral-600 text-neutral-300 hover:bg-neutral-900 hover:border-neutral-500 transition-colors text-base font-medium"
                   >
                     <WhatsAppIcon className="w-5 h-5" />
                     Hablar con Ventas
@@ -1325,7 +1337,7 @@ export default function SaasLanding() {
                 </div>
 
                 {/* Contact info */}
-                <div className="mt-10 flex flex-col sm:flex-row items-start gap-6 text-sm text-neutral-500 dark:text-neutral-400">
+                <div className="mt-10 flex flex-col sm:flex-row items-start gap-6 text-sm text-neutral-400">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-amber-500" />
                     <span>+51 933 667 414</span>
@@ -1342,15 +1354,15 @@ export default function SaasLanding() {
 
                 {/* Trust badges */}
                 <div className="mt-10 flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 bg-white dark:bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-2 text-xs text-neutral-400 bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-700">
                     <Lock className="w-3.5 h-3.5 text-green-500" />
                     SSL Seguro
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 bg-white dark:bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-2 text-xs text-neutral-400 bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-700">
                     <Shield className="w-3.5 h-3.5 text-amber-500" />
                     Garantía 7 días
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 bg-white dark:bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-2 text-xs text-neutral-400 bg-neutral-800 rounded-full px-3 py-1.5 border border-neutral-700">
                     <HeadphonesIcon className="w-3.5 h-3.5 text-blue-500" />
                     Soporte 24/7
                   </div>
@@ -1360,7 +1372,7 @@ export default function SaasLanding() {
 
             {/* Right - Lead Capture Form */}
             <FadeInUp delay={0.2}>
-              <Card className="border-neutral-200 dark:border-neutral-700 shadow-lg py-0 gap-0">
+              <Card className="border-neutral-700 shadow-lg py-0 gap-0">
                 <CardHeader className="bg-neutral-900 rounded-t-lg">
                   <CardTitle className="text-white text-lg">Escríbenos</CardTitle>
                   <CardDescription className="text-neutral-400">
@@ -1377,7 +1389,7 @@ export default function SaasLanding() {
                         value={formData.name}
                         onChange={(e) => handleFormChange('name', e.target.value)}
                         required
-                        className="bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-700 focus:border-amber-400"
+                        className="bg-neutral-900 border-neutral-700 focus:border-amber-400"
                       />
                     </div>
                     <div className="space-y-2">
@@ -1389,18 +1401,18 @@ export default function SaasLanding() {
                         value={formData.email}
                         onChange={(e) => handleFormChange('email', e.target.value)}
                         required
-                        className="bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-700 focus:border-amber-400"
+                        className="bg-neutral-900 border-neutral-700 focus:border-amber-400"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lead-phone">Teléfono <span className="text-neutral-400 dark:text-neutral-500 font-normal">(opcional)</span></Label>
+                      <Label htmlFor="lead-phone">Teléfono <span className="text-neutral-500 font-normal">(opcional)</span></Label>
                       <Input
                         id="lead-phone"
                         type="tel"
                         placeholder="+51 999 999 999"
                         value={formData.phone}
                         onChange={(e) => handleFormChange('phone', e.target.value)}
-                        className="bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-700 focus:border-amber-400"
+                        className="bg-neutral-900 border-neutral-700 focus:border-amber-400"
                       />
                     </div>
                     <div className="space-y-2">
@@ -1409,7 +1421,7 @@ export default function SaasLanding() {
                         value={formData.plan}
                         onValueChange={(val) => handleFormChange('plan', val)}
                       >
-                        <SelectTrigger className="w-full bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-700 focus:border-amber-400">
+                        <SelectTrigger className="w-full bg-neutral-900 border-neutral-700 focus:border-amber-400">
                           <SelectValue placeholder="Selecciona un plan" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1422,14 +1434,14 @@ export default function SaasLanding() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lead-message">Mensaje <span className="text-neutral-400 dark:text-neutral-500 font-normal">(opcional)</span></Label>
+                      <Label htmlFor="lead-message">Mensaje <span className="text-neutral-500 font-normal">(opcional)</span></Label>
                       <Textarea
                         id="lead-message"
                         placeholder="Cuéntanos sobre tu negocio o tu consulta..."
                         value={formData.message}
                         onChange={(e) => handleFormChange('message', e.target.value)}
                         rows={3}
-                        className="bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-700 focus:border-amber-400 resize-none"
+                        className="bg-neutral-900 border-neutral-700 focus:border-amber-400 resize-none"
                       />
                     </div>
                     <Button
@@ -1554,10 +1566,10 @@ export default function SaasLanding() {
 
           {/* Bottom bar */}
           <Separator className="bg-white/10" />
-          <div className="py-5 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-500 dark:text-neutral-400">
+          <div className="py-5 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-400">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
               <p>&copy; {new Date().getFullYear()} Tienda Online Oficial. Todos los derechos reservados.</p>
-              <span className="hidden sm:inline text-neutral-600 dark:text-neutral-300">·</span>
+              <span className="hidden sm:inline text-neutral-300">·</span>
               <a href="https://tienda-online-oficial.vercel.app/" className="hover:text-white transition-colors">
                 Creado y desarrollado por <span className="font-semibold text-white">Tienda Online</span>
               </a>
@@ -1597,6 +1609,16 @@ export default function SaasLanding() {
         >
           <WhatsAppIcon className="w-7 h-7" />
         </a>
+
+      {/* ═══ Portfolio Modal ═══ */}
+      <AnimatePresence>
+        {selectedPortfolioProject && (
+          <PortfolioModal
+            project={selectedPortfolioProject}
+            onClose={() => setSelectedPortfolioProject(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
