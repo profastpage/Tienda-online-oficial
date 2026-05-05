@@ -43,8 +43,15 @@ export async function POST(request: NextRequest) {
     // 2. Initialize Payload CMS and push schema (creates/updates all tables)
     if (dbUrl) {
       try {
-        const { getPayloadHMR } = await import('@payloadcms/next/utilities')
-        const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
+        let payload: any = null
+        try {
+          const { getPayloadHMR } = await import('@payloadcms/next/utilities')
+          payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
+        } catch {
+          const config = (await import('../../../../payload.config')).default
+          const { getPayload } = await import('payload')
+          payload = await getPayload({ config })
+        }
 
         // Push schema to create all tables (store_pages, content_blocks, media, store_users, etc.)
         await payload.db.schema.push({})

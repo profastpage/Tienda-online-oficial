@@ -7,14 +7,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 
+async function getPayloadInstance() {
+  try {
+    const { getPayloadHMR } = await import('@payloadcms/next/utilities')
+    return await getPayloadHMR({ configPath: 'payload.config.ts' })
+  } catch {
+    const config = (await import('../../../../payload.config')).default
+    const { getPayload } = await import('payload')
+    return await getPayload({ config })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req)
     if (auth.error) return auth.error
 
     const user = auth.user
-    const { getPayloadHMR } = await import('@payloadcms/next/utilities')
-    const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
+    const payload = await getPayloadInstance()
 
     // Find or create Payload user
     const existing = await payload.find({

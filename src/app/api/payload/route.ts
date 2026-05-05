@@ -11,14 +11,33 @@ let payloadInstance: any = null
 
 async function getPayload() {
   if (payloadInstance) return payloadInstance
+
+  // Strategy 1: Try getPayloadHMR (works when next.config.ts is wrapped with payload())
   try {
     const { getPayloadHMR } = await import('@payloadcms/next/utilities')
     payloadInstance = await getPayloadHMR({ configPath: 'payload.config.ts' })
-    return payloadInstance
+    if (payloadInstance) {
+      console.log('[Payload API] Initialized via getPayloadHMR')
+      return payloadInstance
+    }
   } catch (err) {
-    console.error('[Payload API] Failed to initialize Payload:', err)
-    throw err
+    console.warn('[Payload API] getPayloadHMR failed, trying direct import:', (err as Error).message)
   }
+
+  // Strategy 2: Direct config import (fallback for edge cases)
+  try {
+    const config = (await import('../../../../payload.config')).default
+    const { getPayload } = await import('payload')
+    payloadInstance = await getPayload({ config })
+    if (payloadInstance) {
+      console.log('[Payload API] Initialized via direct config import')
+      return payloadInstance
+    }
+  } catch (err) {
+    console.error('[Payload API] Direct import also failed:', (err as Error).message)
+  }
+
+  throw new Error('[Payload API] Could not initialize Payload CMS. Ensure payload.config.ts is valid and database is reachable.')
 }
 
 // Verify auth and get storeId

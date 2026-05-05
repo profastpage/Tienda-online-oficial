@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import payload from "@payloadcms/next/next";
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -50,4 +51,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Payload CMS to enable getPayloadHMR / getPayload resolution
+export default payload(nextConfig);

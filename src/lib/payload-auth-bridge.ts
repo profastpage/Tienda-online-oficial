@@ -4,7 +4,19 @@
 // Creates/updates Payload user when existing user logs in
 // ═══════════════════════════════════════════════════════════
 
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+/**
+ * Initialize Payload with fallback strategies
+ */
+async function getPayloadInstance() {
+  try {
+    const { getPayloadHMR } = await import('@payloadcms/next/utilities')
+    return await getPayloadHMR({ configPath: 'payload.config.ts' })
+  } catch {
+    const config = (await import('../../../payload.config')).default
+    const { getPayload } = await import('payload')
+    return await getPayload({ config })
+  }
+}
 
 /**
  * Sync an existing store user to Payload CMS.
@@ -20,7 +32,7 @@ export async function syncUserToPayload(existingUser: {
   storeSlug?: string
 }): Promise<{ payloadUser: any; payloadToken: string } | null> {
   try {
-    const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
+    const payload = await getPayloadInstance()
 
     // Check if user already exists in Payload
     const existing = await payload.find({
@@ -104,7 +116,7 @@ export async function getPayloadAuthForUser(existingUser: {
   storeSlug?: string
 }) {
   try {
-    const payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
+    const payload = await getPayloadInstance()
 
     // Use localAPI to bypass auth (server-side only)
     const existing = await payload.localAPI({
