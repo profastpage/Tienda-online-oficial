@@ -211,6 +211,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [showGuideManual, setShowGuideManual] = useState(false)
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null)
+  const [rejectionReason, setRejectionReason] = useState<string>('')
   const refreshDone = useRef(false)
 
   // Hydrate auth store once
@@ -240,6 +242,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             (freshData.phone !== undefined && freshData.phone !== currentUser.phone) ||
             (freshData.address !== undefined && freshData.address !== currentUser.address) ||
             (freshData.storeName && freshData.storeName !== currentUser.storeName)
+
+          // Check approval status
+          const status = freshData.approvalStatus || 'pending'
+          setApprovalStatus(status)
+          setRejectionReason(freshData.rejectionReason || '')
+
+          if (status === 'pending') {
+            router.push('/admin/pending-approval')
+            return
+          }
+
+          if (status === 'rejected') {
+            router.push('/admin/pending-approval')
+            return
+          }
           if (needsUpdate) {
             useAuthStore.getState().setUser({
               ...currentUser,
@@ -295,6 +312,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Detect super admin impersonation mode
   const isSuperAdminMode = user.role === 'super-admin'
+
+  // Skip approval check for super admin
+  if (isSuperAdminMode) {
+    return renderAdminLayout()
+  }
+
+  // If we haven't checked approval yet, show loading
+  if (approvalStatus === null && refreshDone.current) {
+    // Waiting for approval check result
+  }
+
+  // If rejected, show rejection page
+  if (approvalStatus === 'rejected') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100 dark:bg-neutral-900">
+        <div className="max-w-md w-full text-center space-y-6 p-4">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+            <XCircle className="w-10 h-10 text-red-500" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Solicitud rechazada</h1>
+            {rejectionReason && (
+              <p className="text-neutral-500 dark:text-neutral-400 text-sm">{rejectionReason}</p>
+            )}
+          </div>
+          <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Ir al inicio
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  function renderAdminLayout() {
 
   const storeName = user.storeName || 'Mi Tienda'
   const storeSlug = user.storeSlug || 'urban-style'
@@ -445,4 +496,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <UpdateNotifier />
     </div>
   )
+  }
+
+  return renderAdminLayout()
 }

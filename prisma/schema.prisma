@@ -15,10 +15,13 @@ model Store {
   whatsappNumber        String               @default("")
   address               String               @default("")
   description           String               @default("")
-  isActive              Boolean              @default(true)
-  plan                  String               @default("basico")
+  isActive              Boolean              @default(false)
+  plan                  String               @default("gratis")
   subscriptionExpiresAt DateTime? // when the current plan expires
   trialDays             Int                  @default(0) // extra trial days granted by super admin
+  approvalStatus        String               @default("pending") // "pending" | "approved" | "rejected"
+  approvedAt            DateTime?
+  rejectionReason       String?
   users                 StoreUser[]
   categories            Category[]
   products              Product[]

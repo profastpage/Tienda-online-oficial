@@ -122,7 +122,9 @@ export async function POST(request: NextRequest) {
           name: storeName,
           slug,
           whatsappNumber: '',
-          plan: 'basico',
+          plan: 'gratis',
+          approvalStatus: 'pending',
+          isActive: false,
         },
       })
 
@@ -164,6 +166,7 @@ export async function POST(request: NextRequest) {
         avatar: user.avatar || picture || '',
         token,
         isNewUser: true,
+        approvalStatus: 'pending',
       })
 
       response.cookies.set('auth-token', token, {

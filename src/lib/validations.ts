@@ -60,6 +60,7 @@ export const superAdminActionsSchema = z.object({
     'toggle-store', 'delete-store', 'change-plan', 'store-token',
     'create-coupon', 'toggle-coupon', 'delete-coupon',
     'send-notification', 'delete-lead', 'set-subscription', 'grant-trial',
+    'approve-store', 'reject-store',
   ]),
   storeId: z.string().optional(),
 })

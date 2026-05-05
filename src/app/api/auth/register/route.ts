@@ -59,8 +59,8 @@ export async function POST(request: Request) {
         // Create store using raw SQL (more robust than Prisma ORM)
         try {
           await db.$executeRaw`
-            INSERT INTO Store (id, name, slug, whatsappNumber, address, description, logo, isActive, plan, createdAt, updatedAt)
-            VALUES (${storeId}, ${validStoreName || ''}, ${slug}, ${validPhone || ''}, ${address || ''}, '', '', 1, ${plan || 'basico'}, ${now}, ${now})
+            INSERT INTO Store (id, name, slug, whatsappNumber, address, description, logo, isActive, plan, approvalStatus, createdAt, updatedAt)
+            VALUES (${storeId}, ${validStoreName || ''}, ${slug}, ${validPhone || ''}, ${address || ''}, '', '', 0, 'gratis', 'pending', ${now}, ${now})
           `
           console.log(`[register] Created store ${storeId} (${validStoreName})`)
         } catch (storeError) {
@@ -136,6 +136,7 @@ export async function POST(request: Request) {
         storeSlug: storeSlugStr,
         avatar: '',
         token,
+        approvalStatus: 'pending',
       })
 
       response.cookies.set('auth-token', token, {

@@ -80,7 +80,7 @@ export async function GET(request: Request) {
       const db = await getDb()
       let user = await db.storeUser.findUnique({
         where: { id: authUser.userId },
-        include: { store: { select: { name: true, slug: true } } },
+        include: { store: { select: { name: true, slug: true, approvalStatus: true, rejectionReason: true } } },
       })
 
       // AUTO-REPAIR: If user not found in DB, create them from JWT data
@@ -100,6 +100,8 @@ export async function GET(request: Request) {
           storeId: user.storeId,
           storeName: user.store?.name || '',
           storeSlug: user.store?.slug || '',
+          approvalStatus: user.store?.approvalStatus || 'pending',
+          rejectionReason: user.store?.rejectionReason || '',
           avatar: user.avatar || '',
           twoFactorEnabled: user.twoFactorEnabled,
           token,

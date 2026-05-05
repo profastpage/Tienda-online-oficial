@@ -22,6 +22,35 @@ interface PlanConfig {
 }
 
 export const PLANS: Record<string, PlanConfig> = {
+  gratis: {
+    id: 'gratis',
+    name: 'Gratuito',
+    description: 'Plan gratuito - Aprobacion pendiente',
+    limits: {
+      products: 5,
+      categories: 2,
+      ordersMonthly: 10,
+      users: 1,
+      imagesPerProduct: 1,
+    },
+    features: {
+      mercadopago: false,
+      contra_entrega: true,
+      yape_plin: true,
+      analytics: false,
+      custom_domain: false,
+      inventory: false,
+      bulk_import: false,
+      priority_support: false,
+      whatsapp_orders: true,
+      favorites: false,
+      ai_assistant: false,
+      push_notifications: false,
+    },
+    price: 0,
+    priceLabel: 'Gratis',
+    setupFee: null,
+  },
   basico: {
     id: 'basico',
     name: 'Básico',
@@ -141,7 +170,7 @@ export const PLANS: Record<string, PlanConfig> = {
 }
 
 // Ordered plan tiers for upgrade flow
-export const PLAN_ORDER = ['basico', 'pro', 'premium', 'empresarial'] as const
+export const PLAN_ORDER = ['gratis', 'basico', 'pro', 'premium', 'empresarial'] as const
 
 // ─── Exported Functions ───────────────────────────────────────────────────────
 
@@ -149,7 +178,7 @@ export const PLAN_ORDER = ['basico', 'pro', 'premium', 'empresarial'] as const
  * Get full config for a given plan
  */
 export function getPlanConfig(plan: string): PlanConfig {
-  return PLANS[plan] || PLANS.basico
+  return PLANS[plan] || PLANS.gratis
 }
 
 /**

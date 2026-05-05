@@ -117,7 +117,7 @@ export default function RegisterPage() {
   const { toast } = useToast()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<string | null>('gratis')
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', storeName: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -126,7 +126,7 @@ export default function RegisterPage() {
   const passwordTooShort = Boolean(formData.password && formData.password.length < 6)
 
   const handleNext = () => {
-    if (step === 1 && selectedPlan) setStep(2)
+    if (step === 1) setStep(2) // Skip plan selection - auto-gratis
     if (step === 2 && formData.name && formData.email && formData.password && formData.confirmPassword && !passwordMismatch && !passwordTooShort) setStep(3)
   }
 
@@ -160,7 +160,7 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error)
 
       setUser(data, data.token)
-      toast({ title: 'Tienda creada exitosamente!', description: `Bienvenido a ${data.storeName}. Configura tu tienda ahora.` })
+      toast({ title: 'Solicitud enviada!', description: 'Tu tienda será revisada por un administrador. Te notificaremos por email.' })
       router.push('/admin')
     } catch (err: unknown) {
       toast({ title: 'Error al registrar', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' })
@@ -214,66 +214,46 @@ export default function RegisterPage() {
           <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
             {step === 1 && (
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 text-center mb-2">Elige tu plan</h1>
-                <p className="text-neutral-500 dark:text-neutral-400 text-center text-sm mb-8">Selecciona el plan que impulse tu negocio</p>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 text-center mb-2">Comienza Gratis</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 text-center text-sm mb-8">Crea tu tienda y comienza a vender sin costo</p>
 
-                {/* Setup info banner */}
-                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/30 rounded-xl">
+                {/* Free plan info */}
+                <div className="mb-6 p-5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-800/30">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                      <Settings className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center shrink-0">
+                      <ShoppingBag className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Setup inicial incluido en todos los planes</p>
-                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Te ayudamos a configurar tu tienda paso a paso. Sin costo adicional.</p>
+                      <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Plan Gratuito</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">Comienza con 5 productos, 2 categorías y pedidos por WhatsApp. Una vez aprobada tu tienda, el administrador te asignará el plan que necesites.</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {PLANS.map((plan) => (
-                    <Card key={plan.id} className={`cursor-pointer transition-all hover:shadow-lg dark:shadow-neutral-900/50 ${
-                      selectedPlan === plan.id ? `ring-2 ring-offset-2 dark:ring-offset-neutral-900 ${plan.border}` : ''
-                    } ${plan.recommended ? 'ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-neutral-900' : ''}`} onClick={() => setSelectedPlan(plan.id)}>
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-bold text-neutral-900 dark:text-neutral-100">{plan.name}</h3>
-                              {plan.popular && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900">POPULAR</span>}
-                              {plan.recommended && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">RECOMENDADO</span>}
-                            </div>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{plan.description}</p>
-                            <p className="text-xl font-extrabold text-neutral-900 dark:text-neutral-100 mt-2">{plan.price}<span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">/mes</span></p>
-                            {plan.setupFee && (
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">+ pago único instalación <span className="font-bold text-neutral-700 dark:text-neutral-300">{plan.setupFee}</span></p>
-                            )}
-                            <p className="text-[11px] text-green-600 dark:text-green-400 font-medium mt-1 flex items-center gap-1">
-                              <Check className="w-3 h-3" />
-                              {plan.setupIncluded}
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {plan.features.slice(0, 4).map((f) => (
-                                <span key={f} className="text-[10px] px-2 py-0.5 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-full border border-neutral-100 dark:border-neutral-700">
-                                  {f}
-                                </span>
-                              ))}
-                              {plan.features.length > 4 && (
-                                <span className="text-[10px] px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 rounded-full border border-amber-100 dark:border-amber-800/30 font-medium">
-                                  +{plan.features.length - 4} más
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${selectedPlan === plan.id ? plan.color : 'bg-neutral-100 dark:bg-neutral-800'}`}>
-                            {selectedPlan === plan.id ? <Check className="w-5 h-5" /> : <Store className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                {/* What you get */}
+                <div className="space-y-3 mb-8">
+                  {[
+                    'Tienda online personalizada',
+                    'Catálogo digital con fotos',
+                    'Pedidos por WhatsApp',
+                    'Panel de administración',
+                    'Sin costo de inicio',
+                  ].map((f) => (
+                    <div key={f} className="flex items-center gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+                      <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                      {f}
+                    </div>
                   ))}
                 </div>
-                <Button onClick={handleNext} disabled={!selectedPlan} className="w-full mt-6 h-12 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 font-semibold">
+
+                {/* Upgrade info */}
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/30 rounded-xl">
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    <strong>¿Necesitas más?</strong> Una vez aprobada tu tienda, puedes contactar al administrador por WhatsApp para hacer upgrade a un plan superior (Básico S/49, Pro S/89, Premium S/129).
+                  </p>
+                </div>
+
+                <Button onClick={handleNext} className="w-full mt-2 h-12 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 font-semibold">
                   Continuar <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -403,53 +383,31 @@ export default function RegisterPage() {
                     <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Este nombre será visible para tus clientes</p>
                   </div>
 
-                  {/* Plan summary */}
-                  {getSelectedPlan() && (() => {
-                    const plan = getSelectedPlan()!
-                    return (
-                    <Card className="bg-neutral-50 dark:bg-neutral-900">
-                      <CardContent className="p-5">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${plan.color}`}>
-                            {plan.icon}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Plan {plan.name}</h3>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{plan.description}</p>
-                          </div>
+                  {/* Plan summary - Free plan */}
+                  <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-800/30">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                          <ShoppingBag className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
-
-                        <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-3">Incluye:</h4>
-                        <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                          {plan.features.map((feature: string) => (
-                            <li key={feature} className="flex items-start gap-2 text-xs">
-                              <Check className="w-3.5 h-3.5 text-green-500 dark:text-green-400 shrink-0 mt-0.5" />
-                              <span className="text-neutral-600 dark:text-neutral-400">{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-
-                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-100 dark:border-amber-800/30">
-                          <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-1">
-                            <Settings className="w-3.5 h-3.5" />
-                            Setup: {plan.setupIncluded}
-                          </p>
+                        <div>
+                          <h3 className="font-semibold text-emerald-900 dark:text-emerald-100">Plan Gratuito</h3>
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400">Sin costo - 5 productos, 2 categorías</p>
                         </div>
-
-                        <Separator className="my-4" />
-
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Plan</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{plan.name}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Mensualidad</span><span className="font-bold text-amber-600 dark:text-amber-400">{plan.price}{plan.period}</span></div>
-                          {plan.setupFee && <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Instalación (pago único)</span><span className="font-bold text-neutral-700 dark:text-neutral-300">{plan.setupFee}</span></div>}
-                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Nombre</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.name}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Email</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.email}</span></div>
-                          <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Tienda</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.storeName || '—'}</span></div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    )
-                  })()}
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        Una vez aprobada tu tienda, el administrador podrá asignarte un plan superior (Básico S/49, Pro S/89, Premium S/129).
+                      </p>
+                      <Separator className="my-3" />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Plan</span><span className="font-medium text-emerald-700 dark:text-emerald-300">Gratis</span></div>
+                        <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Mensualidad</span><span className="font-bold text-emerald-600 dark:text-emerald-400">S/ 0</span></div>
+                        <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Nombre</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.name}</span></div>
+                        <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Email</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.email}</span></div>
+                        <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Tienda</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{formData.storeName || '—'}</span></div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
                 <div className="flex gap-3 mt-6">
                   <Button variant="outline" onClick={() => setStep(2)} className="h-12 flex-1">Anterior</Button>

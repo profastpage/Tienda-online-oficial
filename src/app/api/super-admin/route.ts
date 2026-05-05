@@ -53,6 +53,9 @@ async function ensureStoreColumns(db: Awaited<ReturnType<typeof getDb>>): Promis
       { name: 'address', sql: `ALTER TABLE "Store" ADD COLUMN "address" TEXT DEFAULT ''` },
       { name: 'whatsappNumber', sql: `ALTER TABLE "Store" ADD COLUMN "whatsappNumber" TEXT DEFAULT ''` },
       { name: 'logo', sql: `ALTER TABLE "Store" ADD COLUMN "logo" TEXT DEFAULT ''` },
+      { name: 'approvalStatus', sql: `ALTER TABLE "Store" ADD COLUMN "approvalStatus" TEXT DEFAULT 'pending'` },
+      { name: 'approvedAt', sql: `ALTER TABLE "Store" ADD COLUMN "approvedAt" DATETIME` },
+      { name: 'rejectionReason', sql: `ALTER TABLE "Store" ADD COLUMN "rejectionReason" TEXT DEFAULT ''` },
     ]
 
     for (const col of required) {
@@ -289,7 +292,7 @@ export async function GET(request: Request) {
       console.log('[super-admin] Available Store columns:', availableCols)
 
       // Build SELECT statement with only available columns
-      const wantedCols = ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt']
+      const wantedCols = ['id', 'name', 'slug', 'logo', 'whatsappNumber', 'address', 'description', 'isActive', 'plan', 'subscriptionExpiresAt', 'trialDays', 'createdAt', 'updatedAt', 'approvalStatus', 'approvedAt', 'rejectionReason']
       const safeCols = wantedCols.filter(c => availableCols.includes(c))
       const selectClause = safeCols.join(', ')
 
@@ -324,6 +327,8 @@ export async function GET(request: Request) {
             description: store.description || '',
             isActive: store.isActive === 1 || store.isActive === true,
             plan: store.plan || 'basico',
+            approvalStatus: store.approvalStatus || 'pending',
+            rejectionReason: store.rejectionReason || '',
             subscriptionExpiresAt: store.subscriptionExpiresAt || null,
             trialDays: store.trialDays || 0,
             createdAt: store.createdAt,
@@ -348,6 +353,8 @@ export async function GET(request: Request) {
             logo: '', whatsappNumber: '', address: '', description: '',
             isActive: store.isActive === 1 || store.isActive === true,
             plan: store.plan || 'basico',
+            approvalStatus: store.approvalStatus || 'pending',
+            rejectionReason: store.rejectionReason || '',
             subscriptionExpiresAt: null, trialDays: 0,
             createdAt: store.createdAt, updatedAt: store.updatedAt,
             _count: { users: 0, products: 0, orders: 0, categories: 0, coupons: 0 },
@@ -734,6 +741,48 @@ export async function PATCH(request: Request) {
           expiresAt: stores[0].subscriptionExpiresAt
         } : null
       })
+    }
+
+    // ── Approve Store ──
+    if (action === 'approve-store') {
+      const { storeId, plan } = body
+      if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
+      
+      const approvedPlan = plan || 'gratis'
+      const now = new Date().toISOString()
+      
+      await db.$executeRaw`
+        UPDATE Store 
+        SET isActive = 1, approvalStatus = 'approved', approvedAt = ${now}, plan = ${approvedPlan}, updatedAt = ${now}
+        WHERE id = ${storeId}
+      `
+      
+      // Create notification for the store
+      const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      await db.$executeRaw`
+        INSERT INTO AdminNotification (id, storeId, type, title, message, data, createdAt)
+        VALUES (${notifId}, ${storeId}, 'info', 'Tienda Aprobada', 'Tu tienda ha sido aprobada. Ya puedes empezar a vender.', '{}', ${now})
+      `
+      
+      const stores = await db.$queryRaw<{ id: string; name: string; slug: string; plan: string; isActive: number; approvalStatus: string }[]>`
+        SELECT id, name, slug, plan, isActive, approvalStatus FROM Store WHERE id = ${storeId}
+      `
+      
+      return NextResponse.json({ success: true, message: `Tienda aprobada con plan ${approvedPlan}`, store: stores[0] })
+    }
+
+    // ── Reject Store ──
+    if (action === 'reject-store') {
+      const { storeId, reason } = body
+      if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 })
+      
+      await db.$executeRaw`
+        UPDATE Store 
+        SET isActive = 0, approvalStatus = 'rejected', rejectionReason = ${reason || ''}, updatedAt = ${new Date().toISOString()}
+        WHERE id = ${storeId}
+      `
+      
+      return NextResponse.json({ success: true, message: 'Tienda rechazada' })
     }
 
     return NextResponse.json({ error: `Accion no valida: ${action}` }, { status: 400 })

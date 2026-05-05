@@ -12,18 +12,21 @@ import {
   Send, Megaphone, CreditCard, Gift, Timer, Crown,
   ChevronRight, Copy, Check, Percent, DollarSign,
   Bell, Info, AlertCircle, Zap, Database,
-  Key, MessageSquare, Smartphone, MapPin, HeartHandshake, Globe
+  Key, MessageSquare, Smartphone, MapPin, HeartHandshake, Globe,
+  CheckCircle, XCircle, Hourglass
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 // ═══ Types ═══
 interface StoreData {
   id: string; name: string; slug: string; plan: string; isActive: boolean
   logo: string; whatsappNumber: string; address: string; createdAt: string
   subscriptionExpiresAt?: string; trialDays: number
+  approvalStatus?: string; rejectionReason?: string
   _count: { users: number; products: number; orders: number; categories: number; coupons: number }
   users: UserData[]; coupons: CouponData[]
 }
@@ -55,6 +58,12 @@ const planColors: Record<string, string> = {
   basico: 'bg-neutral-100 text-neutral-700', pro: 'bg-neutral-900 text-white',
   premium: 'bg-amber-100 text-amber-700', empresarial: 'bg-purple-100 text-purple-700',
   gratis: 'bg-gray-100 text-gray-600', free: 'bg-gray-100 text-gray-600',
+}
+
+function ApprovalBadge({ status }: { status: string }) {
+  if (status === 'approved') return <Badge className="bg-green-100 text-green-700 text-[10px] font-semibold px-2 py-0.5">Aprobada</Badge>
+  if (status === 'rejected') return <Badge className="bg-red-100 text-red-700 text-[10px] font-semibold px-2 py-0.5">Rechazada</Badge>
+  return <Badge className="bg-yellow-100 text-yellow-700 text-[10px] font-semibold px-2 py-0.5">Pendiente</Badge>
 }
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
@@ -128,6 +137,10 @@ export default function SuperAdminPanel() {
   const [couponModal, setCouponModal] = useState<{ open: boolean; storeId: string; storeName: string }>({ open: false, storeId: '', storeName: '' })
   const [notifModal, setNotifModal] = useState<{ open: boolean; storeId?: string; storeName?: string; broadcast: boolean }>({ open: false, broadcast: true })
   const [subModal, setSubModal] = useState<{ open: boolean; storeId: string; storeName: string; currentExpiry?: string }>({ open: false, storeId: '', storeName: '' })
+  const [approveModal, setApproveModal] = useState<{ open: boolean; storeId: string; storeName: string }>({ open: false, storeId: '', storeName: '' })
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; storeId: string; storeName: string }>({ open: false, storeId: '', storeName: '' })
+  const [approvePlan, setApprovePlan] = useState('gratis')
+  const [rejectReason, setRejectReason] = useState('')
 
   // Form states
   const [couponForm, setCouponForm] = useState({ code: '', type: 'percentage', value: '', minPurchase: '', maxUses: '', expiresAt: '' })
@@ -290,6 +303,35 @@ export default function SuperAdminPanel() {
     finally { setActionLoading(null) }
   }
 
+  // Handle approve store
+  const handleApproveStore = async () => {
+    setActionLoading('approve')
+    try {
+      const json = await apiCall({ action: 'approve-store', storeId: approveModal.storeId, plan: approvePlan })
+      if (json.error) throw new Error(json.error)
+      showToast(json.message || 'Tienda aprobada!')
+      setApproveModal({ open: false, storeId: '', storeName: '' })
+      setApprovePlan('gratis')
+      setData(null); await fetchData()
+    } catch (err: any) { showToast(err.message, 'error') }
+    finally { setActionLoading(null) }
+  }
+
+  // Handle reject store
+  const handleRejectStore = async () => {
+    if (!rejectReason.trim()) { showToast('Motivo de rechazo requerido', 'error'); return }
+    setActionLoading('reject')
+    try {
+      const json = await apiCall({ action: 'reject-store', storeId: rejectModal.storeId, reason: rejectReason })
+      if (json.error) throw new Error(json.error)
+      showToast(json.message || 'Tienda rechazada')
+      setRejectModal({ open: false, storeId: '', storeName: '' })
+      setRejectReason('')
+      setData(null); await fetchData()
+    } catch (err: any) { showToast(err.message, 'error') }
+    finally { setActionLoading(null) }
+  }
+
   // ═══ Auth guard ═══
   if (!authed) return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -301,6 +343,14 @@ export default function SuperAdminPanel() {
   )
 
   // ═══ Filters ═══
+  const sortedStores = [...filteredStores].sort((a, b) => {
+    const statusOrder = { pending: 0, rejected: 1, approved: 2 }
+    const aStatus = (a.approvalStatus || 'approved')
+    const bStatus = (b.approvalStatus || 'approved')
+    return (statusOrder[aStatus] ?? 2) - (statusOrder[bStatus] ?? 2)
+  })
+
+  const pendingCount = data?.stores.filter(s => s.approvalStatus === 'pending' || (!s.approvalStatus && !s.isActive)).length || 0
   const filteredStores = data?.stores.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.plan.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -328,7 +378,7 @@ export default function SuperAdminPanel() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tiendas', label: 'Tiendas', icon: Store, count: data?.stats.totalStores },
+    { id: 'tiendas', label: 'Tiendas', icon: Store, count: data?.stats.totalStores, badge: pendingCount > 0 ? pendingCount : undefined },
     { id: 'usuarios', label: 'Usuarios', icon: Users, count: data?.stats.totalUsers },
     { id: 'cupones', label: 'Cupones', icon: Tag, count: data?.stats.totalCoupons },
     { id: 'leads', label: 'Leads', icon: Mail, count: data?.stats.totalLeads },
@@ -429,6 +479,9 @@ export default function SuperAdminPanel() {
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${activeTab === tab.id ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-600'}`}>{tab.count}</span>
+              )}
+              {(tab as any).badge !== undefined && (tab as any).badge > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-yellow-100 text-yellow-700">{(tab as any).badge}</span>
               )}
             </button>
           ))}
@@ -551,10 +604,15 @@ export default function SuperAdminPanel() {
             {/* ═══ TIENDAS TAB ═══ */}
             {activeTab === 'tiendas' && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 sm:space-y-3">
-                {filteredStores.length === 0 ? (
+                {sortedStores.length === 0 ? (
                   <div className="bg-white rounded-2xl border p-12 text-center"><Store className="w-12 h-12 mx-auto mb-3 text-neutral-200" /><p className="text-sm text-neutral-400">No se encontraron tiendas</p></div>
-                ) : filteredStores.map((store) => (
-                  <div key={store.id} className="bg-white rounded-xl sm:rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
+                ) : sortedStores.map((store) => {
+                  const status = store.approvalStatus || (store.isActive ? 'approved' : 'pending')
+                  const isPending = status === 'pending'
+                  const isRejected = status === 'rejected'
+                  const isPendingOrRejected = isPending || isRejected
+                  return (
+                  <div key={store.id} className={`bg-white rounded-xl sm:rounded-2xl border ${isPending ? 'border-yellow-200' : isRejected ? 'border-red-200' : 'border-neutral-100'} shadow-sm overflow-hidden`}>
                     <button className="w-full text-left" onClick={() => setExpandedStore(expandedStore === store.id ? null : store.id)}>
                       <div className="p-3 sm:p-4">
                         <div className="flex items-start sm:items-center justify-between gap-2">
@@ -563,6 +621,7 @@ export default function SuperAdminPanel() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="text-sm font-semibold text-neutral-900 truncate">{store.name}</p>
+                                <ApprovalBadge status={status} />
                                 <StatusBadge isActive={store.isActive} />
                                 <SubscriptionBadge store={store} />
                               </div>
@@ -570,6 +629,9 @@ export default function SuperAdminPanel() {
                                 <Badge className={`${planColors[store.plan] || planColors.free} text-[10px] capitalize border-0`}>{store.plan}</Badge>
                                 <span className="text-[10px] text-neutral-400 truncate">{store.slug} · {store.users.length} usuarios</span>
                               </div>
+                              {isRejected && store.rejectionReason && (
+                                <p className="text-[10px] text-red-500 mt-1 truncate">Motivo: {store.rejectionReason}</p>
+                              )}
                             </div>
                           </div>
                           <div className="shrink-0 p-1">{expandedStore === store.id ? <ChevronUp className="w-4 h-4 text-neutral-400" /> : <ChevronDown className="w-4 h-4 text-neutral-400" />}</div>
@@ -676,7 +738,7 @@ export default function SuperAdminPanel() {
                               <div className="mt-3 p-2.5 bg-white rounded-lg border border-neutral-100">
                                 <p className="text-[10px] font-semibold text-neutral-500 mb-2">Cambiar Plan</p>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {['basico', 'pro', 'premium', 'empresarial'].map(p => (
+                                  {['gratis', 'basico', 'pro', 'premium', 'empresarial'].map(p => (
                                     <button key={p} disabled={store.plan === p || actionLoading === store.id} onClick={() => handleAction('change-plan', store.id, { plan: p })}
                                       className={`text-[10px] px-2.5 py-1 rounded-lg font-medium transition-colors ${store.plan === p ? planColors[p] || '' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'} disabled:opacity-100`}>
                                       {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -684,13 +746,32 @@ export default function SuperAdminPanel() {
                                   ))}
                                 </div>
                               </div>
+
+                              {/* Approve / Reject Buttons for Pending Stores */}
+                              {isPendingOrRejected && (
+                                <div className="mt-3 p-2.5 bg-yellow-50 rounded-lg border border-yellow-200">
+                                  <p className="text-[10px] font-semibold text-yellow-700 mb-2 flex items-center gap-1">
+                                    <Hourglass className="w-3 h-3" />
+                                    {isPending ? 'Aprobacion Pendiente' : 'Tienda Rechazada'}
+                                  </p>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" className="flex-1 text-xs gap-1 h-9 rounded-lg bg-green-600 hover:bg-green-700 text-white" onClick={() => { setApproveModal({ open: true, storeId: store.id, storeName: store.name }); setApprovePlan(store.plan === 'gratis' ? 'gratis' : 'basico') }}>
+                                      <CheckCircle className="w-3.5 h-3.5" /> Aprobar
+                                    </Button>
+                                    <Button size="sm" className="flex-1 text-xs gap-1 h-9 rounded-lg bg-red-600 hover:bg-red-700 text-white" onClick={() => { setRejectModal({ open: true, storeId: store.id, storeName: store.name }); setRejectReason('') }}>
+                                      <XCircle className="w-3.5 h-3.5" /> Rechazar
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
-                ))}
+                  )
+                })}
               </motion.div>
             )}
 
