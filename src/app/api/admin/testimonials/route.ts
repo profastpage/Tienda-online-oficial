@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireStoreOwner } from '@/lib/api-auth'
+import { requireStoreOwner, requireStoreApproved } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -33,6 +33,10 @@ export async function POST(request: Request) {
   try {
     const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
+
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
 
     const storeId = auth.user.storeId
     if (!storeId) return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })
@@ -67,6 +71,10 @@ export async function PUT(request: Request) {
     const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
 
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
+
     const storeId = auth.user.storeId
     if (!storeId) return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })
 
@@ -95,6 +103,10 @@ export async function DELETE(request: Request) {
   try {
     const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
+
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
 
     const storeId = auth.user.storeId
     if (!storeId) return NextResponse.json({ error: 'No se encontró tienda asociada' }, { status: 400 })

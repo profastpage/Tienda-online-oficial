@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireStoreOwner, verifyStoreOwnershipAny } from '@/lib/api-auth'
+import { requireStoreOwner, verifyStoreOwnershipAny, requireStoreApproved } from '@/lib/api-auth'
 import { checkPlanLimit, getPlanConfig } from '@/lib/plan-limits'
 import { ensureStoreExists, findStoreById } from '@/lib/store-helpers'
 import { validateRequest, createProductSchema } from '@/lib/validations'
@@ -114,6 +114,10 @@ export async function POST(request: Request) {
       console.log('[admin/products POST] Auth error:', auth.error)
       return auth.error
     }
+
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
 
     const db = await getDb()
     
@@ -285,6 +289,10 @@ export async function PUT(request: Request) {
     const { id, ...data } = body
     if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
 
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
+
     // Verify store ownership before update
     const ownership = await verifyStoreOwnershipAny(request, 'product', id)
     if (!ownership.authorized) return ownership.error
@@ -378,6 +386,10 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
+
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
 
     // Verify store ownership before delete
     const ownership = await verifyStoreOwnershipAny(request, 'product', id)

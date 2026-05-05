@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { requireStoreOwner } from '@/lib/api-auth'
+import { requireStoreOwner, requireStoreApproved } from '@/lib/api-auth'
 import { ensureStoreExists, findStoreById, updateStore, SEED_STORES } from '@/lib/store-helpers'
 
 export async function GET(request: Request) {
@@ -42,6 +42,10 @@ export async function PUT(request: Request) {
   try {
     const auth = await requireStoreOwner(request)
     if (auth.error) return auth.error
+
+    // ═══ APPROVAL CHECK: Block if store is pending/rejected/suspended ═══
+    const approval = await requireStoreApproved(request)
+    if (approval.error) return approval.error
 
     const db = await getDb()
     const body = await request.json()

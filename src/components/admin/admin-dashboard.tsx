@@ -13,6 +13,10 @@ import {
   BarChart3,
   CreditCard,
   CalendarCheck,
+  CheckCircle2,
+  XCircle,
+  MessageCircle,
+  Crown,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -153,6 +157,7 @@ export function AdminDashboard() {
   const user = useAuthStore((s) => s.user)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [storeStatus, setStoreStatus] = useState<{ approvalStatus: string; plan: string; isActive: boolean } | null>(null)
 
   useEffect(() => {
     if (!user?.storeId) return
@@ -160,6 +165,19 @@ export function AdminDashboard() {
       try {
         const sid = user!.storeId
         const { token } = useAuthStore.getState()
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        
+        // Fetch store status in parallel
+        const storeRes = await fetch(`/api/admin/settings?storeId=${sid}`, { headers })
+        if (storeRes.ok) {
+          const storeData = await storeRes.json()
+          setStoreStatus({
+            approvalStatus: storeData.approvalStatus || 'approved',
+            plan: storeData.plan || 'gratis',
+            isActive: storeData.isActive !== false,
+          })
+        }
+
         const res = await fetch(`/api/admin/dashboard?storeId=${sid}`, {
           ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
         })
@@ -232,6 +250,71 @@ export function AdminDashboard() {
 
   return (
     <div className="w-full space-y-6">
+      {/* ═══ STORE APPROVAL STATUS BANNER ═══ */}
+      {storeStatus?.approvalStatus === 'pending' && (
+        <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 p-5 sm:p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6 text-amber-600 animate-pulse" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold text-amber-900">Tu tienda está pendiente de aprobación</h3>
+              <p className="text-sm text-amber-700 mt-1 leading-relaxed">
+                Un administrador está revisando tu solicitud. Mientras tanto, <strong>no puedes guardar cambios, 
+                subir productos ni modificar categorías</strong>. 
+                Una vez aprobada, recibirás un email de notificación.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-start gap-2.5 p-3.5 bg-white/70 rounded-xl border border-amber-200">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                <MessageCircle className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-blue-900">¿Quieres un plan superior?</p>
+                <p className="text-[11px] text-blue-600 mt-0.5">Contacta por WhatsApp para coordinar el upgrade de plan y pago.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 p-3.5 bg-white/70 rounded-xl border border-amber-200">
+              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-emerald-900">Plan actual: Gratuito</p>
+                <p className="text-[11px] text-emerald-600 mt-0.5">Al aprobar, el admin puede asignarte el plan que elijas.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {storeStatus?.approvalStatus === 'rejected' && (
+        <div className="rounded-xl border-2 border-red-300 bg-gradient-to-r from-red-50 to-rose-50 p-5 sm:p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center shrink-0">
+              <XCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold text-red-900">Tu tienda fue rechazada</h3>
+              <p className="text-sm text-red-700 mt-1">
+                Contacta al soporte por WhatsApp para más información sobre el rechazo y cómo proceder.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {storeStatus && storeStatus.approvalStatus === 'approved' && storeStatus.plan === 'gratis' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-center gap-3">
+          <Crown className="w-5 h-5 text-amber-500 shrink-0" />
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-amber-900">Estás en el plan Gratuito</p>
+            <p className="text-[11px] text-amber-700">Tienes acceso limitado. Contacta por WhatsApp para upgrade.</p>
+          </div>
+        </div>
+      )}
+
       {/* Quick alerts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {stats && stats.pendingOrders > 0 && (
