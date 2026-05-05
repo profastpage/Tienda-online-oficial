@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           const { getPayloadHMR } = await import('@payloadcms/next/utilities')
           payload = await getPayloadHMR({ configPath: 'payload.config.ts' })
         } catch {
-          const config = (await import('../../../../payload.config')).default
+          const config = (await import('../../../../../payload.config')).default
           const { getPayload } = await import('payload')
           payload = await getPayload({ config })
         }

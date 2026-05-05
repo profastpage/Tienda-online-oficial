@@ -26,7 +26,7 @@ async function getPayload() {
 
   // Strategy 2: Direct config import (fallback for edge cases)
   try {
-    const config = (await import('../../../../payload.config')).default
+    const config = (await import('../../../../../payload.config')).default
     const { getPayload } = await import('payload')
     payloadInstance = await getPayload({ config })
     if (payloadInstance) {

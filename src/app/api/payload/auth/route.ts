@@ -12,7 +12,7 @@ async function getPayloadInstance() {
     const { getPayloadHMR } = await import('@payloadcms/next/utilities')
     return await getPayloadHMR({ configPath: 'payload.config.ts' })
   } catch {
-    const config = (await import('../../../../payload.config')).default
+    const config = (await import('../../../../../payload.config')).default
     const { getPayload } = await import('payload')
     return await getPayload({ config })
   }
