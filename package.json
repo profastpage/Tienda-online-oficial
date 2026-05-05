@@ -21,7 +21,6 @@
     "@libsql/client": "^0.17.2",
     "@mdxeditor/editor": "^3.39.1",
     "@payloadcms/db-postgres": "^3.84.1",
-    "@payloadcms/db-sqlite": "^3.84.1",
     "@payloadcms/live-preview": "^3.84.1",
     "@payloadcms/next": "^3.84.1",
     "@payloadcms/plugin-seo": "^3.84.1",
