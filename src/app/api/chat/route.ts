@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Edge Runtime: no database, no Node.js-only deps — ideal for Vercel CPU savings
+export const runtime = 'edge'
+
 // ═══════════════════════════════════════════════════════════════════
 // ATLAS AI CHAT — Reliable API Route
 // ═══════════════════════════════════════════════════════════════════

@@ -264,8 +264,21 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// OPTIMIZED MATCHER — Skip static assets to drastically reduce CPU.
+// The middleware only runs on pages and API routes.
+// Static files (images, fonts, JS bundles, CSS) are served directly
+// by Vercel CDN without invoking the Edge function.
+// ═══════════════════════════════════════════════════════════════════
 export const config = {
   matcher: [
-    '/:path*',  // Match all paths for custom domain support + existing route protection
+    // Match all paths EXCEPT:
+    //  - _next/static  (JS bundles, CSS chunks)
+    //  - _next/image   (Next.js image optimization)
+    //  - _next/data    (RSC flight data)
+    //  - favicon.ico, robots.txt, sitemap.xml, manifest.json, sw.js
+    //  - images/       (public images directory)
+    //  - icon-*, logo.svg, og-default.png (public branding assets)
+    '/((?!_next/static|_next/image|_next/data|favicon\\.ico|robots\\.txt|sitemap\\.xml|manifest\\.json|sw\\.js|images/|icon-|logo\\.svg|og-default\\.png).*)',
   ],
 }

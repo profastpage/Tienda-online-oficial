@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 
+// Edge Runtime: zero dependencies, just clears a cookie
+export const runtime = 'edge'
+
 export async function POST() {
   return NextResponse.json(
     { success: true },
